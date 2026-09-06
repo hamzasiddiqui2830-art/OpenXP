@@ -1,5 +1,3 @@
-!IF 0
-
 /*
  * ReactOS Kernel
  * Copyright (C) 2024 ReactOS Team
@@ -19,7 +17,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-!ENDIF
+NTSTATUS
+PiPagePathSetState(
+    IN PFILE_OBJECT FileObject,
+    IN BOOLEAN      InPath
+    );
 
-!include $(PROJECT_ROOT)\ntos\ntoskrnl.inc
-!include ..\sources.inc
+

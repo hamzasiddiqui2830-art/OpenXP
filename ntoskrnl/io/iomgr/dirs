@@ -21,5 +21,4 @@
 
 !ENDIF
 
-!include $(PROJECT_ROOT)\ntos\ntoskrnl.inc
-!include ..\sources.inc
+DIRS=up{x86,amd64} mp ddk

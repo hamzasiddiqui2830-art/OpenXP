@@ -1,5 +1,3 @@
-!IF 0
-
 /*
  * ReactOS Kernel
  * Copyright (C) 2024 ReactOS Team
@@ -19,7 +17,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-!ENDIF
+#include "pnpmgrp.h"
+#pragma hdrstop
 
-!include $(PROJECT_ROOT)\ntos\ntoskrnl.inc
-!include ..\sources.inc
+//
+// This is a cpp style symbolic link
+//
+#include "convert.c"
+

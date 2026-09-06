@@ -1,5 +1,3 @@
-!IF 0
-
 /*
  * ReactOS Kernel
  * Copyright (C) 2024 ReactOS Team
@@ -19,7 +17,24 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-!ENDIF
+VOID
+PiLastGoodRevertLastKnownDirectory(
+    IN PUNICODE_STRING  LastKnownGoodDirectory,
+    IN PUNICODE_STRING  LastKnownGoodRegPath
+    );
 
-!include $(PROJECT_ROOT)\ntos\ntoskrnl.inc
-!include ..\sources.inc
+NTSTATUS
+PiLastGoodRevertCopyCallback(
+    IN PUNICODE_STRING  FullPathName,
+    IN PUNICODE_STRING  FileName,
+    IN ULONG            FileAttributes,
+    IN PVOID            Context
+    );
+
+NTSTATUS
+PiLastGoodCopyKeyContents(
+    IN PUNICODE_STRING  SourceRegPath,
+    IN PUNICODE_STRING  DestinationRegPath,
+    IN BOOLEAN          DeleteSourceKey
+    );
+

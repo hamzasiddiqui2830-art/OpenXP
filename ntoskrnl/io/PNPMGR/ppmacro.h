@@ -1,5 +1,3 @@
-!IF 0
-
 /*
  * ReactOS Kernel
  * Copyright (C) 2024 ReactOS Team
@@ -19,7 +17,16 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-!ENDIF
+//
+// This is to make all the TEXT(...) macros come out right. As of 07/27/2000,
+// UNICODE isn't defined in kernel space by default.
+//
+#define UNICODE
 
-!include $(PROJECT_ROOT)\ntos\ntoskrnl.inc
-!include ..\sources.inc
+//
+// This macro is used to convert HKLM relative paths from user-mode accessable
+// headers into a form usable by kernel mode. Eventually this macro should be
+// moved to somewhere like cm.h so the entire kernel can use it.
+//
+#define CM_REGISTRY_MACHINE(x) L"\\Registry\\Machine\\"##x
+

@@ -1,5 +1,3 @@
-!IF 0
-
 /*
  * ReactOS Kernel
  * Copyright (C) 2024 ReactOS Team
@@ -19,7 +17,21 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-!ENDIF
+VOID
+PpHotSwapInitRemovalPolicy(
+    OUT PDEVICE_NODE    DeviceNode
+    );
 
-!include $(PROJECT_ROOT)\ntos\ntoskrnl.inc
-!include ..\sources.inc
+VOID
+PpHotSwapUpdateRemovalPolicy(
+    IN  PDEVICE_NODE    DeviceNode
+    );
+
+VOID
+PpHotSwapGetDevnodeRemovalPolicy(
+    IN  PDEVICE_NODE            DeviceNode,
+    IN  BOOLEAN                 IncludeRegistryOverride,
+    OUT PDEVICE_REMOVAL_POLICY  RemovalPolicy
+    );
+
+

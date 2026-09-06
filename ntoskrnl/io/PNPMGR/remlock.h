@@ -1,5 +1,3 @@
-!IF 0
-
 /*
  * ReactOS Kernel
  * Copyright (C) 2024 ReactOS Team
@@ -19,7 +17,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-!ENDIF
+typedef struct _IO_REMOVE_LOCK_TRACKING_BLOCK {
+    struct _IO_REMOVE_LOCK_TRACKING_BLOCK * Link;
+    PVOID           Tag;
+    LARGE_INTEGER   TimeLocked;
+    PCSTR           File;
+    ULONG           Line;
+} IO_REMOVE_LOCK_TRACKING_BLOCK, *PIO_REMOVE_LOCK_TRACKING_BLOCK;
 
-!include $(PROJECT_ROOT)\ntos\ntoskrnl.inc
-!include ..\sources.inc
+

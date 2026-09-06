@@ -1,5 +1,3 @@
-!IF 0
-
 /*
  * ReactOS Kernel
  * Copyright (C) 2024 ReactOS Team
@@ -19,7 +17,22 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-!ENDIF
+typedef struct {
 
-!include $(PROJECT_ROOT)\ntos\ntoskrnl.inc
-!include ..\sources.inc
+    LIST_ENTRY Link;
+    UNICODE_STRING Directory;
+    WCHAR Name[1];
+
+} DIRWALK_ENTRY, *PDIRWALK_ENTRY;
+
+NTSTATUS
+IopFileUtilWalkDirectoryTreeHelper(
+    IN      PUNICODE_STRING  Directory,
+    IN      ULONG            Flags,
+    IN      DIRWALK_CALLBACK CallbackFunction,
+    IN      PVOID            Context,
+    IN      PUCHAR           Buffer,
+    IN      ULONG            BufferSize,
+    IN OUT  PLIST_ENTRY      DirList
+    );
+

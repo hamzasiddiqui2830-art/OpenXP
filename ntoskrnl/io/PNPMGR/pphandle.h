@@ -1,5 +1,3 @@
-!IF 0
-
 /*
  * ReactOS Kernel
  * Copyright (C) 2024 ReactOS Team
@@ -19,7 +17,18 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-!ENDIF
+typedef LOGICAL (*PHANDLE_ENUMERATION_CALLBACK)(
+    IN  PDEVICE_OBJECT  DeviceObject,
+    IN  PEPROCESS       Process,
+    IN  PFILE_OBJECT    FileObject,
+    IN  HANDLE          HandleId,
+    IN  PVOID           Context
+    );
 
-!include $(PROJECT_ROOT)\ntos\ntoskrnl.inc
-!include ..\sources.inc
+LOGICAL
+PpHandleEnumerateHandlesAgainstPdoStack(
+    IN  PDEVICE_OBJECT                  PhysicalDeviceObject,
+    IN  PHANDLE_ENUMERATION_CALLBACK    HandleEnumCallBack,
+    IN  PVOID                           Context
+    );
+

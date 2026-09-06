@@ -1,6 +1,6 @@
-# Windows Research Kernel (WRK) - Multi-Compiler Build System
+# ReactOS-WRK - Multi-Compiler Build System
 
-This document describes the enhanced build system for the Windows Research Kernel that supports multiple compilers and architectures.
+This document describes the enhanced build system for the ReactOS-WRK that supports multiple compilers and architectures.
 
 ## Features
 
@@ -211,6 +211,5 @@ If you encounter undefined references to HAL functions, ensure `hal_stub.c` is b
 
 ## License
 
-Copyright (c) Microsoft Corporation. All rights reserved.
-You may only use this code if you agree to the terms of the Windows Research 
-Kernel Source Code License agreement (see License.txt).
+Copyright (c) OpenXP Team. All rights reserved.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.

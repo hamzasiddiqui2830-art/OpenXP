@@ -1,9 +1,7 @@
 /*++ BUILD Version: 0014    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -13,6 +11,14 @@ Abstract:
 
     This module contains the internal structure definitions and APIs used by
     the NT I/O system.
+
+Author:
+
+    Darryl E. Havens (darrylh) 12-Apr-1989
+
+
+Revision History:
+
 
 --*/
 
@@ -478,7 +484,7 @@ typedef struct _DUMP_STACK_CONTEXT {
 } DUMP_STACK_CONTEXT, *PDUMP_STACK_CONTEXT;
 
 #define IO_DUMP_MAX_MDL_PAGES           8
-#define IO_DUMP_MEMORY_BLOCK_PAGES      16
+#define IO_DUMP_MEMORY_BLOCK_PAGES      8
 #define IO_DUMP_COMMON_BUFFER_SIZE      0x2000
 
 NTSTATUS
@@ -1187,8 +1193,8 @@ typedef struct _FS_FILTER_CALLBACKS {
 NTKERNELAPI
 NTSTATUS
 FsRtlRegisterFileSystemFilterCallbacks (
-    __in struct _DRIVER_OBJECT *FilterDriverObject,
-    __in PFS_FILTER_CALLBACKS Callbacks
+    IN struct _DRIVER_OBJECT *FilterDriverObject,
+    IN PFS_FILTER_CALLBACKS Callbacks
     );
 
 // begin_ntddk begin_wdm begin_nthal begin_ntosp
@@ -1676,7 +1682,7 @@ typedef struct _DEVICE_HANDLER_OBJECT {
     USHORT Size;
 
     //
-    // Identifies which bus extender this device handler
+    // Indentifies which bus extender this device handler
     // object is associated with
     //
 
@@ -2105,7 +2111,6 @@ NTSTATUS
 //
 
 #define SL_PENDING_RETURNED             0x01
-#define SL_ERROR_RETURNED               0x02
 #define SL_INVOKE_ON_CANCEL             0x20
 #define SL_INVOKE_ON_SUCCESS            0x40
 #define SL_INVOKE_ON_ERROR              0x80
@@ -2285,7 +2290,7 @@ typedef enum {
 // Define I/O Request Packet (IRP) stack locations
 //
 
-#if !defined(_AMD64_)
+#if !defined(_AMD64_) && !defined(_IA64_)
 #include "pshpack4.h"
 #endif
 
@@ -2783,7 +2788,7 @@ typedef struct _IO_STACK_LOCATION {
     PVOID Context;
 
 } IO_STACK_LOCATION, *PIO_STACK_LOCATION;
-#if !defined(_AMD64_)
+#if !defined(_AMD64_) && !defined(_IA64_)
 #include "poppack.h"
 #endif
 
@@ -2831,7 +2836,7 @@ typedef struct _CONFIGURATION_INFORMATION {
 
     //
     // These next two fields indicate ownership of one of the two IO address
-    // spaces that are used by WD1003-compatible disk controllers.
+    // spaces that are used by WD1003-compatable disk controllers.
     //
 
     BOOLEAN AtDiskPrimaryAddressClaimed;    // 0x1F0 - 0x1FF
@@ -4018,6 +4023,16 @@ IoPageRead(                                             // ntifs
     OUT PIO_STATUS_BLOCK IoStatusBlock                  // ntifs
     );                                                  // ntifs
 
+NTKERNELAPI
+NTSTATUS
+IoAsynchronousPageRead(
+    IN PFILE_OBJECT FileObject,
+    IN PMDL MemoryDescriptorList,
+    IN PLARGE_INTEGER StartingOffset,
+    IN PKEVENT Event,
+    OUT PIO_STATUS_BLOCK IoStatusBlock
+    );
+
 // begin_ntddk begin_ntosp
 DECLSPEC_DEPRECATED_DDK                 // Use IoGetDeviceProperty
 NTKERNELAPI
@@ -4038,7 +4053,6 @@ IoQueryDeviceDescription(
 
 // begin_ntifs
 
-NTKERNELAPI
 NTSTATUS
 IoQueryFileDosDeviceName(
     IN PFILE_OBJECT FileObject,
@@ -4128,16 +4142,7 @@ IoRegisterFsRegistrationChange(
     IN PDRIVER_FS_NOTIFICATION DriverNotificationRoutine
     );
 
-NTKERNELAPI
-NTSTATUS
-IoEnumerateRegisteredFiltersList(
-    IN  PDRIVER_OBJECT *DriverObjectList,
-    IN  ULONG          DriverObjectListSize,   //in bytes
-    OUT PULONG         ActualNumberDriverObjects
-    );
-
 // begin_ntddk begin_nthal begin_ntosp
-// begin_wdm
 
 NTKERNELAPI
 NTSTATUS
@@ -4150,6 +4155,8 @@ NTSTATUS
 IoRegisterLastChanceShutdownNotification(
     IN PDEVICE_OBJECT DeviceObject
     );
+
+// begin_wdm
 
 NTKERNELAPI
 VOID
@@ -4200,15 +4207,6 @@ IoReportResourceUsage(
     IN ULONG DeviceListSize OPTIONAL,
     IN BOOLEAN OverrideConflict,
     OUT PBOOLEAN ConflictDetected
-    );
-
-BOOLEAN
-IoTranslateBusAddress(
-    IN INTERFACE_TYPE InterfaceType,
-    IN ULONG BusNumber,
-    IN PHYSICAL_ADDRESS BusAddress,
-    IN OUT PULONG AddressSpace,
-    OUT PPHYSICAL_ADDRESS TranslatedAddress
     );
 
 // begin_wdm
@@ -4321,7 +4319,7 @@ IoTranslateBusAddress(
 
 #define IoSetCompletionRoutine( Irp, Routine, CompletionContext, Success, Error, Cancel ) { \
     PIO_STACK_LOCATION __irpSp;                                               \
-    ASSERT( ((Success) | (Error) | (Cancel)) ? (Routine) != NULL : TRUE );    \
+    ASSERT( (Success) | (Error) | (Cancel) ? (Routine) != NULL : TRUE );    \
     __irpSp = IoGetNextIrpStackLocation( (Irp) );                             \
     __irpSp->CompletionRoutine = (Routine);                                   \
     __irpSp->Context = (CompletionContext);                                   \
@@ -4330,7 +4328,6 @@ IoTranslateBusAddress(
     if ((Error)) { __irpSp->Control |= SL_INVOKE_ON_ERROR; }                  \
     if ((Cancel)) { __irpSp->Control |= SL_INVOKE_ON_CANCEL; } }
 
-NTKERNELAPI
 NTSTATUS
 IoSetCompletionRoutineEx(
     IN PDEVICE_OBJECT DeviceObject,
@@ -4525,7 +4522,7 @@ typedef struct _IO_REMOVE_LOCK {
 #define IoInitializeRemoveLock(Lock, Tag, Maxmin, HighWater) \
         IoInitializeRemoveLockEx (Lock, Tag, Maxmin, HighWater, sizeof (IO_REMOVE_LOCK))
 
-NTKERNELAPI
+NTSYSAPI
 VOID
 NTAPI
 IoInitializeRemoveLockEx(
@@ -4546,7 +4543,7 @@ IoInitializeRemoveLockEx(
 #define IoAcquireRemoveLock(RemoveLock, Tag) \
         IoAcquireRemoveLockEx(RemoveLock, Tag, __FILE__, __LINE__, sizeof (IO_REMOVE_LOCK))
 
-NTKERNELAPI
+NTSYSAPI
 NTSTATUS
 NTAPI
 IoAcquireRemoveLockEx (
@@ -4595,7 +4592,7 @@ IoAcquireRemoveLockEx (
 #define IoReleaseRemoveLock(RemoveLock, Tag) \
         IoReleaseRemoveLockEx(RemoveLock, Tag, sizeof (IO_REMOVE_LOCK))
 
-NTKERNELAPI
+NTSYSAPI
 VOID
 NTAPI
 IoReleaseRemoveLockEx(
@@ -4631,7 +4628,7 @@ IoReleaseRemoveLockEx(
 #define IoReleaseRemoveLockAndWait(RemoveLock, Tag) \
         IoReleaseRemoveLockAndWaitEx(RemoveLock, Tag, sizeof (IO_REMOVE_LOCK))
 
-NTKERNELAPI
+NTSYSAPI
 VOID
 NTAPI
 IoReleaseRemoveLockAndWaitEx(
@@ -4906,7 +4903,6 @@ typedef NTSTATUS (*WMIENTRY)(
 //
 #define WMIREG_NOTIFY_DISK_IO               1 << 20
 #define WMIREG_NOTIFY_TDI_IO                2 << 20
-#define WMIREG_NOTIFY_VOLMGR_IO             3 << 20
 
 // end_wmikm
 
@@ -4921,19 +4917,16 @@ VOID
     IN PVOID Context
     );
 
-NTKERNELAPI
 PIO_WORKITEM
 IoAllocateWorkItem(
     PDEVICE_OBJECT DeviceObject
     );
 
-NTKERNELAPI
 VOID
 IoFreeWorkItem(
     PIO_WORKITEM IoWorkItem
     );
 
-NTKERNELAPI
 VOID
 IoQueueWorkItem(
     IN PIO_WORKITEM IoWorkItem,
@@ -4946,8 +4939,8 @@ IoQueueWorkItem(
 NTKERNELAPI
 NTSTATUS
 IoWMIRegistrationControl(
-    __in PDEVICE_OBJECT DeviceObject,
-    __in ULONG Action
+    IN PDEVICE_OBJECT DeviceObject,
+    IN ULONG Action
 );
 
 //
@@ -4970,114 +4963,113 @@ IoWMIRegistrationControl(
 NTKERNELAPI
 NTSTATUS
 IoWMIAllocateInstanceIds(
-    __in GUID *Guid,
-    __in ULONG InstanceCount,
-    __out ULONG *FirstInstanceId
+    IN GUID *Guid,
+    IN ULONG InstanceCount,
+    OUT ULONG *FirstInstanceId
     );
 
 NTKERNELAPI
 NTSTATUS
 IoWMISuggestInstanceName(
-    __in_opt PDEVICE_OBJECT PhysicalDeviceObject,
-    __in_opt PUNICODE_STRING SymbolicLinkName,
-    __in BOOLEAN CombineNames,
-    __out PUNICODE_STRING SuggestedInstanceName
+    IN PDEVICE_OBJECT PhysicalDeviceObject OPTIONAL,
+    IN PUNICODE_STRING SymbolicLinkName OPTIONAL,
+    IN BOOLEAN CombineNames,
+    OUT PUNICODE_STRING SuggestedInstanceName
     );
 
 NTKERNELAPI
 NTSTATUS
 IoWMIWriteEvent(
-    __in PVOID WnodeEventItem
+    IN PVOID WnodeEventItem
     );
 
 #if defined(_WIN64)
 NTKERNELAPI
-ULONG
-IoWMIDeviceObjectToProviderId(
-    __in PDEVICE_OBJECT DeviceObject
+ULONG IoWMIDeviceObjectToProviderId(
+    PDEVICE_OBJECT DeviceObject
     );
 #else
 #define IoWMIDeviceObjectToProviderId(DeviceObject) ((ULONG)(DeviceObject))
 #endif
 
 NTKERNELAPI
-NTSTATUS
-IoWMIOpenBlock(
-    __in GUID *DataBlockGuid,
-    __in ULONG DesiredAccess,
-    __out PVOID *DataBlockObject
+NTSTATUS IoWMIOpenBlock(
+    IN GUID *DataBlockGuid,
+    IN ULONG DesiredAccess,
+    OUT PVOID *DataBlockObject
     );
 
 
 NTKERNELAPI
-NTSTATUS
-IoWMIQueryAllData(
-    __in PVOID DataBlockObject,
-    __inout ULONG *InOutBufferSize,
-    __out_bcount_opt(*InOutBufferSize) /* non paged */ PVOID OutBuffer
-    );
+NTSTATUS IoWMIQueryAllData(
+    IN PVOID DataBlockObject,
+    IN OUT ULONG *InOutBufferSize,
+    OUT /* non paged */ PVOID OutBuffer
+);
 
 
 NTKERNELAPI
 NTSTATUS
 IoWMIQueryAllDataMultiple(
-    __in_ecount(ObjectCount) PVOID *DataBlockObjectList,
-    __in ULONG ObjectCount,
-    __inout ULONG *InOutBufferSize,
-    __out_bcount_opt(*InOutBufferSize) /* non paged */ PVOID OutBuffer
-    );
+    IN PVOID *DataBlockObjectList,
+    IN ULONG ObjectCount,
+    IN OUT ULONG *InOutBufferSize,
+    OUT /* non paged */ PVOID OutBuffer
+);
 
 
 NTKERNELAPI
 NTSTATUS
 IoWMIQuerySingleInstance(
-    __in PVOID DataBlockObject,
-    __in PUNICODE_STRING InstanceName,
-    __inout ULONG *InOutBufferSize,
-    __out_bcount_opt(*InOutBufferSize) /* non paged */ PVOID OutBuffer
-    );
+    IN PVOID DataBlockObject,
+    IN PUNICODE_STRING InstanceName,
+    IN OUT ULONG *InOutBufferSize,
+    OUT /* non paged */ PVOID OutBuffer
+);
 
 NTKERNELAPI
 NTSTATUS
 IoWMIQuerySingleInstanceMultiple(
-    __in_ecount(ObjectCount) PVOID *DataBlockObjectList,
-    __in_ecount(ObjectCount) PUNICODE_STRING InstanceNames,
-    __in ULONG ObjectCount,
-    __inout ULONG *InOutBufferSize,
-    __out_bcount_opt(*InOutBufferSize) /* non paged */ PVOID OutBuffer
-    );
+    IN PVOID *DataBlockObjectList,
+    IN PUNICODE_STRING InstanceNames,
+    IN ULONG ObjectCount,
+    IN OUT ULONG *InOutBufferSize,
+    OUT /* non paged */ PVOID OutBuffer
+);
 
 NTKERNELAPI
 NTSTATUS
 IoWMISetSingleInstance(
-    __in PVOID DataBlockObject,
-    __in PUNICODE_STRING InstanceName,
-    __in ULONG Version,
-    __in ULONG ValueBufferSize,
-    __in_bcount(ValueBufferSize) PVOID ValueBuffer
+    IN PVOID DataBlockObject,
+    IN PUNICODE_STRING InstanceName,
+    IN ULONG Version,
+    IN ULONG ValueBufferSize,
+    IN PVOID ValueBuffer
     );
 
 NTKERNELAPI
 NTSTATUS
 IoWMISetSingleItem(
-    __in PVOID DataBlockObject,
-    __in PUNICODE_STRING InstanceName,
-    __in ULONG DataItemId,
-    __in ULONG Version,
-    __in ULONG ValueBufferSize,
-    __in_bcount(ValueBufferSize) PVOID ValueBuffer
+    IN PVOID DataBlockObject,
+    IN PUNICODE_STRING InstanceName,
+    IN ULONG DataItemId,
+    IN ULONG Version,
+    IN ULONG ValueBufferSize,
+    IN PVOID ValueBuffer
     );
 
 NTKERNELAPI
 NTSTATUS
 IoWMIExecuteMethod(
-    __in PVOID DataBlockObject,
-    __in PUNICODE_STRING InstanceName,
-    __in ULONG MethodId,
-    __in ULONG InBufferSize,
-    __inout PULONG OutBufferSize,
-    __inout_bcount_part_opt(*OutBufferSize, InBufferSize) PUCHAR InOutBuffer
+    IN PVOID DataBlockObject,
+    IN PUNICODE_STRING InstanceName,
+    IN ULONG MethodId,
+    IN ULONG InBufferSize,
+    IN OUT PULONG OutBufferSize,
+    IN OUT PUCHAR InOutBuffer
     );
+
+
 
 typedef VOID (*WMI_NOTIFICATION_CALLBACK)(
     PVOID Wnode,
@@ -5087,28 +5079,30 @@ typedef VOID (*WMI_NOTIFICATION_CALLBACK)(
 NTKERNELAPI
 NTSTATUS
 IoWMISetNotificationCallback(
-    __in PVOID Object,
-    __in WMI_NOTIFICATION_CALLBACK Callback,
-    __in_opt PVOID Context
+    IN PVOID Object,
+    IN WMI_NOTIFICATION_CALLBACK Callback,
+    IN PVOID Context
     );
 
 NTKERNELAPI
 NTSTATUS
 IoWMIHandleToInstanceName(
-    __in PVOID DataBlockObject,
-    __in HANDLE FileHandle,
-    __out PUNICODE_STRING InstanceName
+    IN PVOID DataBlockObject,
+    IN HANDLE FileHandle,
+    OUT PUNICODE_STRING InstanceName
     );
 
 NTKERNELAPI
 NTSTATUS
 IoWMIDeviceObjectToInstanceName(
-    __in PVOID DataBlockObject,
-    __in PDEVICE_OBJECT DeviceObject,
-    __out PUNICODE_STRING InstanceName
+    IN PVOID DataBlockObject,
+    IN PDEVICE_OBJECT DeviceObject,
+    OUT PUNICODE_STRING InstanceName
     );
 
 // end_ntddk end_wdm end_ntifs end_ntosp
+
+
 
 NTKERNELAPI
 BOOLEAN
@@ -5187,16 +5181,12 @@ IopSetRegistryStringValue(
     IN PUNICODE_STRING ValueData
     );
 
-// begin_ntifs
-
 NTKERNELAPI
 NTSTATUS
 IoGetRequestorSessionId(
     IN PIRP Irp,
     OUT PULONG pSessionId
     );
-
-// end_ntifs
 
 NTSTATUS
 IoShutdownPnpDevices(
@@ -5279,21 +5269,15 @@ IoRetryIrpCompletions(
     );
 
 // begin_ntddk begin_wdm begin_ntifs begin_ntosp
-
 #if defined(_WIN64)
-
-NTKERNELAPI
 BOOLEAN
 IoIs32bitProcess(
     IN PIRP Irp
     );
-
 #endif
-
 // end_ntddk end_wdm end_ntifs end_ntosp
 
 // begin_ntosp
-
 NTKERNELAPI
 VOID
 FASTCALL
@@ -5304,6 +5288,7 @@ IoAssignDriveLetters(
     OUT PSTRING NtSystemPathString
     );
 // end_ntosp
+
 
 // begin_ntddk
 NTKERNELAPI
@@ -5422,7 +5407,6 @@ IoReadDiskSignature(
 
 // begin_ntosp begin_ntifs begin_ntddk
 
-NTKERNELAPI
 NTSTATUS
 IoVolumeDeviceToDosName(
     IN  PVOID           VolumeDeviceObject,
@@ -5431,8 +5415,6 @@ IoVolumeDeviceToDosName(
 // end_ntosp end_ntifs end_ntddk
 
 // begin_ntosp begin_ntifs
-
-NTKERNELAPI
 NTSTATUS
 IoEnumerateDeviceObjectList(
     IN  PDRIVER_OBJECT  DriverObject,
@@ -5441,19 +5423,16 @@ IoEnumerateDeviceObjectList(
     OUT PULONG          ActualNumberDeviceObjects
     );
 
-NTKERNELAPI
 PDEVICE_OBJECT
 IoGetLowerDeviceObject(
     IN  PDEVICE_OBJECT  DeviceObject
     );
 
-NTKERNELAPI
 PDEVICE_OBJECT
 IoGetDeviceAttachmentBaseRef(
     IN PDEVICE_OBJECT DeviceObject
     );
 
-NTKERNELAPI
 NTSTATUS
 IoGetDiskDeviceObject(
     IN  PDEVICE_OBJECT  FileSystemDeviceObject,
@@ -5464,15 +5443,12 @@ IoGetDiskDeviceObject(
 
 // begin_ntosp begin_ntifs begin_ntddk
 
-NTKERNELAPI
 NTSTATUS
 IoSetSystemPartition(
     PUNICODE_STRING VolumeNameString
     );
 
 // begin_wdm
-
-NTKERNELAPI
 VOID
 IoFreeErrorLogEntry(
     PVOID ElEntry
@@ -5502,7 +5478,7 @@ IoFreeErrorLogEntry(
 // parameter in IoInsertIrp.
 //
 // Mode 2:
-// In this the driver queues the IRP, issues the IO request (like issuing a DMA
+// In this the driver queues theIRP, issues the IO request (like issuing a DMA
 // request or writing to a register) and when the IO request completes (either
 // using a DPC or timer) the driver dequeues the IRP and completes it. For this
 // mode the driver should use IoCsqInsertIrp and IoCsqRemoveIrp. In this case
@@ -5629,7 +5605,6 @@ typedef struct _IO_CSQ {
 // Initializes the cancel queue structure.
 //
 
-NTKERNELAPI
 NTSTATUS
 IoCsqInitialize(
     IN PIO_CSQ                          Csq,
@@ -5641,7 +5616,6 @@ IoCsqInitialize(
     IN PIO_CSQ_COMPLETE_CANCELED_IRP    CsqCompleteCanceledIrp
     );
 
-NTKERNELAPI
 NTSTATUS
 IoCsqInitializeEx(
     IN PIO_CSQ                          Csq,
@@ -5657,7 +5631,6 @@ IoCsqInitializeEx(
 // The caller calls this routine to insert the IRP and return STATUS_PENDING.
 //
 
-NTKERNELAPI
 VOID
 IoCsqInsertIrp(
     IN  PIO_CSQ             Csq,
@@ -5665,7 +5638,7 @@ IoCsqInsertIrp(
     IN  PIO_CSQ_IRP_CONTEXT Context
     );
 
-NTKERNELAPI
+
 NTSTATUS
 IoCsqInsertIrpEx(
     IN  PIO_CSQ             Csq,
@@ -5678,7 +5651,6 @@ IoCsqInsertIrpEx(
 // Returns an IRP if one can be found. NULL otherwise.
 //
 
-NTKERNELAPI
 PIRP
 IoCsqRemoveNextIrp(
     IN  PIO_CSQ   Csq,
@@ -5688,10 +5660,9 @@ IoCsqRemoveNextIrp(
 //
 // This routine is called from timeout or DPCs.
 // The context is presumably part of the DPC or timer context.
-// If successful returns the IRP associated with context.
+// If succesfull returns the IRP associated with context.
 //
 
-NTKERNELAPI
 PIRP
 IoCsqRemoveIrp(
     IN  PIO_CSQ             Csq,
@@ -5704,7 +5675,6 @@ IoCsqRemoveIrp(
 
 // begin_ntosp begin_ntifs
 
-NTKERNELAPI
 NTSTATUS
 IoCreateFileSpecifyDeviceObjectHint(
     OUT PHANDLE FileHandle,
@@ -5724,7 +5694,6 @@ IoCreateFileSpecifyDeviceObjectHint(
     IN PVOID DeviceObject
     );
 
-NTKERNELAPI
 NTSTATUS
 IoAttachDeviceToDeviceStackSafe(
     IN PDEVICE_OBJECT SourceDevice,
@@ -5774,18 +5743,15 @@ IoComputeDesiredAccessFileObject(
 
 
 // begin_ntosp begin_ntifs begin_ntddk
-// begin_wdm
 
-NTKERNELAPI
 NTSTATUS
 IoValidateDeviceIoControlAccess(
     IN  PIRP    Irp,
     IN  ULONG   RequiredAccess
     );
 
-// end_wdm
 
-NTKERNELAPI
+
 IO_PAGING_PRIORITY
 FASTCALL
 IoGetPagingIoPriority(
@@ -5794,10 +5760,5 @@ IoGetPagingIoPriority(
 
 
 // end_ntosp end_ntifs end_ntddk end_wdm
-
-PDEVICE_OBJECT
-IoFindDeviceThatFailedIrp(
-    IN  PIRP    Irp
-    );
 
 #endif // _IO_

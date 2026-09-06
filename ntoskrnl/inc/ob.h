@@ -1,9 +1,7 @@
 /*++ BUILD Version: 0002    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -14,6 +12,12 @@ Abstract:
     This module contains the object manager structure public data
     structures and procedure prototypes to be used within the NT
     system.
+
+Author:
+
+    Steve Wood (stevewo) 28-Mar-1989
+
+Revision History:
 
 --*/
 
@@ -327,6 +331,10 @@ typedef struct _OBJECT_DIRECTORY {
     EX_PUSH_LOCK Lock;
     struct _DEVICE_MAP *DeviceMap;
     ULONG SessionId;
+#if 0
+    USHORT Reserved;
+    USHORT SymbolicLinkUsageCount;
+#endif
 } OBJECT_DIRECTORY, *POBJECT_DIRECTORY;
 // end_ntosp
 
@@ -336,7 +344,6 @@ typedef struct _OBJECT_DIRECTORY {
 typedef struct _OBJECT_DIRECTORY_ENTRY {
     struct _OBJECT_DIRECTORY_ENTRY *ChainLink;
     PVOID Object;
-    ULONG HashValue;
 } OBJECT_DIRECTORY_ENTRY, *POBJECT_DIRECTORY_ENTRY;
 
 
@@ -493,124 +500,27 @@ typedef struct _OBJECT_HEADER_CREATOR_INFO {
 #define OBJECT_HEADER_TO_EXCLUSIVE_PROCESS( oh ) ((oh->Flags & OB_FLAG_EXCLUSIVE_OBJECT) == 0 ? \
     NULL : (((POBJECT_HEADER_QUOTA_INFO)((PCHAR)(oh) - (oh)->QuotaInfoOffset))->ExclusiveProcess))
 
-FORCEINLINE
-POBJECT_HEADER_QUOTA_INFO
-OBJECT_HEADER_TO_QUOTA_INFO_EXISTS (
-    IN POBJECT_HEADER ObjectHeader
-    )
-{
-    ASSERT(ObjectHeader->QuotaInfoOffset != 0);
-    return (POBJECT_HEADER_QUOTA_INFO)((PUCHAR)ObjectHeader -
-                                       ObjectHeader->QuotaInfoOffset);
-}
 
-FORCEINLINE
-POBJECT_HEADER_QUOTA_INFO
-OBJECT_HEADER_TO_QUOTA_INFO (
-    IN POBJECT_HEADER ObjectHeader
-    )
-{
-    POBJECT_HEADER_QUOTA_INFO quotaInfo;
+#define OBJECT_HEADER_TO_QUOTA_INFO( oh ) ((POBJECT_HEADER_QUOTA_INFO) \
+    ((oh)->QuotaInfoOffset == 0 ? NULL : ((PCHAR)(oh) - (oh)->QuotaInfoOffset)))
 
-    if (ObjectHeader->QuotaInfoOffset != 0) {
-        quotaInfo = OBJECT_HEADER_TO_QUOTA_INFO_EXISTS(ObjectHeader);
-        __assume(quotaInfo != NULL);
-    } else {
-        quotaInfo = NULL;
-    }
-
-    return quotaInfo;
-}
-
-FORCEINLINE
-POBJECT_HEADER_HANDLE_INFO
-OBJECT_HEADER_TO_HANDLE_INFO_EXISTS (
-    IN POBJECT_HEADER ObjectHeader
-    )
-{
-    ASSERT(ObjectHeader->HandleInfoOffset != 0);
-    return (POBJECT_HEADER_HANDLE_INFO)((PUCHAR)ObjectHeader -
-                                        ObjectHeader->HandleInfoOffset);
-}
-
-FORCEINLINE
-POBJECT_HEADER_HANDLE_INFO
-OBJECT_HEADER_TO_HANDLE_INFO (
-    IN POBJECT_HEADER ObjectHeader
-    )
-{
-    POBJECT_HEADER_HANDLE_INFO handleInfo;
-
-    if (ObjectHeader->HandleInfoOffset != 0) {
-        handleInfo = OBJECT_HEADER_TO_HANDLE_INFO_EXISTS(ObjectHeader);
-        __assume(handleInfo != NULL);
-    } else {
-        handleInfo = NULL;
-    }
-
-    return handleInfo;
-}
+#define OBJECT_HEADER_TO_HANDLE_INFO( oh ) ((POBJECT_HEADER_HANDLE_INFO) \
+    ((oh)->HandleInfoOffset == 0 ? NULL : ((PCHAR)(oh) - (oh)->HandleInfoOffset)))
 
 // begin_ntosp
+#define OBJECT_HEADER_TO_NAME_INFO( oh ) ((POBJECT_HEADER_NAME_INFO) \
+    ((oh)->NameInfoOffset == 0 ? NULL : ((PCHAR)(oh) - (oh)->NameInfoOffset)))
 
-FORCEINLINE
-POBJECT_HEADER_NAME_INFO
-OBJECT_HEADER_TO_NAME_INFO_EXISTS (
-    IN POBJECT_HEADER ObjectHeader
-    )
-{
-    ASSERT(ObjectHeader->NameInfoOffset != 0);
-    return (POBJECT_HEADER_NAME_INFO)((PUCHAR)ObjectHeader -
-                                      ObjectHeader->NameInfoOffset);
-}
-
-FORCEINLINE
-POBJECT_HEADER_NAME_INFO
-OBJECT_HEADER_TO_NAME_INFO (
-    IN POBJECT_HEADER ObjectHeader
-    )
-{
-    POBJECT_HEADER_NAME_INFO nameInfo;
-
-    if (ObjectHeader->NameInfoOffset != 0) {
-        nameInfo = OBJECT_HEADER_TO_NAME_INFO_EXISTS(ObjectHeader);
-        __assume(nameInfo != NULL);
-    } else {
-        nameInfo = NULL;
-    }
-
-    return nameInfo;
-}
-
-// end_ntosp
-
-FORCEINLINE
-POBJECT_HEADER_CREATOR_INFO
-OBJECT_HEADER_TO_CREATOR_INFO (
-    IN POBJECT_HEADER ObjectHeader
-    )
-{
-    POBJECT_HEADER_CREATOR_INFO creatorInfo;
-
-    if ((ObjectHeader->Flags & OB_FLAG_CREATOR_INFO) != 0) {
-        creatorInfo = ((POBJECT_HEADER_CREATOR_INFO)ObjectHeader) - 1;
-        __assume(creatorInfo != NULL);
-    } else {
-        creatorInfo = NULL;
-    }
-
-    return creatorInfo;
-}
-
-// begin_ntosp
+#define OBJECT_HEADER_TO_CREATOR_INFO( oh ) ((POBJECT_HEADER_CREATOR_INFO) \
+    (((oh)->Flags & OB_FLAG_CREATOR_INFO) == 0 ? NULL : ((PCHAR)(oh) - sizeof(OBJECT_HEADER_CREATOR_INFO))))
 
 NTKERNELAPI
 NTSTATUS
 ObCreateObjectType(
-    __in PUNICODE_STRING TypeName,
-    __in POBJECT_TYPE_INITIALIZER ObjectTypeInitializer,
-    __in_opt PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __out POBJECT_TYPE *ObjectType
+    IN PUNICODE_STRING TypeName,
+    IN POBJECT_TYPE_INITIALIZER ObjectTypeInitializer,
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor OPTIONAL,
+    OUT POBJECT_TYPE *ObjectType
     );
 
 #define OBJ_PROTECT_CLOSE       0x00000001L
@@ -642,17 +552,6 @@ ObIsObjectDeletionInline(
     IN PVOID Object
     );
 
-//
-//  Object attributes only for internal use
-//
-
-#define OBJ_KERNEL_EXCLUSIVE           0x00010000L
-
-#define OBJ_VALID_PRIVATE_ATTRIBUTES   0x00010000L
-
-#define OBJ_ALL_VALID_ATTRIBUTES (OBJ_VALID_PRIVATE_ATTRIBUTES | OBJ_VALID_ATTRIBUTES)
-
-
 FORCEINLINE
 ULONG
 ObSanitizeHandleAttributes (
@@ -661,9 +560,9 @@ ObSanitizeHandleAttributes (
     )
 {
     if (Mode == KernelMode) {
-        return HandleAttributes & OBJ_ALL_VALID_ATTRIBUTES;
+        return HandleAttributes & OBJ_VALID_ATTRIBUTES;
     } else {
-        return HandleAttributes & (OBJ_ALL_VALID_ATTRIBUTES & ~(OBJ_KERNEL_HANDLE | OBJ_KERNEL_EXCLUSIVE));
+        return HandleAttributes & (OBJ_VALID_ATTRIBUTES&~OBJ_KERNEL_HANDLE);
     }
 }
 
@@ -674,22 +573,22 @@ ObSanitizeHandleAttributes (
 NTKERNELAPI
 VOID
 ObDeleteCapturedInsertInfo(
-    __in PVOID Object
+    IN PVOID Object
     );
 
 
 NTKERNELAPI
 NTSTATUS
 ObCreateObject(
-    __in KPROCESSOR_MODE ProbeMode,
-    __in POBJECT_TYPE ObjectType,
-    __in_opt POBJECT_ATTRIBUTES ObjectAttributes,
-    __in KPROCESSOR_MODE OwnershipMode,
-    __inout_opt PVOID ParseContext,
-    __in ULONG ObjectBodySize,
-    __in ULONG PagedPoolCharge,
-    __in ULONG NonPagedPoolCharge,
-    __out PVOID *Object
+    IN KPROCESSOR_MODE ProbeMode,
+    IN POBJECT_TYPE ObjectType,
+    IN POBJECT_ATTRIBUTES ObjectAttributes OPTIONAL,
+    IN KPROCESSOR_MODE OwnershipMode,
+    IN OUT PVOID ParseContext OPTIONAL,
+    IN ULONG ObjectBodySize,
+    IN ULONG PagedPoolCharge,
+    IN ULONG NonPagedPoolCharge,
+    OUT PVOID *Object
     );
 
 //
@@ -700,15 +599,15 @@ ObCreateObject(
 FORCEINLINE
 NTSTATUS
 _ObCreateObject(
-    __in KPROCESSOR_MODE ProbeMode,
-    __in POBJECT_TYPE ObjectType,
-    __in_opt POBJECT_ATTRIBUTES ObjectAttributes,
-    __in KPROCESSOR_MODE OwnershipMode,
-    __inout_opt PVOID ParseContext,
-    __in ULONG ObjectBodySize,
-    __in ULONG PagedPoolCharge,
-    __in ULONG NonPagedPoolCharge,
-    __out PVOID *pObject
+    IN KPROCESSOR_MODE ProbeMode,
+    IN POBJECT_TYPE ObjectType,
+    IN POBJECT_ATTRIBUTES ObjectAttributes OPTIONAL,
+    IN KPROCESSOR_MODE OwnershipMode,
+    IN OUT PVOID ParseContext OPTIONAL,
+    IN ULONG ObjectBodySize,
+    IN ULONG PagedPoolCharge,
+    IN ULONG NonPagedPoolCharge,
+    OUT PVOID *pObject
     )
 {
     PVOID Object;
@@ -729,41 +628,40 @@ _ObCreateObject(
 
 #define ObCreateObject _ObCreateObject
 
-// begin_ntifs
 
 NTKERNELAPI
 NTSTATUS
 ObInsertObject(
-    __in PVOID Object,
-    __in_opt PACCESS_STATE PassedAccessState,
-    __in_opt ACCESS_MASK DesiredAccess,
-    __in ULONG ObjectPointerBias,
-    __out_opt PVOID *NewObject,
-    __out_opt PHANDLE Handle
+    IN PVOID Object,
+    IN PACCESS_STATE PassedAccessState OPTIONAL,
+    IN ACCESS_MASK DesiredAccess OPTIONAL,
+    IN ULONG ObjectPointerBias,
+    OUT PVOID *NewObject OPTIONAL,
+    OUT PHANDLE Handle OPTIONAL
     );
 
-// end_nthal end_ntifs
+// end_nthal
 
 NTKERNELAPI                                                     // ntddk wdm nthal ntifs
 NTSTATUS                                                        // ntddk wdm nthal ntifs
 ObReferenceObjectByHandle(                                      // ntddk wdm nthal ntifs
-    __in HANDLE Handle,                                           // ntddk wdm nthal ntifs
-    __in ACCESS_MASK DesiredAccess,                               // ntddk wdm nthal ntifs
-    __in_opt POBJECT_TYPE ObjectType,                        // ntddk wdm nthal ntifs
-    __in KPROCESSOR_MODE AccessMode,                              // ntddk wdm nthal ntifs
-    __out PVOID *Object,                                          // ntddk wdm nthal ntifs
-    __out_opt POBJECT_HANDLE_INFORMATION HandleInformation   // ntddk wdm nthal ntifs
+    IN HANDLE Handle,                                           // ntddk wdm nthal ntifs
+    IN ACCESS_MASK DesiredAccess,                               // ntddk wdm nthal ntifs
+    IN POBJECT_TYPE ObjectType OPTIONAL,                        // ntddk wdm nthal ntifs
+    IN KPROCESSOR_MODE AccessMode,                              // ntddk wdm nthal ntifs
+    OUT PVOID *Object,                                          // ntddk wdm nthal ntifs
+    OUT POBJECT_HANDLE_INFORMATION HandleInformation OPTIONAL   // ntddk wdm nthal ntifs
     );                                                          // ntddk wdm nthal ntifs
 
 FORCEINLINE
 NTSTATUS
 _ObReferenceObjectByHandle(
-    __in HANDLE Handle,
-    __in ACCESS_MASK DesiredAccess,
-    __in_opt POBJECT_TYPE ObjectType,
-    __in KPROCESSOR_MODE AccessMode,
-    __out PVOID *pObject,
-    __out_opt POBJECT_HANDLE_INFORMATION pHandleInformation
+    IN HANDLE Handle,
+    IN ACCESS_MASK DesiredAccess,
+    IN POBJECT_TYPE ObjectType OPTIONAL,
+    IN KPROCESSOR_MODE AccessMode,
+    OUT PVOID *pObject,
+    OUT POBJECT_HANDLE_INFORMATION pHandleInformation OPTIONAL
     )
 {
     PVOID Object;
@@ -793,39 +691,38 @@ ObReferenceFileObjectForWrite(
 NTKERNELAPI
 NTSTATUS
 ObOpenObjectByName(
-    __in POBJECT_ATTRIBUTES ObjectAttributes,
-    __in_opt POBJECT_TYPE ObjectType,
-    __in KPROCESSOR_MODE AccessMode,
-    __inout_opt PACCESS_STATE AccessState,
-    __in_opt ACCESS_MASK DesiredAccess,
-    __inout_opt PVOID ParseContext,
-    __out PHANDLE Handle
+    IN POBJECT_ATTRIBUTES ObjectAttributes,
+    IN POBJECT_TYPE ObjectType,
+    IN KPROCESSOR_MODE AccessMode,
+    IN OUT PACCESS_STATE PassedAccessState OPTIONAL,
+    IN ACCESS_MASK DesiredAccess OPTIONAL,
+    IN OUT PVOID ParseContext OPTIONAL,
+    OUT PHANDLE Handle
     );
 
 
 NTKERNELAPI                                                     // ntifs
 NTSTATUS                                                        // ntifs
 ObOpenObjectByPointer(                                          // ntifs
-    __in PVOID Object,                                            // ntifs
-    __in ULONG HandleAttributes,                                  // ntifs
-    __in_opt PACCESS_STATE PassedAccessState,                // ntifs
-    __in ACCESS_MASK DesiredAccess,                      // ntifs
-    __in_opt POBJECT_TYPE ObjectType,                        // ntifs
-    __in KPROCESSOR_MODE AccessMode,                              // ntifs
-    __out PHANDLE Handle                                          // ntifs
+    IN PVOID Object,                                            // ntifs
+    IN ULONG HandleAttributes,                                  // ntifs
+    IN PACCESS_STATE PassedAccessState OPTIONAL,                // ntifs
+    IN ACCESS_MASK DesiredAccess OPTIONAL,                      // ntifs
+    IN POBJECT_TYPE ObjectType OPTIONAL,                        // ntifs
+    IN KPROCESSOR_MODE AccessMode,                              // ntifs
+    OUT PHANDLE Handle                                          // ntifs
     );                                                          // ntifs
 
-NTKERNELAPI
 NTSTATUS
 ObReferenceObjectByName(
-    __in PUNICODE_STRING ObjectName,
-    __in ULONG Attributes,
-    __in_opt PACCESS_STATE AccessState,
-    __in_opt ACCESS_MASK DesiredAccess,
-    __in POBJECT_TYPE ObjectType,
-    __in KPROCESSOR_MODE AccessMode,
-    __inout_opt PVOID ParseContext,
-    __out PVOID *Object
+    IN PUNICODE_STRING ObjectName,
+    IN ULONG Attributes,
+    IN PACCESS_STATE PassedAccessState OPTIONAL,
+    IN ACCESS_MASK DesiredAccess OPTIONAL,
+    IN POBJECT_TYPE ObjectType,
+    IN KPROCESSOR_MODE AccessMode,
+    IN OUT PVOID ParseContext OPTIONAL,
+    OUT PVOID *Object
     );
 
 // end_ntosp
@@ -833,7 +730,7 @@ ObReferenceObjectByName(
 NTKERNELAPI                                                     // ntifs
 VOID                                                            // ntifs
 ObMakeTemporaryObject(                                          // ntifs
-    __in PVOID Object                                             // ntifs
+    IN PVOID Object                                             // ntifs
     );                                                          // ntifs
 
 // begin_ntosp
@@ -841,11 +738,11 @@ ObMakeTemporaryObject(                                          // ntifs
 NTKERNELAPI
 BOOLEAN
 ObFindHandleForObject(
-    __in PEPROCESS Process,
-    __in PVOID Object,
-    __in_opt POBJECT_TYPE ObjectType,
-    __in_opt POBJECT_HANDLE_INFORMATION MatchCriteria,
-    __out PHANDLE Handle
+    IN PEPROCESS Process,
+    IN PVOID Object,
+    IN POBJECT_TYPE ObjectType OPTIONAL,
+    IN POBJECT_HANDLE_INFORMATION MatchCriteria OPTIONAL,
+    OUT PHANDLE Handle
     );
 
 // begin_ntddk begin_wdm begin_nthal begin_ntifs
@@ -859,23 +756,23 @@ NTKERNELAPI
 LONG_PTR
 FASTCALL
 ObfReferenceObject(
-    __in PVOID Object
+    IN PVOID Object
     );
 
 NTKERNELAPI
 NTSTATUS
 ObReferenceObjectByPointer(
-    __in PVOID Object,
-    __in ACCESS_MASK DesiredAccess,
-    __in_opt POBJECT_TYPE ObjectType,
-    __in KPROCESSOR_MODE AccessMode
+    IN PVOID Object,
+    IN ACCESS_MASK DesiredAccess,
+    IN POBJECT_TYPE ObjectType,
+    IN KPROCESSOR_MODE AccessMode
     );
 
 NTKERNELAPI
 LONG_PTR
 FASTCALL
 ObfDereferenceObject(
-    __in PVOID Object
+    IN PVOID Object
     );
 
 // end_ntddk end_wdm end_nthal end_ntifs end_ntosp
@@ -918,10 +815,10 @@ ObDereferenceObjectDeferDelete (
 NTKERNELAPI
 NTSTATUS
 ObQueryNameString(
-    __in PVOID Object,
-    __out_bcount(Length) POBJECT_NAME_INFORMATION ObjectNameInfo,
-    __in ULONG Length,
-    __out PULONG ReturnLength
+    IN PVOID Object,
+    OUT POBJECT_NAME_INFORMATION ObjectNameInfo,
+    IN ULONG Length,
+    OUT PULONG ReturnLength
     );
 
 // end_ntifs end_ntosp
@@ -987,43 +884,36 @@ ObDereferenceDeviceMap(
     );
 
 // begin_ntifs begin_ntddk begin_wdm begin_ntosp
-
-NTKERNELAPI
 NTSTATUS
 ObGetObjectSecurity(
-    __in PVOID Object,
-    __out PSECURITY_DESCRIPTOR *SecurityDescriptor,
-    __out PBOOLEAN MemoryAllocated
+    IN PVOID Object,
+    OUT PSECURITY_DESCRIPTOR *SecurityDescriptor,
+    OUT PBOOLEAN MemoryAllocated
     );
 
-NTKERNELAPI
 VOID
 ObReleaseObjectSecurity(
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __in BOOLEAN MemoryAllocated
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN BOOLEAN MemoryAllocated
     );
-
 // end_ntifs end_ntddk end_wdm
-
-NTKERNELAPI
 NTSTATUS
 ObLogSecurityDescriptor (
-    __in PSECURITY_DESCRIPTOR InputSecurityDescriptor,
-    __out PSECURITY_DESCRIPTOR *OutputSecurityDescriptor,
-    __in ULONG RefBias
+    IN PSECURITY_DESCRIPTOR InputSecurityDescriptor,
+    OUT PSECURITY_DESCRIPTOR *OutputSecurityDescriptor,
+    ULONG RefBias
     );
 
-NTKERNELAPI
 VOID
 ObDereferenceSecurityDescriptor (
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __in ULONG Count
+    PSECURITY_DESCRIPTOR SecurityDescriptor,
+    ULONG Count
     );
 
 VOID
 ObReferenceSecurityDescriptor (
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __in ULONG Count
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN ULONG Count
     );
 
 // end_ntosp
@@ -1045,69 +935,63 @@ ObValidateSecurityQuota(
 NTKERNELAPI
 BOOLEAN
 ObCheckCreateObjectAccess(
-    __in PVOID DirectoryObject,
-    __in ACCESS_MASK CreateAccess,
-    __in PACCESS_STATE AccessState,
-    __in PUNICODE_STRING ComponentName,
-    __in BOOLEAN TypeMutexLocked,
-    __in KPROCESSOR_MODE PreviousMode,
-    __out PNTSTATUS AccessStatus
+    IN PVOID DirectoryObject,
+    IN ACCESS_MASK CreateAccess,
+    IN PACCESS_STATE AccessState OPTIONAL,
+    IN PUNICODE_STRING ComponentName,
+    IN BOOLEAN TypeMutexLocked,
+    IN KPROCESSOR_MODE PreviousMode,
+    OUT PNTSTATUS AccessStatus
    );
 
 NTKERNELAPI
 BOOLEAN
 ObCheckObjectAccess(
-    __in PVOID Object,
-    __inout PACCESS_STATE AccessState,
-    __in BOOLEAN TypeMutexLocked,
-    __in KPROCESSOR_MODE AccessMode,
-    __out PNTSTATUS AccessStatus
+    IN PVOID Object,
+    IN PACCESS_STATE AccessState,
+    IN BOOLEAN TypeMutexLocked,
+    IN KPROCESSOR_MODE AccessMode,
+    OUT PNTSTATUS AccessStatus
     );
 
 
 NTKERNELAPI
 NTSTATUS
 ObAssignSecurity(
-    __in PACCESS_STATE AccessState,
-    __in_opt PSECURITY_DESCRIPTOR ParentDescriptor,
-    __in PVOID Object,
-    __in POBJECT_TYPE ObjectType
+    IN PACCESS_STATE AccessState,
+    IN PSECURITY_DESCRIPTOR ParentDescriptor OPTIONAL,
+    IN PVOID Object,
+    IN POBJECT_TYPE ObjectType
     );
 // end_ntosp
 
-NTKERNELAPI                                                     // ntifs
 NTSTATUS                                                        // ntifs
 ObQueryObjectAuditingByHandle(                                  // ntifs
-    __in HANDLE Handle,                                           // ntifs
-    __out PBOOLEAN GenerateOnClose                                // ntifs
+    IN HANDLE Handle,                                           // ntifs
+    OUT PBOOLEAN GenerateOnClose                                // ntifs
     );                                                          // ntifs
 
 // begin_ntosp
-
-NTKERNELAPI
 NTSTATUS
 ObSetSecurityObjectByPointer (
-    __in PVOID Object,
-    __in SECURITY_INFORMATION SecurityInformation,
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor
+    IN PVOID Object,
+    IN SECURITY_INFORMATION SecurityInformation,
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor
     );
 
-NTKERNELAPI
 NTSTATUS
 ObSetHandleAttributes (
-    __in HANDLE Handle,
-    __in POBJECT_HANDLE_FLAG_INFORMATION HandleFlags,
-    __in KPROCESSOR_MODE PreviousMode
+    IN HANDLE Handle,
+    IN POBJECT_HANDLE_FLAG_INFORMATION HandleFlags,
+    IN KPROCESSOR_MODE PreviousMode
     );
 
-NTKERNELAPI
 NTSTATUS
 ObCloseHandle (
-    __in HANDLE Handle,
-    __in KPROCESSOR_MODE PreviousMode
+    IN HANDLE Handle,
+    IN KPROCESSOR_MODE PreviousMode
     );
 
-NTKERNELAPI
 NTSTATUS
 ObSwapObjectNames (
     IN HANDLE DirectoryHandle,
@@ -1161,12 +1045,12 @@ ObGetObjectInformation(
 NTKERNELAPI
 NTSTATUS
 ObSetSecurityDescriptorInfo(
-    __in PVOID Object,
-    __in PSECURITY_INFORMATION SecurityInformation,
-    __inout PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __inout PSECURITY_DESCRIPTOR *ObjectsSecurityDescriptor,
-    __in POOL_TYPE PoolType,
-    __in PGENERIC_MAPPING GenericMapping
+    IN PVOID Object,
+    IN PSECURITY_INFORMATION SecurityInformation,
+    IN OUT PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN OUT PSECURITY_DESCRIPTOR *ObjectsSecurityDescriptor,
+    IN POOL_TYPE PoolType,
+    IN PGENERIC_MAPPING GenericMapping
     );
 // end_ntosp
 

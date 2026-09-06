@@ -1,9 +1,7 @@
 /*++
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -12,6 +10,15 @@ Module Name:
 Abstract:
 
     This module contains definitions that describe SMBIOS
+
+Author:
+
+
+    Alan Warwick (AlanWar) 12-Feb-1998
+
+
+Revision History:
+
 
 --*/
 
@@ -38,12 +45,14 @@ Abstract:
 
 //
 // SMBIOS registry values
-//
 #define SMBIOSPARENTKEYNAME L"\\Registry\\Machine\\Hardware\\Description\\System\\MultifunctionAdapter"
-#define SMBIOSGLOBALKEYNAME L"\\Registry\\Machine\\Hardware\\Description\\System"
 
 #define SMBIOSIDENTIFIERVALUENAME L"Identifier"
+#ifdef _IA64_
+#define SMBIOSIDENTIFIERVALUEDATA L"SMBIOS"
+#else
 #define SMBIOSIDENTIFIERVALUEDATA L"PNP BIOS"
+#endif
 #define SMBIOSDATAVALUENAME     L"Configuration Data"
 
 #define MAXSMBIOSKEYNAMESIZE 256
@@ -113,23 +122,12 @@ typedef struct _SMBIOS_BIOS_INFORMATION_STRUCT
     USHORT      StartingAddressSegment;
     UCHAR       ReleaseDate;
     UCHAR       RomSize;
-    UCHAR       Characteristics[8];
-    UCHAR       CharacteristicsExtension0;
-    UCHAR       CharacteristicsExtension1;
-    UCHAR       SystemBiosMajorRelease;     // SMBIOS 2.3.6+
-    UCHAR       SystemBiosMinorRelease;     // SMBIOS 2.3.6+
-    UCHAR       ECFirmwareMajorRelease;     // SMBIOS 2.3.6+
-    UCHAR       ECFirmwareMinorRelease;     // SMBIOS 2.3.6+
+    ULONG       Characteristics0;
+    ULONG       Characteristics1;
+    UCHAR       CharacteristicsExtension;
 } SMBIOS_BIOS_INFORMATION_STRUCT, *PSMBIOS_BIOS_INFORMATION_STRUCT;
 
-//
-// If the Minor or Major Release are equal to this, then the system does not
-// support the use of this field
-//
-// SMBIOS 2.3.6+
-//
-#define SMBIOS_BIOS_UNSUPPORTED_FIRMWARE_REVISION   0xFF
-#define SMBIOS_BIOS_TARGETTED_CONTENT_ENABLED(X)    ((X & 0x4) != 0)
+
 
 //
 // Definitions for the SMBIOS table SYSTEM INFORMATION STRUCTURE
@@ -147,8 +145,6 @@ typedef struct _SMBIOS_SYSTEM_INFORMATION_STRUCT
     UCHAR SerialNumber;     // string
     UCHAR Uuid[16];         // SMBIOS 2.1+
     UCHAR WakeupType;       // SMBIOS 2.1+
-    UCHAR SKUNumber;        // SMBIOS 2.3.6+
-    UCHAR Family;           // SMBIOS 2.3.6+
 } SMBIOS_SYSTEM_INFORMATION_STRUCT, *PSMBIOS_SYSTEM_INFORMATION_STRUCT;
 
 #define SMBIOS_SYSTEM_INFORMATION_LENGTH_20 8
@@ -169,12 +165,6 @@ typedef struct _SMBIOS_BASE_BOARD_INFORMATION_STRUCT
     UCHAR       Product;
     UCHAR       Version;
     UCHAR       SerialNumber;
-    UCHAR       AssetTagNumber;
-    UCHAR       FeatureFlags;
-    UCHAR       Location;
-    USHORT      ChassisHandle;
-    UCHAR       BoardType;
-    UCHAR       ObjectHandles;
 } SMBIOS_BASE_BOARD_INFORMATION_STRUCT, *PSMBIOS_BASE_BOARD_INFORMATION_STRUCT;
 
 
@@ -229,7 +219,7 @@ typedef struct _SMBIOS_PROCESSOR_INFORMATION_STRUCT
     USHORT      L2CacheHandle;
     USHORT      L3CacheHandle;
     UCHAR       SerialNumber;
-    UCHAR       AssetTagNumber;
+    UCHAR       AssetTag;
 } SMBIOS_PROCESSOR_INFORMATION_STRUCT, *PSMBIOS_PROCESSOR_INFORMATION_STRUCT;
 
 
@@ -292,76 +282,6 @@ typedef struct _SMBIOS_SYSTEM_EVENTLOG_STRUCT
 
 #define SMBIOS_SYSTEM_EVENTLOG_LENGTH_20 0x14
 #define SMBIOS_SYSTEM_EVENTLOG_LENGTH (FIELD_OFFSET(SMBIOS_SYSTEM_EVENTLOG_STRUCT, LogTypeDescriptor))
-
-#define SMBIOS_MEMORY_DEVICE_TYPE   17
-typedef struct _SMBIOS_MEMORY_DEVICE_STRUCT
-{
-    UCHAR	Type;
-    UCHAR	Length;
-    USHORT	Handle;
-    USHORT	MemArrayHandle;
-    USHORT	MemErrorInfoHandle;
-    USHORT	TotalWidth;
-    USHORT	DataWidth;
-    USHORT	Size;
-    UCHAR	FormFactor;
-    UCHAR	DeviceSet;
-    UCHAR	DeviceLocator;
-    UCHAR	BankLocator;
-    UCHAR	MemoryType;
-    USHORT	TypeDetail;
-    USHORT	Speed;
-    UCHAR   Manufacturer;
-    UCHAR   SerialNumber;
-    UCHAR   AssetTagNumber;
-    UCHAR   PartNumber;
-} SMBIOS_MEMORY_DEVICE_STRUCT, *PSMBIOS_MEMORY_DEVICE_STRUCT;
-
-#define SMBIOS_PORTABLE_BATTERY_TYPE    22
-typedef struct _SMBIOS_PORTABLE_BATTERY_STRUCT
-{
-    UCHAR   Type;
-    UCHAR   Length;
-    USHORT  Handle;
-
-    UCHAR   Location;           // String Index
-    UCHAR   Manufacturer;       // String Index
-    UCHAR   ManufactureDate;    // String Index
-    UCHAR   SerialNumber;       // String Index
-    UCHAR   DeviceName;         // String Index
-    UCHAR   DeviceChemistry;    // Enum - See 3.3.23.1 of SMBIOS 2.3.3 spec
-    USHORT  DesignCapacity;     // mWatt/hours
-    USHORT  DeviceVoltage;      // mVolts
-    UCHAR   SBDSVersionNumber;  // String Index
-    UCHAR   MaximumError;       // Percentage
-    USHORT  SBDSSerialNumber;   
-    USHORT  SBDSManufacturerDate;// Packed format. See 3.3.23 of SMBIOS 2.3.3 spec
-    UCHAR   SBDSDeviceChemistry;// String Index
-    UCHAR   DeviceCapacityMult; // DesignCapacity Multiplier value
-    ULONG   OEMSpecific;        // OEM Specific Value
-} SMBIOS_PORTABLE_BATTERY_STRUCT, *PSMBIOS_PORTABLE_BATTERY_STRUCT;
-
-#define SMBIOS_SYSTEM_POWER_SUPPLY_TYPE 39
-typedef struct _SMBIOS_SYSTEM_POWER_SUPPLY_STRUCT
-{
-    UCHAR   Type;
-    UCHAR   Length;
-    USHORT  Handle;
-
-    UCHAR   PowerUnitGroup;
-    UCHAR   Location;                   // String Index
-    UCHAR   DeviceName;                 // String Index
-    UCHAR   Manufacturer;               // String Index
-    UCHAR   SerialNumber;               // String Index
-    UCHAR   AssetTagNumber;             // String Index
-    UCHAR   ModelPartNumber;            // String Index
-    UCHAR   RevisionLevel;              // String Index
-    USHORT  MaximumPowerCapacity;       // Watts, 0x8000 if unknown
-    USHORT  PowerSupplyCharacteristics; // See 3.3.40.1 of SMBIOS 2.3.3 spec
-    USHORT  InputVoltageProbeHandle;
-    USHORT  CoolingDeviceHandle;
-    USHORT  InputCurrentProbleHandle;
-} SMBIOS_SYSTEM_POWER_SUPPLY_STRUCT, *PSMBIOS_SYSTEM_POWER_SUPPLY_STRUCT;
 
 //
 // SYSID table search

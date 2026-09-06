@@ -1,9 +1,7 @@
 /*++ BUILD Version: 0002    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -13,6 +11,12 @@ Abstract:
 
     This file contains all of the Priority boots numbers used by the NT
     executive.
+
+Author:
+
+    Steve Wood (stevewo) 03-Jun-1989
+
+Revision History:
 
 --*/
 

@@ -1,9 +1,7 @@
 /*++ BUILD Version: 0002    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -12,6 +10,12 @@ Module Name:
 Abstract:
 
     Header file for the INIT subcomponent of NTOS
+
+Author:
+
+    Steve Wood (stevewo) 31-Mar-1989
+
+Revision History:
 
 --*/
 
@@ -30,6 +34,7 @@ Abstract:
 #define INIT_WINPEMODE_READONLY_MEDIA       0x00000100
 #define INIT_WINPEMODE_REMOVABLE_MEDIA      0x00000200  
 
+
 extern UNICODE_STRING NtSystemRoot;
 // begin_ntosp
 extern ULONG NtBuildNumber;
@@ -37,8 +42,6 @@ extern ULONG NtBuildNumber;
 extern const ULONG NtMajorVersion;
 extern const ULONG NtMinorVersion;
 extern ULONG CmNtCSDVersion;
-extern ULONG CmNtCSDReleaseType;
-extern ULONG CmNtSpBuildNumber;
 extern UNICODE_STRING CmVersionString;
 extern UNICODE_STRING CmCSDVersionString;
 

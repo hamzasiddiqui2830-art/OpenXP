@@ -1,9 +1,7 @@
 /*++ BUILD Version: 0011    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -16,11 +14,19 @@ Abstract:
 
     This file is included by including "ntos.h".
 
+Author:
+
+    Gary Kimura (GaryKi) 09-Mar-1989
+
+Revision History:
+
+
+
 --*/
 
 #ifndef _SE_
 #define _SE_
-#include <ntlsa.h>
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -138,7 +144,7 @@ typedef struct _SECURITY_SUBJECT_CONTEXT {
 //
 //  Initial Privilege Set - Room for three privileges, which should
 //  be enough for most applications.  This structure exists so that
-//  it can be embedded in an ACCESS_STATE structure.  Use PRIVILEGE_SET
+//  it can be imbedded in an ACCESS_STATE structure.  Use PRIVILEGE_SET
 //  for all other references to Privilege sets.
 //
 
@@ -222,7 +228,7 @@ where:
        SEASSIGNSECURITY SHOULD EVER LOOK IN THIS FIELD FOR AN
        OBJECT'S SECURITY DESCRIPTOR.
 
-    AuxData - points to an auxiliary data structure to be used for future
+    AuxData - points to an auxillary data structure to be used for future
         expansion of the access state in an upwardly compatible way.  This
         field replaces the PrivilegesUsed pointer, which was for internal
         use only.
@@ -507,7 +513,7 @@ typedef NTSTATUS
 //
 //  Routine Description:
 //
-//      This routine generates an access mask containing accesses
+//      This routine generates an access mask containing acccesses
 //      requested by DesiredAccess that are granted by GrantedAccess.
 //      The result of this routine may be compared to 0 to determine
 //      if any desired accesses have been granted.
@@ -602,26 +608,26 @@ typedef NTSTATUS
 
 // begin_ntifs
 //
-// VOID
-// SeDeleteClientSecurity(
+//VOID
+//SeDeleteClientSecurity(
 //    IN PSECURITY_CLIENT_CONTEXT ClientContext
 //    )
 //
 ///*++
 //
-// Routine Description:
+//Routine Description:
 //
 //    This service deletes a client security context block,
 //    performing whatever cleanup might be necessary to do so.  In
 //    particular, reference to any client token is removed.
 //
-// Arguments:
+//Arguments:
 //
 //    ClientContext - Points to the client security context block to be
 //        deleted.
 //
 //
-// Return Value:
+//Return Value:
 //
 //
 //
@@ -639,12 +645,12 @@ typedef NTSTATUS
 
 
 //++
-// VOID
-// SeStopImpersonatingClient()
+//VOID
+//SeStopImpersonatingClient()
 //
 ///*++
 //
-// Routine Description:
+//Routine Description:
 //
 //    This service is used to stop impersonating a client using an
 //    impersonation token.  This service must be called in the context
@@ -652,11 +658,11 @@ typedef NTSTATUS
 //    client.
 //
 //
-// Arguments:
+//Arguments:
 //
 //    None.
 //
-// Return Value:
+//Return Value:
 //
 //    None.
 //
@@ -771,46 +777,46 @@ SeInitSystem( VOID );
 
 VOID
 SeSetSecurityAccessMask(
-    __in SECURITY_INFORMATION SecurityInformation,
-    __out PACCESS_MASK DesiredAccess
+    IN SECURITY_INFORMATION SecurityInformation,
+    OUT PACCESS_MASK DesiredAccess
     );
 
 VOID
 SeQuerySecurityAccessMask(
-    __in SECURITY_INFORMATION SecurityInformation,
-    __out PACCESS_MASK DesiredAccess
+    IN SECURITY_INFORMATION SecurityInformation,
+    OUT PACCESS_MASK DesiredAccess
     );
 
 
 NTSTATUS
 SeDefaultObjectMethod (
-    __in PVOID Object,
-    __in SECURITY_OPERATION_CODE OperationCode,
-    __in PSECURITY_INFORMATION SecurityInformation,
-    __inout PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __inout_opt PULONG CapturedLength,
-    __deref_inout PSECURITY_DESCRIPTOR *ObjectsSecurityDescriptor,
-    __in POOL_TYPE PoolType,
-    __in PGENERIC_MAPPING GenericMapping
+    IN PVOID Object,
+    IN SECURITY_OPERATION_CODE OperationCode,
+    IN PSECURITY_INFORMATION SecurityInformation,
+    IN OUT PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN OUT PULONG Length,
+    IN OUT PSECURITY_DESCRIPTOR *ObjectsSecurityDescriptor,
+    IN POOL_TYPE PoolType,
+    IN PGENERIC_MAPPING GenericMapping
     );
 
 // begin_ntosp
 NTKERNELAPI
 NTSTATUS
 SeCaptureSecurityDescriptor (
-    __in PSECURITY_DESCRIPTOR InputSecurityDescriptor,
-    __in KPROCESSOR_MODE RequestorMode,
-    __in POOL_TYPE PoolType,
-    __in BOOLEAN ForceCapture,
-    __deref_out PSECURITY_DESCRIPTOR *OutputSecurityDescriptor
+    IN PSECURITY_DESCRIPTOR InputSecurityDescriptor,
+    IN KPROCESSOR_MODE RequestorMode,
+    IN POOL_TYPE PoolType,
+    IN BOOLEAN ForceCapture,
+    OUT PSECURITY_DESCRIPTOR *OutputSecurityDescriptor
     );
 
 NTKERNELAPI
 VOID
 SeReleaseSecurityDescriptor (
-    __in PSECURITY_DESCRIPTOR CapturedSecurityDescriptor,
-    __in KPROCESSOR_MODE RequestorMode,
-    __in BOOLEAN ForceCapture
+    IN PSECURITY_DESCRIPTOR CapturedSecurityDescriptor,
+    IN KPROCESSOR_MODE RequestorMode,
+    IN BOOLEAN ForceCapture
     );
 
 // begin_ntifs
@@ -818,152 +824,152 @@ SeReleaseSecurityDescriptor (
 NTKERNELAPI
 VOID
 SeCaptureSubjectContext (
-    __out PSECURITY_SUBJECT_CONTEXT SubjectContext
+    OUT PSECURITY_SUBJECT_CONTEXT SubjectContext
     );
 
 
 NTKERNELAPI
 VOID
 SeLockSubjectContext(
-    __in PSECURITY_SUBJECT_CONTEXT SubjectContext
+    IN PSECURITY_SUBJECT_CONTEXT SubjectContext
     );
 
 NTKERNELAPI
 VOID
 SeUnlockSubjectContext(
-    __in PSECURITY_SUBJECT_CONTEXT SubjectContext
+    IN PSECURITY_SUBJECT_CONTEXT SubjectContext
     );
 
 NTKERNELAPI
 VOID
 SeReleaseSubjectContext (
-    __inout PSECURITY_SUBJECT_CONTEXT SubjectContext
+    IN PSECURITY_SUBJECT_CONTEXT SubjectContext
     );
 
 NTSTATUS
 SeCaptureAuditPolicy(
-    __in PTOKEN_AUDIT_POLICY Policy,
-    __in KPROCESSOR_MODE RequestorMode,
-    __in_bcount_opt(CaptureBufferLength) PVOID CaptureBuffer,
-    __in ULONG CaptureBufferLength,
-    __in POOL_TYPE PoolType,
-    __in BOOLEAN ForceCapture,
-    __deref_out PTOKEN_AUDIT_POLICY *CapturedPolicy
+    IN PTOKEN_AUDIT_POLICY Policy,
+    IN KPROCESSOR_MODE RequestorMode,
+    IN PVOID CaptureBuffer OPTIONAL,
+    IN ULONG CaptureBufferLength,
+    IN POOL_TYPE PoolType,
+    IN BOOLEAN ForceCapture,
+    OUT PTOKEN_AUDIT_POLICY *CapturedPolicy
     );
 
 VOID
 SeReleaseAuditPolicy (
-    __in PTOKEN_AUDIT_POLICY CapturedPolicy,
-    __in KPROCESSOR_MODE RequestorMode,
-    __in BOOLEAN ForceCapture
+    IN PTOKEN_AUDIT_POLICY CapturedPolicy,
+    IN KPROCESSOR_MODE RequestorMode,
+    IN BOOLEAN ForceCapture
     );
 
 // end_ntifs end_ntosp
 
 VOID
 SeCaptureSubjectContextEx (
-    __in PETHREAD Thread,
-    __in PEPROCESS Process,
-    __out PSECURITY_SUBJECT_CONTEXT SubjectContext
+    IN PETHREAD Thread,
+    IN PEPROCESS Process,
+    OUT PSECURITY_SUBJECT_CONTEXT SubjectContext
     );
 
 NTSTATUS
 SeCaptureSecurityQos (
-    __in_opt POBJECT_ATTRIBUTES ObjectAttributes,
-    __in KPROCESSOR_MODE RequestorMode,
-    __out PBOOLEAN SecurityQosPresent,
-    __out PSECURITY_ADVANCED_QUALITY_OF_SERVICE CapturedSecurityQos
+    IN POBJECT_ATTRIBUTES ObjectAttributes OPTIONAL,
+    IN KPROCESSOR_MODE RequestorMode,
+    IN PBOOLEAN SecurityQosPresent,
+    IN PSECURITY_ADVANCED_QUALITY_OF_SERVICE CapturedSecurityQos
     );
 
 VOID
 SeFreeCapturedSecurityQos(
-    __in PVOID SecurityQos
+    IN PVOID SecurityQos
     );
 
 NTSTATUS
 SeCaptureSid (
-    __in PSID InputSid,
-    __in KPROCESSOR_MODE RequestorMode,
-    __inout_bcount_opt(CaptureBufferLength) PVOID CaptureBuffer,
-    __in ULONG CaptureBufferLength,
-    __in POOL_TYPE PoolType,
-    __in BOOLEAN ForceCapture,
-    __deref_out PSID *CapturedSid
+    IN PSID InputSid,
+    IN KPROCESSOR_MODE RequestorMode,
+    IN PVOID CaptureBuffer OPTIONAL,
+    IN ULONG CaptureBufferLength,
+    IN POOL_TYPE PoolType,
+    IN BOOLEAN ForceCapture,
+    OUT PSID *CapturedSid
     );
 
 
 VOID
 SeReleaseSid (
-    __in PSID CapturedSid,
-    __in KPROCESSOR_MODE RequestorMode,
-    __in BOOLEAN ForceCapture
+    IN PSID CapturedSid,
+    IN KPROCESSOR_MODE RequestorMode,
+    IN BOOLEAN ForceCapture
     );
 
 
 NTSTATUS
 SeCaptureAcl (
-    __in PACL InputAcl,
-    __in KPROCESSOR_MODE RequestorMode,
-    __inout_bcount_opt(CaptureBufferLength) PVOID CaptureBuffer,
-    __in ULONG CaptureBufferLength,
-    __in POOL_TYPE PoolType,
-    __in BOOLEAN ForceCapture,
-    __deref_out_bcount_full(*AlignedAclSize) PACL *CapturedAcl,
-    __out PULONG AlignedAclSize
+    IN PACL InputAcl,
+    IN KPROCESSOR_MODE RequestorMode,
+    IN PVOID CaptureBuffer OPTIONAL,
+    IN ULONG CaptureBufferLength,
+    IN POOL_TYPE PoolType,
+    IN BOOLEAN ForceCapture,
+    OUT PACL *CapturedAcl,
+    OUT PULONG AlignedAclSize
     );
 
 
 VOID
 SeReleaseAcl (
-    __in PACL CapturedAcl,
-    __in KPROCESSOR_MODE RequestorMode,
-    __in BOOLEAN ForceCapture
+    IN PACL CapturedAcl,
+    IN KPROCESSOR_MODE RequestorMode,
+    IN BOOLEAN ForceCapture
     );
 
 
 NTSTATUS
 SeCaptureLuidAndAttributesArray (
-    __in_ecount(ArrayCount) PLUID_AND_ATTRIBUTES InputArray,
-    __in ULONG ArrayCount,
-    __in KPROCESSOR_MODE RequestorMode,
-    __in_bcount_opt(CaptureBufferLength) PVOID CaptureBuffer,
-    __in ULONG CaptureBufferLength,
-    __in POOL_TYPE PoolType,
-    __in BOOLEAN ForceCapture,
-    __deref_out_bcount_full(*AlignedArraySize) PLUID_AND_ATTRIBUTES *CapturedArray,
-    __out PULONG AlignedArraySize
+    IN PLUID_AND_ATTRIBUTES InputArray,
+    IN ULONG ArrayCount,
+    IN KPROCESSOR_MODE RequestorMode,
+    IN PVOID CaptureBuffer OPTIONAL,
+    IN ULONG CaptureBufferLength,
+    IN POOL_TYPE PoolType,
+    IN BOOLEAN ForceCapture,
+    OUT PLUID_AND_ATTRIBUTES *CapturedArray,
+    OUT PULONG AlignedArraySize
     );
 
 
 
 VOID
 SeReleaseLuidAndAttributesArray (
-    __in PLUID_AND_ATTRIBUTES CapturedArray,
-    __in KPROCESSOR_MODE RequestorMode,
-    __in BOOLEAN ForceCapture
+    IN PLUID_AND_ATTRIBUTES CapturedArray,
+    IN KPROCESSOR_MODE RequestorMode,
+    IN BOOLEAN ForceCapture
     );
 
 
 
 NTSTATUS
 SeCaptureSidAndAttributesArray (
-    __in_ecount(ArrayCount) PSID_AND_ATTRIBUTES InputArray,
-    __in ULONG ArrayCount,
-    __in KPROCESSOR_MODE RequestorMode,
-    __in_bcount_opt(CaptureBufferLength) PVOID CaptureBuffer,
-    __in ULONG CaptureBufferLength,
-    __in POOL_TYPE PoolType,
-    __in BOOLEAN ForceCapture,
-    __deref_out_bcount_full(AlignedArraySize) PSID_AND_ATTRIBUTES *CapturedArray,
-    __out PULONG AlignedArraySize
+    IN PSID_AND_ATTRIBUTES InputArray,
+    IN ULONG ArrayCount,
+    IN KPROCESSOR_MODE RequestorMode,
+    IN PVOID CaptureBuffer OPTIONAL,
+    IN ULONG CaptureBufferLength,
+    IN POOL_TYPE PoolType,
+    IN BOOLEAN ForceCapture,
+    OUT PSID_AND_ATTRIBUTES *CapturedArray,
+    OUT PULONG AlignedArraySize
     );
 
 
 VOID
 SeReleaseSidAndAttributesArray (
-    __in PSID_AND_ATTRIBUTES CapturedArray,
-    __in KPROCESSOR_MODE RequestorMode,
-    __in BOOLEAN ForceCapture
+    IN PSID_AND_ATTRIBUTES CapturedArray,
+    IN KPROCESSOR_MODE RequestorMode,
+    IN BOOLEAN ForceCapture
     );
 
 // begin_ntddk begin_wdm begin_ntifs begin_ntosp
@@ -971,48 +977,48 @@ SeReleaseSidAndAttributesArray (
 NTKERNELAPI
 NTSTATUS
 SeAssignSecurity (
-    __in_opt PSECURITY_DESCRIPTOR ParentDescriptor,
-    __in_opt PSECURITY_DESCRIPTOR ExplicitDescriptor,
-    __out PSECURITY_DESCRIPTOR *NewDescriptor,
-    __in BOOLEAN IsDirectoryObject,
-    __in PSECURITY_SUBJECT_CONTEXT SubjectContext,
-    __in PGENERIC_MAPPING GenericMapping,
-    __in POOL_TYPE PoolType
+    IN PSECURITY_DESCRIPTOR ParentDescriptor OPTIONAL,
+    IN PSECURITY_DESCRIPTOR ExplicitDescriptor,
+    OUT PSECURITY_DESCRIPTOR *NewDescriptor,
+    IN BOOLEAN IsDirectoryObject,
+    IN PSECURITY_SUBJECT_CONTEXT SubjectContext,
+    IN PGENERIC_MAPPING GenericMapping,
+    IN POOL_TYPE PoolType
     );
 
 NTKERNELAPI
 NTSTATUS
 SeAssignSecurityEx (
-    __in_opt PSECURITY_DESCRIPTOR ParentDescriptor,
-    __in_opt PSECURITY_DESCRIPTOR ExplicitDescriptor,
-    __out PSECURITY_DESCRIPTOR *NewDescriptor,
-    __in_opt GUID *ObjectType,
-    __in BOOLEAN IsDirectoryObject,
-    __in ULONG AutoInheritFlags,
-    __in PSECURITY_SUBJECT_CONTEXT SubjectContext,
-    __in PGENERIC_MAPPING GenericMapping,
-    __in POOL_TYPE PoolType
+    IN PSECURITY_DESCRIPTOR ParentDescriptor OPTIONAL,
+    IN PSECURITY_DESCRIPTOR ExplicitDescriptor OPTIONAL,
+    OUT PSECURITY_DESCRIPTOR *NewDescriptor,
+    IN GUID *ObjectType OPTIONAL,
+    IN BOOLEAN IsDirectoryObject,
+    IN ULONG AutoInheritFlags,
+    IN PSECURITY_SUBJECT_CONTEXT SubjectContext,
+    IN PGENERIC_MAPPING GenericMapping,
+    IN POOL_TYPE PoolType
     );
 
 NTKERNELAPI
 NTSTATUS
 SeDeassignSecurity (
-    __deref_inout PSECURITY_DESCRIPTOR *SecurityDescriptor
+    IN OUT PSECURITY_DESCRIPTOR *SecurityDescriptor
     );
 
 NTKERNELAPI
 BOOLEAN
 SeAccessCheck (
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __in PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
-    __in BOOLEAN SubjectContextLocked,
-    __in ACCESS_MASK DesiredAccess,
-    __in ACCESS_MASK PreviouslyGrantedAccess,
-    __deref_out_opt PPRIVILEGE_SET *Privileges,
-    __in PGENERIC_MAPPING GenericMapping,
-    __in KPROCESSOR_MODE AccessMode,
-    __out PACCESS_MASK GrantedAccess,
-    __out PNTSTATUS AccessStatus
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
+    IN BOOLEAN SubjectContextLocked,
+    IN ACCESS_MASK DesiredAccess,
+    IN ACCESS_MASK PreviouslyGrantedAccess,
+    OUT PPRIVILEGE_SET *Privileges OPTIONAL,
+    IN PGENERIC_MAPPING GenericMapping,
+    IN KPROCESSOR_MODE AccessMode,
+    OUT PACCESS_MASK GrantedAccess,
+    OUT PNTSTATUS AccessStatus
     );
 
 
@@ -1020,58 +1026,58 @@ SeAccessCheck (
 
 VOID
 SeGetWorldRights (
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __in PGENERIC_MAPPING GenericMapping,
-    __out PACCESS_MASK GrantedAccess
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN PGENERIC_MAPPING GenericMapping,
+    OUT PACCESS_MASK GrantedAccess
     );
 
 #endif
 
-NTSTATUS
-SeSetAuditParameter(
-    __inout PSE_ADT_PARAMETER_ARRAY AuditParameters,
-    __in SE_ADT_PARAMETER_TYPE Type,
-    __in ULONG Index,
-    __in PVOID Data
-    );
-
-NTSTATUS
-SeReportSecurityEvent(
-    __in ULONG Flags,
-    __in PUNICODE_STRING SourceName,
-    __in_opt PSID UserSid,
-    __in PSE_ADT_PARAMETER_ARRAY AuditParameters
-    );
-
 // end_ntddk end_wdm end_ntifs end_ntosp
 
+BOOLEAN
+SeProxyAccessCheck (
+    IN PUNICODE_STRING Volume,
+    IN PUNICODE_STRING RelativePath,
+    IN BOOLEAN ContainerObject,
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
+    IN BOOLEAN SubjectContextLocked,
+    IN ACCESS_MASK DesiredAccess,
+    IN ACCESS_MASK PreviouslyGrantedAccess,
+    OUT PPRIVILEGE_SET *Privileges OPTIONAL,
+    IN PGENERIC_MAPPING GenericMapping,
+    IN KPROCESSOR_MODE AccessMode,
+    OUT PACCESS_MASK GrantedAccess,
+    OUT PNTSTATUS AccessStatus
+    );
 
 // begin_ntifs begin_ntosp
 
 NTKERNELAPI
 BOOLEAN
 SePrivilegeCheck(
-    __inout PPRIVILEGE_SET RequiredPrivileges,
-    __in PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
-    __in KPROCESSOR_MODE AccessMode
+    IN OUT PPRIVILEGE_SET RequiredPrivileges,
+    IN PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
+    IN KPROCESSOR_MODE AccessMode
     );
 
 NTKERNELAPI
 VOID
 SeFreePrivileges(
-    __in PPRIVILEGE_SET Privileges
+    IN PPRIVILEGE_SET Privileges
     );
 
 // end_ntifs end_ntosp
 
 NTSTATUS
 SePrivilegePolicyCheck(
-    __inout PACCESS_MASK RemainingDesiredAccess,
-    __inout PACCESS_MASK PreviouslyGrantedAccess,
-    __in_opt PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
-    __in_opt PACCESS_TOKEN ExplicitToken,
-    __deref_out PPRIVILEGE_SET *PrivilegeSet,
-    __in KPROCESSOR_MODE PreviousMode
+    IN OUT PACCESS_MASK RemainingDesiredAccess,
+    IN OUT PACCESS_MASK PreviouslyGrantedAccess,
+    IN PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext OPTIONAL,
+    IN PACCESS_TOKEN Token OPTIONAL,
+    OUT PPRIVILEGE_SET *PrivilegeSet,
+    IN KPROCESSOR_MODE PreviousMode
     );
 
 VOID
@@ -1091,36 +1097,35 @@ SeGenerateMessage (
 NTKERNELAPI
 VOID
 SeOpenObjectAuditAlarm (
-    __in PUNICODE_STRING ObjectTypeName,
-    __in_opt PVOID Object,
-    __in_opt PUNICODE_STRING AbsoluteObjectName,
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __in PACCESS_STATE AccessState,
-    __in BOOLEAN ObjectCreated,
-    __in BOOLEAN AccessGranted,
-    __in KPROCESSOR_MODE AccessMode,
-    __out PBOOLEAN GenerateOnClose
+    IN PUNICODE_STRING ObjectTypeName,
+    IN PVOID Object OPTIONAL,
+    IN PUNICODE_STRING AbsoluteObjectName OPTIONAL,
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN PACCESS_STATE AccessState,
+    IN BOOLEAN ObjectCreated,
+    IN BOOLEAN AccessGranted,
+    IN KPROCESSOR_MODE AccessMode,
+    OUT PBOOLEAN GenerateOnClose
     );
 
 NTKERNELAPI
 VOID
 SeOpenObjectForDeleteAuditAlarm (
-    __in PUNICODE_STRING ObjectTypeName,
-    __in_opt PVOID Object,
-    __in_opt PUNICODE_STRING AbsoluteObjectName,
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __in PACCESS_STATE AccessState,
-    __in BOOLEAN ObjectCreated,
-    __in BOOLEAN AccessGranted,
-    __in KPROCESSOR_MODE AccessMode,
-    __out PBOOLEAN GenerateOnClose
+    IN PUNICODE_STRING ObjectTypeName,
+    IN PVOID Object OPTIONAL,
+    IN PUNICODE_STRING AbsoluteObjectName OPTIONAL,
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN PACCESS_STATE AccessState,
+    IN BOOLEAN ObjectCreated,
+    IN BOOLEAN AccessGranted,
+    IN KPROCESSOR_MODE AccessMode,
+    OUT PBOOLEAN GenerateOnClose
     );
 
-NTKERNELAPI
 VOID
 SeDeleteObjectAuditAlarm(
-    __in PVOID Object,
-    __in HANDLE Handle
+    IN PVOID Object,
+    IN HANDLE Handle
     );
 
 
@@ -1128,9 +1133,9 @@ SeDeleteObjectAuditAlarm(
 
 VOID
 SeCloseObjectAuditAlarm(
-    __in PVOID Object,
-    __in HANDLE Handle,
-    __in BOOLEAN GenerateOnClose
+    IN PVOID Object,
+    IN HANDLE Handle,
+    IN BOOLEAN GenerateOnClose
     );
 
 VOID
@@ -1161,35 +1166,35 @@ SeCreateObjectAuditAlarm(
 
 VOID
 SeObjectReferenceAuditAlarm(
-    __in_opt PLUID OperationID,
-    __in PVOID Object,
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __in PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
-    __in ACCESS_MASK DesiredAccess,
-    __in_opt PPRIVILEGE_SET Privileges,
-    __in BOOLEAN AccessGranted,
-    __in KPROCESSOR_MODE AccessMode
+    IN PLUID OperationID OPTIONAL,
+    IN PVOID Object,
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
+    IN ACCESS_MASK DesiredAccess,
+    IN PPRIVILEGE_SET Privileges OPTIONAL,
+    IN BOOLEAN AccessGranted,
+    IN KPROCESSOR_MODE AccessMode
     );
 
 // begin_ntosp
 NTKERNELAPI
 VOID
 SePrivilegeObjectAuditAlarm(
-    __in HANDLE Handle,
-    __in PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
-    __in ACCESS_MASK DesiredAccess,
-    __in PPRIVILEGE_SET Privileges,
-    __in BOOLEAN AccessGranted,
-    __in KPROCESSOR_MODE AccessMode
+    IN HANDLE Handle,
+    IN PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
+    IN ACCESS_MASK DesiredAccess,
+    IN PPRIVILEGE_SET Privileges,
+    IN BOOLEAN AccessGranted,
+    IN KPROCESSOR_MODE AccessMode
     );
 // end_ntosp
 
 BOOLEAN
 SeCheckPrivilegedObject(
-    __in LUID PrivilegeValue,
-    __in HANDLE ObjectHandle,
-    __in ACCESS_MASK DesiredAccess,
-    __in KPROCESSOR_MODE PreviousMode
+    LUID PrivilegeValue,
+    HANDLE ObjectHandle,
+    ACCESS_MASK DesiredAccess,
+    KPROCESSOR_MODE PreviousMode
     );
 
 // begin_ntddk begin_wdm begin_ntifs
@@ -1197,16 +1202,16 @@ SeCheckPrivilegedObject(
 NTKERNELAPI
 BOOLEAN
 SeValidSecurityDescriptor(
-    __in ULONG Length,
-    __in_bcount(Length) PSECURITY_DESCRIPTOR SecurityDescriptor
+    IN ULONG Length,
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor
     );
 
 // end_ntddk end_wdm end_ntifs
 
 
 
-// VOID
-// SeImplicitObjectAuditAlarm(
+//VOID
+//SeImplicitObjectAuditAlarm(
 //    IN PLUID OperationID OPTIONAL,
 //    IN PVOID Object,
 //    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
@@ -1220,8 +1225,8 @@ SeValidSecurityDescriptor(
 
 VOID
 SeAuditHandleCreation(
-    __in PACCESS_STATE AccessState,
-    __in HANDLE Handle
+    IN PACCESS_STATE AccessState,
+    IN HANDLE Handle
     );
 
 
@@ -1243,8 +1248,8 @@ SeMakeAnonymousLogonTokenNoEveryone (
 
 VOID
 SeGetTokenControlInformation (
-    __in PACCESS_TOKEN Token,
-    __out PTOKEN_CONTROL TokenControl
+    IN PACCESS_TOKEN Token,
+    OUT PTOKEN_CONTROL TokenControl
     );
 
 // begin_ntosp
@@ -1253,140 +1258,138 @@ extern struct _OBJECT_TYPE *SeTokenObjectType;
 NTKERNELAPI                                     // ntifs
 TOKEN_TYPE                                      // ntifs
 SeTokenType(                                    // ntifs
-    __in PACCESS_TOKEN Token                    // ntifs
+    IN PACCESS_TOKEN Token                      // ntifs
     );                                          // ntifs
 
 SECURITY_IMPERSONATION_LEVEL
 SeTokenImpersonationLevel(
-    __in PACCESS_TOKEN Token
+    IN PACCESS_TOKEN Token
     );
 
 NTKERNELAPI                                     // ntifs
 BOOLEAN                                         // ntifs
 SeTokenIsAdmin(                                 // ntifs
-    __in PACCESS_TOKEN Token                    // ntifs
+    IN PACCESS_TOKEN Token                      // ntifs
     );                                          // ntifs
 
 
 NTKERNELAPI                                     // ntifs
 BOOLEAN                                         // ntifs
 SeTokenIsRestricted(                            // ntifs
-    __in PACCESS_TOKEN Token                    // ntifs
+    IN PACCESS_TOKEN Token                      // ntifs
     );                                          // ntifs
 
 NTKERNELAPI
 NTSTATUS
 SeTokenCanImpersonate(
-    __in PACCESS_TOKEN ProcessToken,
-    __in PACCESS_TOKEN Token,
-    __in SECURITY_IMPERSONATION_LEVEL ImpersonationLevel
+    IN PACCESS_TOKEN ProcessToken,
+    IN PACCESS_TOKEN Token,
+    IN SECURITY_IMPERSONATION_LEVEL ImpersonationLevel
     );
 // end_ntosp
 
 NTSTATUS
 SeSubProcessToken (
-    __in  PACCESS_TOKEN ParentToken,
-    __deref_out PACCESS_TOKEN *ChildToken,
-    __in  BOOLEAN MarkAsActive,
-    __in  ULONG SessionId
+    IN  PACCESS_TOKEN ParentToken,
+    OUT PACCESS_TOKEN *ChildToken,
+    IN  BOOLEAN MarkAsActive,
+    IN  ULONG SessionId
     );
 
 VOID
 SeAssignPrimaryToken(
-    __in PEPROCESS Process,
-    __in PACCESS_TOKEN Token
+    IN PEPROCESS Process,
+    IN PACCESS_TOKEN Token
     );
 
 VOID
 SeDeassignPrimaryToken(
-    __in PEPROCESS Process
+    IN PEPROCESS Process
     );
 
 NTSTATUS
 SeExchangePrimaryToken(
-    __in PEPROCESS Process,
-    __in PACCESS_TOKEN NewAccessToken,
-    __deref_out PACCESS_TOKEN *OldAccessToken
+    IN PEPROCESS Process,
+    IN PACCESS_TOKEN NewAccessToken,
+    OUT PACCESS_TOKEN *OldAccessToken
     );
 
 NTSTATUS
 SeCopyClientToken(
-    __in PACCESS_TOKEN ClientToken,
-    __in SECURITY_IMPERSONATION_LEVEL ImpersonationLevel,
-    __in KPROCESSOR_MODE RequestorMode,
-    __deref_out PACCESS_TOKEN *DuplicateToken
+    IN PACCESS_TOKEN ClientToken,
+    IN SECURITY_IMPERSONATION_LEVEL ImpersonationLevel,
+    IN KPROCESSOR_MODE RequestorMode,
+    OUT PACCESS_TOKEN *DuplicateToken
     );
 
 // begin_ntifs
-
-NTKERNELAPI
 NTSTATUS
 SeFilterToken (
-    __in PACCESS_TOKEN ExistingToken,
-    __in ULONG Flags,
-    __in_opt PTOKEN_GROUPS SidsToDisable,
-    __in_opt PTOKEN_PRIVILEGES PrivilegesToDelete,
-    __in_opt PTOKEN_GROUPS RestrictedSids,
-    __deref_out PACCESS_TOKEN * FilteredToken
+    IN PACCESS_TOKEN ExistingToken,
+    IN ULONG Flags,
+    IN PTOKEN_GROUPS SidsToDisable OPTIONAL,
+    IN PTOKEN_PRIVILEGES PrivilegesToDelete OPTIONAL,
+    IN PTOKEN_GROUPS RestrictedSids OPTIONAL,
+    OUT PACCESS_TOKEN * FilteredToken
     );
 
 // begin_ntosp
 NTKERNELAPI
 NTSTATUS
 SeQueryAuthenticationIdToken(
-    __in PACCESS_TOKEN Token,
-    __out PLUID AuthenticationId
+    IN PACCESS_TOKEN Token,
+    OUT PLUID AuthenticationId
     );
 
 // end_ntosp
 NTKERNELAPI
 NTSTATUS
 SeQuerySessionIdToken(
-    __in PACCESS_TOKEN Token,
-    __out PULONG SessionId
+    IN PACCESS_TOKEN,
+    IN PULONG pSessionId
     );
 
 NTKERNELAPI
 NTSTATUS
 SeSetSessionIdToken(
-    __in PACCESS_TOKEN Token,
-    __in ULONG SessionId
+    IN PACCESS_TOKEN,
+    IN ULONG SessionId
     );
 
 // begin_ntosp
 NTKERNELAPI
 NTSTATUS
 SeCreateClientSecurity (
-    __in PETHREAD ClientThread,
-    __in PSECURITY_QUALITY_OF_SERVICE ClientSecurityQos,
-    __in BOOLEAN RemoteSession,
-    __out PSECURITY_CLIENT_CONTEXT ClientContext
+    IN PETHREAD ClientThread,
+    IN PSECURITY_QUALITY_OF_SERVICE ClientSecurityQos,
+    IN BOOLEAN RemoteSession,
+    OUT PSECURITY_CLIENT_CONTEXT ClientContext
     );
 // end_ntosp
 
 NTKERNELAPI
 VOID
 SeImpersonateClient(
-    __in PSECURITY_CLIENT_CONTEXT ClientContext,
-    __in_opt PETHREAD ServerThread
+    IN PSECURITY_CLIENT_CONTEXT ClientContext,
+    IN PETHREAD ServerThread OPTIONAL
     );
 
 // begin_ntosp
 NTKERNELAPI
 NTSTATUS
 SeImpersonateClientEx(
-    __in PSECURITY_CLIENT_CONTEXT ClientContext,
-    __in_opt PETHREAD ServerThread
+    IN PSECURITY_CLIENT_CONTEXT ClientContext,
+    IN PETHREAD ServerThread OPTIONAL
     );
 // end_ntosp
 
 NTKERNELAPI
 NTSTATUS
 SeCreateClientSecurityFromSubjectContext (
-    __in PSECURITY_SUBJECT_CONTEXT SubjectContext,
-    __in PSECURITY_QUALITY_OF_SERVICE ClientSecurityQos,
-    __in BOOLEAN ServerIsRemote,
-    __out PSECURITY_CLIENT_CONTEXT ClientContext
+    IN PSECURITY_SUBJECT_CONTEXT SubjectContext,
+    IN PSECURITY_QUALITY_OF_SERVICE ClientSecurityQos,
+    IN BOOLEAN ServerIsRemote,
+    OUT PSECURITY_CLIENT_CONTEXT ClientContext
     );
 
 // end_ntifs
@@ -1402,27 +1405,27 @@ SeCreateClientSecurityFromSubjectContext (
 NTKERNELAPI
 NTSTATUS
 SeCreateAccessState(
-   __out PACCESS_STATE AccessState,
-   __out PAUX_ACCESS_DATA AuxData,
-   __in ACCESS_MASK DesiredAccess,
-   __in PGENERIC_MAPPING GenericMapping
+   IN PACCESS_STATE AccessState,
+   IN PAUX_ACCESS_DATA AuxData,
+   IN ACCESS_MASK DesiredAccess,
+   IN PGENERIC_MAPPING GenericMapping
    );
 
 NTKERNELAPI
 VOID
 SeDeleteAccessState(
-    __in PACCESS_STATE AccessState
+    IN PACCESS_STATE AccessState
     );
 // end_ntosp
 
 NTSTATUS
 SeCreateAccessStateEx(
-   __in_opt PETHREAD Thread,
-   __in PEPROCESS Process,
-   __out PACCESS_STATE AccessState,
-   __out PAUX_ACCESS_DATA AuxData,
-   __in ACCESS_MASK DesiredAccess,
-   __in_opt PGENERIC_MAPPING GenericMapping
+   IN PETHREAD Thread OPTIONAL,
+   IN PEPROCESS PRocess,
+   IN PACCESS_STATE AccessState,
+   IN PAUX_ACCESS_DATA AuxData,
+   IN ACCESS_MASK DesiredAccess,
+   IN PGENERIC_MAPPING GenericMapping OPTIONAL
    );
 
 NTSTATUS
@@ -1440,21 +1443,21 @@ SeRmInitPhase1(
 
 NTSTATUS
 SeInitializeProcessAuditName (
-    __in __typefix(PFILE_OBJECT) PVOID FileObject,
-    __in BOOLEAN bIgnoreAuditPolicy,
-    __deref_out POBJECT_NAME_INFORMATION *pAuditName
+    IN PVOID FileObject,
+    IN BOOLEAN bIgnoreAuditPolicy,
+    OUT POBJECT_NAME_INFORMATION *pAuditName
     );
 
 NTSTATUS
 SeLocateProcessImageName(
-    __in PEPROCESS Process,
-    __deref_out PUNICODE_STRING *pImageFileName
+    IN PEPROCESS Process,
+    IN PUNICODE_STRING *pImageFileName
     );
 
 VOID
 SeAuditSystemTimeChange(
-    __in LARGE_INTEGER OldTime,
-    __in LARGE_INTEGER NewTime
+    IN LARGE_INTEGER OldTime,
+    IN LARGE_INTEGER NewTime
     );
 
 
@@ -1463,84 +1466,84 @@ SeAuditSystemTimeChange(
 NTKERNELAPI
 NTSTATUS
 SeQuerySecurityDescriptorInfo (
-    __in PSECURITY_INFORMATION SecurityInformation,
-    __out_bcount(*Length) PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __inout PULONG Length,
-    __deref_inout PSECURITY_DESCRIPTOR *ObjectsSecurityDescriptor
+    IN PSECURITY_INFORMATION SecurityInformation,
+    OUT PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN OUT PULONG Length,
+    IN PSECURITY_DESCRIPTOR *ObjectsSecurityDescriptor
     );
 
 NTKERNELAPI
 NTSTATUS
 SeSetSecurityDescriptorInfo (
-    __in_opt PVOID Object,
-    __in PSECURITY_INFORMATION SecurityInformation,
-    __in PSECURITY_DESCRIPTOR ModificationDescriptor,
-    __inout PSECURITY_DESCRIPTOR *ObjectsSecurityDescriptor,
-    __in POOL_TYPE PoolType,
-    __in PGENERIC_MAPPING GenericMapping
+    IN PVOID Object OPTIONAL,
+    IN PSECURITY_INFORMATION SecurityInformation,
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN OUT PSECURITY_DESCRIPTOR *ObjectsSecurityDescriptor,
+    IN POOL_TYPE PoolType,
+    IN PGENERIC_MAPPING GenericMapping
     );
 
 NTKERNELAPI
 NTSTATUS
 SeSetSecurityDescriptorInfoEx (
-    __in_opt PVOID Object,
-    __in PSECURITY_INFORMATION SecurityInformation,
-    __in PSECURITY_DESCRIPTOR ModificationDescriptor,
-    __inout PSECURITY_DESCRIPTOR *ObjectsSecurityDescriptor,
-    __in ULONG AutoInheritFlags,
-    __in POOL_TYPE PoolType,
-    __in PGENERIC_MAPPING GenericMapping
+    IN PVOID Object OPTIONAL,
+    IN PSECURITY_INFORMATION SecurityInformation,
+    IN PSECURITY_DESCRIPTOR ModificationDescriptor,
+    IN OUT PSECURITY_DESCRIPTOR *ObjectsSecurityDescriptor,
+    IN ULONG AutoInheritFlags,
+    IN POOL_TYPE PoolType,
+    IN PGENERIC_MAPPING GenericMapping
     );
 
 NTKERNELAPI
 NTSTATUS
 SeAppendPrivileges(
-    __inout PACCESS_STATE AccessState,
-    __in PPRIVILEGE_SET Privileges
+    PACCESS_STATE AccessState,
+    PPRIVILEGE_SET Privileges
     );
 
 // end_ntifs end_ntosp
 
 NTSTATUS
 SeComputeQuotaInformationSize(
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __out PULONG Size
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+    OUT PULONG Size
     );
 
 VOID
 SePrivilegedServiceAuditAlarm (
-    __in_opt PUNICODE_STRING ServiceName,
-    __in PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
-    __in PPRIVILEGE_SET Privileges,
-    __in BOOLEAN AccessGranted
+    IN PUNICODE_STRING ServiceName,
+    IN PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
+    IN PPRIVILEGE_SET Privileges,
+    IN BOOLEAN AccessGranted
     );
 
 NTKERNELAPI                                                     // ntddk ntifs ntosp
 BOOLEAN                                                         // ntddk ntifs ntosp
 SeSinglePrivilegeCheck(                                         // ntddk ntifs ntosp
-    __in LUID PrivilegeValue,                                        // ntddk ntifs ntosp
-    __in KPROCESSOR_MODE PreviousMode                                // ntddk ntifs ntosp
+    LUID PrivilegeValue,                                        // ntddk ntifs ntosp
+    KPROCESSOR_MODE PreviousMode                                // ntddk ntifs ntosp
     );                                                          // ntddk ntifs ntosp
 
 BOOLEAN
 SeCheckAuditPrivilege (
-   __in PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
-   __in KPROCESSOR_MODE PreviousMode
+   IN PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
+   IN KPROCESSOR_MODE PreviousMode
    );
 
 NTSTATUS
 SeAssignWorldSecurityDescriptor(
-    __inout_bcount_part( *Length, *Length) PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __inout PULONG Length,
-    __in PSECURITY_INFORMATION SecurityInformation
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN OUT PULONG Length,
+    IN PSECURITY_INFORMATION SecurityInformation
     );
 
 BOOLEAN
 SeFastTraverseCheck(
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __in_opt PACCESS_STATE AccessState,
-    __in ACCESS_MASK TraverseAccess,
-    __in KPROCESSOR_MODE AccessMode
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN PACCESS_STATE AccessState    OPTIONAL,
+    IN ACCESS_MASK TraverseAccess,
+    IN KPROCESSOR_MODE AccessMode
     );
 
 // begin_ntifs
@@ -1548,80 +1551,79 @@ SeFastTraverseCheck(
 NTKERNELAPI
 BOOLEAN
 SeAuditingFileEvents(
-    __in BOOLEAN AccessGranted,
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor
+    IN BOOLEAN AccessGranted,
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor
     );
 
 NTKERNELAPI
 BOOLEAN
 SeAuditingFileEventsWithContext(
-    __in BOOLEAN AccessGranted,
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __in_opt PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext
+    IN BOOLEAN AccessGranted,
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext OPTIONAL
     );
 
 NTKERNELAPI
 BOOLEAN
 SeAuditingHardLinkEvents(
-    __in BOOLEAN AccessGranted,
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor
+    IN BOOLEAN AccessGranted,
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor
     );
 
 NTKERNELAPI
 BOOLEAN
 SeAuditingHardLinkEventsWithContext(
-    __in BOOLEAN AccessGranted,
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __in_opt PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext
+    IN BOOLEAN AccessGranted,
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext OPTIONAL
     );
 
 NTKERNELAPI
 BOOLEAN
 SeAuditingFileOrGlobalEvents(
-    __in BOOLEAN AccessGranted,
-    __in PSECURITY_DESCRIPTOR SecurityDescriptor,
-    __in PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext
+    IN BOOLEAN AccessGranted,
+    IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+    IN PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext
     );
 
 NTKERNELAPI
 BOOLEAN
 FASTCALL
 SeDetailedAuditingWithToken(
-    __in_opt PACCESS_TOKEN AccessToken
+    IN PACCESS_TOKEN AccessToken OPTIONAL
     );
 
 // end_ntifs
 
 VOID
 SeAuditProcessCreation(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
 VOID
 SeAuditProcessExit(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
-NTKERNELAPI                                                     // ntifs
 VOID                                                            // ntifs
 SeAuditHardLinkCreation(                                        // ntifs
-    __in PUNICODE_STRING FileName,                                // ntifs
-    __in PUNICODE_STRING LinkName,                                // ntifs
-    __in BOOLEAN bSuccess                                         // ntifs
+    IN PUNICODE_STRING FileName,                                // ntifs
+    IN PUNICODE_STRING LinkName,                                // ntifs
+    IN BOOLEAN bSuccess                                         // ntifs
     );                                                          // ntifs
 
 VOID
 SeAuditLPCInvalidUse(
-    __in PUNICODE_STRING LpcCallName,
-    __in PUNICODE_STRING LpcServerPort
+    IN PUNICODE_STRING LpcCallName,
+    IN PUNICODE_STRING LpcServerPort
     );
 
 VOID
 SeAuditHandleDuplication(
-    __in PVOID SourceHandle,
-    __in PVOID NewHandle,
-    __in PEPROCESS SourceProcess,
-    __in PEPROCESS TargetProcess
+    PVOID SourceHandle,
+    PVOID NewHandle,
+    PEPROCESS SourceProcess,
+    PEPROCESS TargetProcess
     );
 
 VOID
@@ -1634,11 +1636,11 @@ SeMaximumAuditMask(
 
 VOID
 SeOperationAuditAlarm (
-    __in_opt PUNICODE_STRING CapturedSubsystemName,
-    __in PVOID HandleId,
-    __in PUNICODE_STRING ObjectTypeName,
-    __in ACCESS_MASK AuditMask,
-    __in_opt PSID UserSid
+    IN PUNICODE_STRING CapturedSubsystemName OPTIONAL,
+    IN PVOID HandleId,
+    IN PUNICODE_STRING ObjectTypeName,
+    IN ACCESS_MASK AuditMask,
+    IN PSID UserSid OPTIONAL
     );
 
 VOID
@@ -1652,8 +1654,8 @@ SeAddSaclToProcess(
 
 VOID
 SeSetAccessStateGenericMapping (
-    __inout PACCESS_STATE AccessState,
-    __in PGENERIC_MAPPING GenericMapping
+    PACCESS_STATE AccessState,
+    PGENERIC_MAPPING GenericMapping
     );
 
 // end_ntifs
@@ -1683,50 +1685,39 @@ SeMarkLogonSessionForTerminationNotification(
 NTKERNELAPI
 NTSTATUS
 SeQueryInformationToken (
-    __in PACCESS_TOKEN Token,
-    __in TOKEN_INFORMATION_CLASS TokenInformationClass,
-    __deref_out PVOID *TokenInformation
+    IN PACCESS_TOKEN Token,
+    IN TOKEN_INFORMATION_CLASS TokenInformationClass,
+    OUT PVOID *TokenInformation
     );
 
 // end_ntifs end_ntosp
 
 NTSTATUS
 SeIsChildToken(
-    __in HANDLE Token,
-    __out PBOOLEAN IsChild
+    IN HANDLE Token,
+    OUT PBOOLEAN IsChild
     );
 
 NTSTATUS
 SeIsChildTokenByPointer(
-    __in PACCESS_TOKEN Token,
-    __out PBOOLEAN IsChild
+    IN PACCESS_TOKEN Token,
+    OUT PBOOLEAN IsChild
     );
 
-NTSTATUS
-SeIsSiblingToken(
-    __in HANDLE Token,
-    __out PBOOLEAN IsSibling
-    );
-
-NTSTATUS
-SeIsSiblingTokenByPointer(
-    __in PACCESS_TOKEN Token,
-    __out PBOOLEAN IsSibling
-    );
 
 NTSTATUS
 SeFastFilterToken(
-    __in PACCESS_TOKEN ExistingToken,
-    __in KPROCESSOR_MODE RequestorMode,
-    __in ULONG Flags,
-    __in ULONG GroupCount,
-    __in_ecount_opt(GroupCount) PSID_AND_ATTRIBUTES GroupsToDisable,
-    __in ULONG PrivilegeCount,
-    __in_ecount_opt(PrivilegeCount) PLUID_AND_ATTRIBUTES PrivilegesToDelete,
-    __in ULONG SidCount,
-    __in_ecount_opt( SidCount ) PSID_AND_ATTRIBUTES RestrictedSids,
-    __in ULONG SidLength,
-    __deref_out PACCESS_TOKEN * FilteredToken
+    IN PACCESS_TOKEN ExistingToken,
+    IN KPROCESSOR_MODE RequestorMode,
+    IN ULONG Flags,
+    IN ULONG GroupCount,
+    IN PSID_AND_ATTRIBUTES GroupsToDisable OPTIONAL,
+    IN ULONG PrivilegeCount,
+    IN PLUID_AND_ATTRIBUTES PrivilegesToDelete OPTIONAL,
+    IN ULONG SidCount,
+    IN PSID_AND_ATTRIBUTES RestrictedSids OPTIONAL,
+    IN ULONG SidLength,
+    OUT PACCESS_TOKEN * FilteredToken
     );
 
 ////////////////////////////////////////////////////////////////////////
@@ -1752,6 +1743,10 @@ SeFastFilterToken(
 //              C A V E A T      P R O G R A M M E R
 //
 // **************************************************************
+#if 0
+#define SeEnableAccessToExports() SeExports = *(PSE_EXPORTS *)SeExports;
+extern PSE_EXPORTS SeExports;
+#else
 
 // begin_ntifs begin_ntosp
 //
@@ -1761,6 +1756,7 @@ SeFastFilterToken(
 extern NTKERNELAPI PSE_EXPORTS SeExports;
 
 // end_ntifs end_ntosp
+#endif
 
 //
 // Value used to represent the authentication ID of system processes

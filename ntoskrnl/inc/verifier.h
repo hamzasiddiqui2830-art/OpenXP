@@ -1,18 +1,24 @@
 /*++
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
 
 Module Name:
 
-   verifier.h
+   verifeir.h
 
 Abstract:
 
     This module contains the internal structure definitions and APIs used by
     Driver Verifier.
+
+
+Author:
+
+    Jordan Tigani (jtigani) 2-May-2000
+    Silviu Calinoiu (silviuc) 9-May-2000
+
+
+Revision History:
 
 --*/
 
@@ -25,12 +31,6 @@ Abstract:
 //
 
 #include "..\verifier\vfzwapi.h"
-
-//
-// Verifier triage support.
-//
-
-#include "..\verifier\vftriage.h"
 
 //
 // Resource types handled by deadlock detection package.
@@ -413,32 +413,6 @@ BOOLEAN
 VfIsVerificationEnabled(
     IN  VF_OBJECT_TYPE  VfObjectType,
     IN  PVOID           Object          OPTIONAL
-    );
-
-//
-// Modes in which driver verifier can execute. The higher you go the pickier
-// verifier will get and the more resources will throw at verification.
-//
-
-typedef enum {
-
-    VERIFIER_MODE_DISABLED = 0,
-    VERIFIER_MODE_TRIAGE,
-    VERIFIER_MODE_FIELD,
-    VERIFIER_MODE_LOGO,
-    VERIFIER_MODE_TEST,
-    VERIFIER_MODE_MAX
-
-} VERIFIER_MODE;
-
-VERIFIER_MODE
-VfVerifierRunningMode (
-    VOID
-    );
-
-LOGICAL
-VfIsVerifierEnabled (
-    VOID
     );
 
 #endif

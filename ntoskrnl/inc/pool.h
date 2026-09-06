@@ -1,9 +1,7 @@
 /*++ BUILD Version: 0001    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -17,6 +15,13 @@ Abstract:
         1. NonPaged.
         2. Paged.
         3. Session (always paged, but virtualized per TS session).
+
+Author:
+
+    Lou Perazzoli (loup) 23-Feb-1989
+    Landy Wang (landyw) 02-June-1997
+
+Revision History:
 
 --*/
 
@@ -84,7 +89,7 @@ Abstract:
 #elif (PAGE_SIZE == 0x2000)
 #define POOL_BLOCK_SHIFT 4
 #else
-C_ASSERT(PAGE_SIZE == 0x1000);
+
 #if defined (_WIN64)
 #define POOL_BLOCK_SHIFT 4
 #else
@@ -158,26 +163,16 @@ typedef struct _POOL_DESCRIPTOR {
 // N.B. The size fields of the pool header are expressed in units of the
 //      smallest pool block size.
 //
-// N.B. AMD64 has a 16 byte allocation size and 4096 byte page size. Therefore,
-//      byte fields in the pool header are adequate.
-//
 
 typedef struct _POOL_HEADER {
     union {
         struct {
-#if defined(_AMD64_)
-            ULONG PreviousSize : 8;
-            ULONG PoolIndex : 8;
-            ULONG BlockSize : 8;
-            ULONG PoolType : 8;
-#else
             USHORT PreviousSize : 9;
             USHORT PoolIndex : 7;
             USHORT BlockSize : 9;
             USHORT PoolType : 7;
-#endif
         };
-        ULONG Ulong1;
+        ULONG Ulong1;   // used for InterlockedCompareExchange required by Alpha
     };
 #if defined (_WIN64)
     ULONG PoolTag;

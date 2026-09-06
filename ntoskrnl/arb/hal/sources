@@ -1,0 +1,24 @@
+!IF 0
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
+
+!ENDIF
+
+!include $(PROJECT_ROOT)\hals\hals.inc
+
+MAJORCOMP=ntos
+MINORCOMP=arbiter
+
+TARGETNAME=halarbiter
+TARGETTYPE=LIBRARY
+TARGETPATH=obj
+
+PASS1_PUBLISH={$(O)\$(TARGETNAME).lib=$(HALKIT_LIB_PATH)\$(TARGETNAME).lib}
+
+INCLUDES=..\..\inc;$(DDK_INC_PATH)
+
+SOURCES=..\arbiter.c \
+        ..\debug.c
+
+C_DEFINES=/D_NTHAL_

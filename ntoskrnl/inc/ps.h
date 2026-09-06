@@ -1,9 +1,7 @@
 /*++ BUILD Version: 0009    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -13,6 +11,12 @@ Abstract:
 
     This module contains the process structure public data structures and
     procedure prototypes to be used within the NT system.
+
+Author:
+
+    Mark Lucovsky       16-Feb-1989
+
+Revision History:
 
 --*/
 
@@ -81,7 +85,7 @@ typedef struct _MMSUPPORT {
     WSLE_NUMBER EstimatedAvailable;
     WSLE_NUMBER WorkingSetSize;
 
-    EX_PUSH_LOCK WorkingSetMutex;
+    KGUARDED_MUTEX WorkingSetMutex;
 
 } MMSUPPORT, *PMMSUPPORT;
 
@@ -152,7 +156,7 @@ typedef enum _PS_QUOTA_TYPE {
 
 typedef struct _EPROCESS_QUOTA_ENTRY {
     SIZE_T Usage;  // Current usage count
-    SIZE_T Limit;  // Unhindered progress may be made to this point
+    SIZE_T Limit;  // Unhidered progress may be made to this point
     SIZE_T Peak;   // Peak quota usage
     SIZE_T Return; // Quota value to return to the pool once its big enough
 } EPROCESS_QUOTA_ENTRY, *PEPROCESS_QUOTA_ENTRY;
@@ -194,13 +198,17 @@ typedef struct _PAGEFAULT_HISTORY {
 #define PS_WS_TRIM_BACKGROUND_ONLY_APP    2
 
 //
-// Wow64 process structure.
+// Wow64 process stucture.
 //
 
 
 
 typedef struct _WOW64_PROCESS {
     PVOID Wow64;
+#if defined(_IA64_)
+    KGUARDED_MUTEX AlternateTableLock;
+    PULONG AltPermBitmap;
+#endif
 } WOW64_PROCESS, *PWOW64_PROCESS;
 
 #if defined (_WIN64)
@@ -439,16 +447,6 @@ typedef struct _EPROCESS {
     #define PS_PROCESS_FLAGS_IMAGE_NOTIFY_DONE      0x00400000UL // We have sent a message for this image
     #define PS_PROCESS_FLAGS_PDE_UPDATE_NEEDED      0x00800000UL // The system PDEs need updating for this process (NT32 only)
     #define PS_PROCESS_FLAGS_VDM_ALLOWED            0x01000000UL // Process allowed to invoke NTVDM support
-    #define PS_PROCESS_FLAGS_SMAP_ALLOWED           0x02000000UL // Process allowed to invoke SMAP support
-    #define PS_PROCESS_FLAGS_CREATE_FAILED          0x04000000UL // Process create failed
-
-    #define PS_PROCESS_FLAGS_DEFAULT_IO_PRIORITY    0x38000000UL // The default I/O priority for created threads. (3 bits)
-
-    #define PS_PROCESS_FLAGS_PRIORITY_SHIFT         27
-    
-    #define PS_PROCESS_FLAGS_EXECUTE_SPARE1         0x40000000UL //
-    #define PS_PROCESS_FLAGS_EXECUTE_SPARE2         0x80000000UL //
-
 
     union {
 
@@ -485,11 +483,7 @@ typedef struct _EPROCESS {
             ULONG ImageNotifyDone           : 1;
             ULONG PdeUpdateNeeded           : 1;    // NT32 only
             ULONG VdmAllowed                : 1;
-            ULONG SmapAllowed               : 1;
-            ULONG CreateFailed              : 1;
-            ULONG DefaultIoPriority         : 3;
-            ULONG Spare1                    : 1;
-            ULONG Spare2                    : 1;
+            ULONG Unused                    : 7;
         };
     };
 
@@ -507,12 +501,11 @@ typedef struct _EPROCESS {
 
     MM_AVL_TABLE VadRoot;
 
-    ULONG Cookie;
+} EPROCESS;
 
-} EPROCESS, *PEPROCESS; 
 
-C_ASSERT( FIELD_OFFSET(EPROCESS, Pcb) == 0 );
-           
+typedef EPROCESS *PEPROCESS;
+
 //
 // Thread termination port
 //
@@ -530,10 +523,15 @@ typedef struct _TERMINATION_PORT {
 // block (TCB) which is the kernel's representation of a thread.
 //
 
-#define PS_GET_THREAD_CREATE_TIME(Thread) ((Thread)->CreateTime.QuadPart)
+//
+// The upper 4 bits of the CreateTime should be zero on initialization so
+// that the shift doesn't destroy anything.
+//
+
+#define PS_GET_THREAD_CREATE_TIME(Thread) ((Thread)->CreateTime.QuadPart >> 3)
 
 #define PS_SET_THREAD_CREATE_TIME(Thread, InputCreateTime) \
-            ((Thread)->CreateTime.QuadPart = (InputCreateTime.QuadPart))
+            ((Thread)->CreateTime.QuadPart = (InputCreateTime.QuadPart << 3))
 
 //
 // Macro to return TRUE if the specified thread is impersonating.
@@ -543,8 +541,26 @@ typedef struct _TERMINATION_PORT {
 
 typedef struct _ETHREAD {
     KTHREAD Tcb;
+    union {
 
-    LARGE_INTEGER CreateTime;
+        //
+        // The fact that this is a union means that all accesses to CreateTime
+        // must be sanitized using the two macros above.
+        //
+
+        LARGE_INTEGER CreateTime;
+
+        //
+        // These fields are accessed only by the owning thread, but can be
+        // accessed from within a special kernel APC so IRQL protection must
+        // be applied.
+        //
+
+        struct {
+            unsigned NestedFaultCount : 2;
+            unsigned ApcNeeded : 1;
+        };
+    };
 
     union {
         LARGE_INTEGER ExitTime;
@@ -762,7 +778,7 @@ typedef struct _ETHREAD {
             ULONG MemoryMaker : 1;
 
             //
-            // Thread is active in the keyed event code. LPC should not run above this in an APC.
+            // Thread is active inthe keyed event code. LPC should not run above this in an APC.
             //
             ULONG KeyedEventInUse : 1;
         };
@@ -785,31 +801,21 @@ typedef struct _ETHREAD {
             BOOLEAN LpcReceivedMsgIdValid : 1;
             BOOLEAN LpcExitThreadCalled   : 1;
             BOOLEAN AddressSpaceOwner     : 1;
-            BOOLEAN OwnsProcessWorkingSetExclusive  : 1;
-            BOOLEAN OwnsProcessWorkingSetShared     : 1;
-            BOOLEAN OwnsSystemWorkingSetExclusive   : 1;
-            BOOLEAN OwnsSystemWorkingSetShared      : 1;
-            BOOLEAN OwnsSessionWorkingSetExclusive  : 1;
-            BOOLEAN OwnsSessionWorkingSetShared     : 1;
-
-            #define PS_SAME_THREAD_FLAGS_OWNS_A_WORKING_SET    0x000001F8UL
-
-            BOOLEAN ApcNeeded                       : 1;
         };
     };
 
     BOOLEAN ForwardClusterOnly;
     BOOLEAN DisablePageFaultClustering;
-    UCHAR ActiveFaultCount;
 
 #if defined (PERF_DATA)
     ULONG PerformanceCountLow;
     LONG PerformanceCountHigh;
 #endif
 
-} ETHREAD, *PETHREAD;
+} ETHREAD;
 
-C_ASSERT( FIELD_OFFSET(ETHREAD, Tcb) == 0 );
+typedef ETHREAD *PETHREAD;
+
 
 //
 // The following two inline functions allow a thread or process object to
@@ -819,6 +825,9 @@ C_ASSERT( FIELD_OFFSET(ETHREAD, Tcb) == 0 );
 // These functions take advantage of the fact that the kernel structures
 // appear as the first element in the respective object structures.
 //
+// The C_ASSERTs that follow ensure that this is the case.
+//
+
 // begin_ntosp
 
 PKTHREAD
@@ -839,23 +848,24 @@ PsGetKernelProcess(
     return (PKPROCESS)ProcessObject;
 }
 
-NTKERNELAPI
 NTSTATUS
 PsGetContextThread(
-    __in PETHREAD Thread,
-    __inout PCONTEXT ThreadContext,
-    __in KPROCESSOR_MODE Mode
+    IN PETHREAD Thread,
+    IN OUT PCONTEXT ThreadContext,
+    IN KPROCESSOR_MODE Mode
     );
 
-NTKERNELAPI
 NTSTATUS
 PsSetContextThread(
-    __in PETHREAD Thread,
-    __in PCONTEXT ThreadContext,
-    __in KPROCESSOR_MODE Mode
+    IN PETHREAD Thread,
+    IN PCONTEXT ThreadContext,
+    IN KPROCESSOR_MODE Mode
     );
 
 // end_ntosp
+
+C_ASSERT( FIELD_OFFSET(ETHREAD,Tcb) == 0 );
+C_ASSERT( FIELD_OFFSET(EPROCESS,Pcb) == 0 );
 
 //
 // Initial PEB
@@ -865,31 +875,9 @@ typedef struct _INITIAL_PEB {
     BOOLEAN InheritedAddressSpace;      // These four fields cannot change unless the
     BOOLEAN ReadImageFileExecOptions;   //
     BOOLEAN BeingDebugged;              //
-    union {
-        BOOLEAN BitField;                  //
-        struct {
-            BOOLEAN ImageUsesLargePages : 1;
-            BOOLEAN SpareBits : 7;
-         };
-    };
+    BOOLEAN SpareBool;                  //
     HANDLE Mutant;                      // PEB structure is also updated.
 } INITIAL_PEB, *PINITIAL_PEB;
-
-#if defined(_WIN64)
-typedef struct _INITIAL_PEB32 {
-    BOOLEAN InheritedAddressSpace;      // These four fields cannot change unless the
-    BOOLEAN ReadImageFileExecOptions;   //
-    BOOLEAN BeingDebugged;              //
-    union {
-        BOOLEAN BitField;                  //
-        struct {
-            BOOLEAN ImageUsesLargePages : 1;
-            BOOLEAN SpareBits : 7;
-         };
-    };
-    LONG Mutant;                        // PEB structure is also updated.
-} INITIAL_PEB32, *PINITIAL_PEB32;
-#endif
 
 typedef struct _PS_JOB_TOKEN_FILTER {
     ULONG CapturedSidCount ;
@@ -908,7 +896,6 @@ typedef struct _PS_JOB_TOKEN_FILTER {
 //
 // Job Object
 //
-
 typedef struct _EJOB {
     KEVENT Event;
 
@@ -1029,7 +1016,7 @@ typedef EJOB *PEJOB;
 // Global Variables
 //
 
-extern ULONG PsPrioritySeparation;
+extern ULONG PsPrioritySeperation;
 extern ULONG PsRawPrioritySeparation;
 extern LIST_ENTRY PsActiveProcessHead;
 extern const UNICODE_STRING PsNtDllPathName;
@@ -1038,7 +1025,7 @@ extern PEPROCESS PsInitialSystemProcess;
 extern PVOID PsNtosImageBase;
 extern PVOID PsHalImageBase;
 
-#if defined(_AMD64_)
+#if defined(_AMD64_) || defined(_IA64_)
 
 extern INVERTED_FUNCTION_TABLE PsInvertedFunctionTable;
 
@@ -1046,7 +1033,7 @@ extern INVERTED_FUNCTION_TABLE PsInvertedFunctionTable;
 
 extern LIST_ENTRY PsLoadedModuleList;
 extern ERESOURCE PsLoadedModuleResource;
-extern ALIGNED_SPINLOCK PsLoadedModuleSpinLock;
+extern KSPIN_LOCK PsLoadedModuleSpinLock;
 extern LCID PsDefaultSystemLocaleId;
 extern LCID PsDefaultThreadLocaleId;
 extern LANGID PsDefaultUILanguageId;
@@ -1093,8 +1080,7 @@ PsInitSystem (
 NTSTATUS
 PsMapSystemDll (
     IN PEPROCESS Process,
-    OUT PVOID *DllBase OPTIONAL,
-    IN LOGICAL UseLargePages
+    OUT PVOID *DllBase OPTIONAL
     );
 
 VOID
@@ -1123,45 +1109,42 @@ PsChangeQuantumTable(
     );
 
 //
-// Get Current Prototypes
+// Get Gurrent Prototypes
 //
 #define THREAD_TO_PROCESS(Thread) ((Thread)->ThreadsProcess)
 #define IS_SYSTEM_THREAD(Thread)  (((Thread)->CrossThreadFlags&PS_CROSS_THREAD_FLAGS_SYSTEM) != 0)
 
+
 #define _PsGetCurrentProcess() (CONTAINING_RECORD(((KeGetCurrentThread())->ApcState.Process),EPROCESS,Pcb))
 #define PsGetCurrentProcessByThread(xCurrentThread) (ASSERT((xCurrentThread) == PsGetCurrentThread ()),CONTAINING_RECORD(((xCurrentThread)->Tcb.ApcState.Process),EPROCESS,Pcb))
 
-#define _PsGetCurrentThread() ((PETHREAD)KeGetCurrentThread())
-
-//
-// N.B. The kernel thread object is architecturally defined as being at offset
-//      zero of the executive thread object. This assumption has been exported
-//      from ntddk.h for some time.
-//
-
-C_ASSERT(FIELD_OFFSET(ETHREAD, Tcb) == 0);
+#define _PsGetCurrentThread() (CONTAINING_RECORD((KeGetCurrentThread()),ETHREAD,Tcb))
 
 #if defined(_NTOSP_)
 
 // begin_ntosp
-
 NTKERNELAPI
 PEPROCESS
 PsGetCurrentProcess(
     VOID
     );
 
-#define PsGetCurrentThread() ((PETHREAD)KeGetCurrentThread())
-
+NTKERNELAPI
+PETHREAD
+PsGetCurrentThread(
+    VOID
+    );
 // end_ntosp
 
-#else
+ #else
 
 #define PsGetCurrentProcess() _PsGetCurrentProcess()
 
 #define PsGetCurrentThread() _PsGetCurrentThread()
 
 #endif
+
+
 
 //
 // Exit kernel mode APC routine.
@@ -1184,47 +1167,38 @@ PsExitSpecialApc(
 NTKERNELAPI
 NTSTATUS
 PsCreateSystemThread(
-    __out PHANDLE ThreadHandle,
-    __in ULONG DesiredAccess,
-    __in_opt POBJECT_ATTRIBUTES ObjectAttributes,
-    __in_opt  HANDLE ProcessHandle,
-    __out_opt PCLIENT_ID ClientId,
-    __in PKSTART_ROUTINE StartRoutine,
-    __in_opt PVOID StartContext
+    OUT PHANDLE ThreadHandle,
+    IN ULONG DesiredAccess,
+    IN POBJECT_ATTRIBUTES ObjectAttributes OPTIONAL,
+    IN HANDLE ProcessHandle OPTIONAL,
+    OUT PCLIENT_ID ClientId OPTIONAL,
+    IN PKSTART_ROUTINE StartRoutine,
+    IN PVOID StartContext
     );
 
 NTKERNELAPI
 NTSTATUS
 PsTerminateSystemThread(
-    __in NTSTATUS ExitStatus
+    IN NTSTATUS ExitStatus
     );
-
-NTKERNELAPI
-NTSTATUS
-PsWrapApcWow64Thread (
-    __inout PVOID *ApcContext,
-    __inout PVOID *ApcRoutine);
-
 
 // end_ntddk end_wdm end_nthal end_ntifs end_ntosp
 
-NTKERNELAPI
 NTSTATUS
 PsCreateSystemProcess(
-    __out PHANDLE ProcessHandle,
-    __in ULONG DesiredAccess,
-    __in_opt POBJECT_ATTRIBUTES ObjectAttributes
+    OUT PHANDLE ProcessHandle,
+    IN ULONG DesiredAccess,
+    IN POBJECT_ATTRIBUTES ObjectAttributes OPTIONAL
     );
 
 typedef
-VOID (*PBBT_NOTIFY_ROUTINE)(
+VOID (*PLEGO_NOTIFY_ROUTINE)(
     PKTHREAD Thread
     );
 
-NTKERNELAPI
 ULONG
-PsSetBBTNotifyRoutine(
-    __in PBBT_NOTIFY_ROUTINE BBTNotifyRoutine
+PsSetLegoNotifyRoutine(
+    PLEGO_NOTIFY_ROUTINE LegoNotifyRoutine
     );
 
 // begin_ntifs begin_ntddk
@@ -1237,11 +1211,10 @@ VOID
     IN BOOLEAN Create
     );
 
-NTKERNELAPI
 NTSTATUS
 PsSetCreateProcessNotifyRoutine(
-    __in PCREATE_PROCESS_NOTIFY_ROUTINE NotifyRoutine,
-    __in BOOLEAN Remove
+    IN PCREATE_PROCESS_NOTIFY_ROUTINE NotifyRoutine,
+    IN BOOLEAN Remove
     );
 
 typedef
@@ -1252,16 +1225,14 @@ VOID
     IN BOOLEAN Create
     );
 
-NTKERNELAPI
 NTSTATUS
 PsSetCreateThreadNotifyRoutine(
-    __in PCREATE_THREAD_NOTIFY_ROUTINE NotifyRoutine
+    IN PCREATE_THREAD_NOTIFY_ROUTINE NotifyRoutine
     );
 
-NTKERNELAPI
 NTSTATUS
 PsRemoveCreateThreadNotifyRoutine (
-    __in PCREATE_THREAD_NOTIFY_ROUTINE NotifyRoutine
+    IN PCREATE_THREAD_NOTIFY_ROUTINE NotifyRoutine
     );
 
 //
@@ -1294,16 +1265,14 @@ VOID
     IN PIMAGE_INFO ImageInfo
     );
 
-NTKERNELAPI
 NTSTATUS
 PsSetLoadImageNotifyRoutine(
-    __in PLOAD_IMAGE_NOTIFY_ROUTINE NotifyRoutine
+    IN PLOAD_IMAGE_NOTIFY_ROUTINE NotifyRoutine
     );
 
-NTKERNELAPI
 NTSTATUS
 PsRemoveLoadImageNotifyRoutine(
-    __in PLOAD_IMAGE_NOTIFY_ROUTINE NotifyRoutine
+    IN PLOAD_IMAGE_NOTIFY_ROUTINE NotifyRoutine
     );
 
 // end_ntddk
@@ -1312,11 +1281,10 @@ PsRemoveLoadImageNotifyRoutine(
 // Security Support
 //
 
-NTKERNELAPI
 NTSTATUS
 PsAssignImpersonationToken(
-    __in PETHREAD Thread,
-    __in HANDLE Token
+    IN PETHREAD Thread,
+    IN HANDLE Token
     );
 
 // begin_ntosp
@@ -1324,19 +1292,17 @@ PsAssignImpersonationToken(
 NTKERNELAPI
 PACCESS_TOKEN
 PsReferencePrimaryToken(
-    __inout PEPROCESS Process
+    IN PEPROCESS Process
     );
 
-NTKERNELAPI
 VOID
 PsDereferencePrimaryToken(
-    __in PACCESS_TOKEN PrimaryToken
+    IN PACCESS_TOKEN PrimaryToken
     );
 
-NTKERNELAPI
 VOID
 PsDereferenceImpersonationToken(
-    __in PACCESS_TOKEN ImpersonationToken
+    IN PACCESS_TOKEN ImpersonationToken
     );
 
 // end_ntifs
@@ -1364,10 +1330,10 @@ PsDereferenceImpersonationToken(
 NTKERNELAPI
 PACCESS_TOKEN
 PsReferenceImpersonationToken(
-    __inout PETHREAD Thread,
-    __out PBOOLEAN CopyOnOpen,
-    __out PBOOLEAN EffectiveOnly,
-    __out PSECURITY_IMPERSONATION_LEVEL ImpersonationLevel
+    IN PETHREAD Thread,
+    OUT PBOOLEAN CopyOnOpen,
+    OUT PBOOLEAN EffectiveOnly,
+    OUT PSECURITY_IMPERSONATION_LEVEL ImpersonationLevel
     );
 
 // end_ntifs
@@ -1382,7 +1348,8 @@ PsReferenceEffectiveToken(
 
 // begin_ntifs
 
-NTKERNELAPI
+
+
 LARGE_INTEGER
 PsGetProcessExitTime(
     VOID
@@ -1394,11 +1361,9 @@ PsGetProcessExitTime(
 #if defined(_NTDDK_) || defined(_NTIFS_)
 
 // begin_ntifs begin_ntosp
-
-NTKERNELAPI
 BOOLEAN
 PsIsThreadTerminating(
-    __in PETHREAD Thread
+    IN PETHREAD Thread
     );
 
 // end_ntifs end_ntosp
@@ -1431,30 +1396,27 @@ PsCallImageNotifyRoutines(
 // begin_ntifs
 // begin_ntosp
 
-NTKERNELAPI
 NTSTATUS
 PsImpersonateClient(
-    __inout PETHREAD Thread,
-    __in PACCESS_TOKEN Token,
-    __in BOOLEAN CopyOnOpen,
-    __in BOOLEAN EffectiveOnly,
-    __in SECURITY_IMPERSONATION_LEVEL ImpersonationLevel
+    IN PETHREAD Thread,
+    IN PACCESS_TOKEN Token,
+    IN BOOLEAN CopyOnOpen,
+    IN BOOLEAN EffectiveOnly,
+    IN SECURITY_IMPERSONATION_LEVEL ImpersonationLevel
     );
 
 // end_ntosp
 
-NTKERNELAPI
 BOOLEAN
 PsDisableImpersonation(
-    __inout PETHREAD Thread,
-    __inout PSE_IMPERSONATION_STATE ImpersonationState
+    IN PETHREAD Thread,
+    IN PSE_IMPERSONATION_STATE ImpersonationState
     );
 
-NTKERNELAPI
 VOID
 PsRestoreImpersonation(
-    __inout PETHREAD Thread,
-    __in PSE_IMPERSONATION_STATE ImpersonationState
+    IN PETHREAD Thread,
+    IN PSE_IMPERSONATION_STATE ImpersonationState
     );
 
 // end_ntifs
@@ -1472,10 +1434,11 @@ PsRevertToSelf(
 NTKERNELAPI
 VOID
 PsRevertThreadToSelf(
-    __inout PETHREAD Thread
+    PETHREAD Thread
     );
 
 // end_ntosp
+
 
 NTSTATUS
 PsOpenTokenOfThread(
@@ -1503,28 +1466,26 @@ PsOpenTokenOfJob(
 // Cid
 //
 
-NTKERNELAPI
 NTSTATUS
 PsLookupProcessThreadByCid(
-    __in PCLIENT_ID Cid,
-    __deref_opt_out PEPROCESS *Process,
-    __deref_out PETHREAD *Thread
+    IN PCLIENT_ID Cid,
+    OUT PEPROCESS *Process OPTIONAL,
+    OUT PETHREAD *Thread
     );
 
 // begin_ntosp
-
 NTKERNELAPI
 NTSTATUS
 PsLookupProcessByProcessId(
-    __in HANDLE ProcessId,
-    __deref_out PEPROCESS *Process
+    IN HANDLE ProcessId,
+    OUT PEPROCESS *Process
     );
 
 NTKERNELAPI
 NTSTATUS
 PsLookupThreadByThreadId(
-    __in HANDLE ThreadId,
-    __deref_out PETHREAD *Thread
+    IN HANDLE ThreadId,
+    OUT PETHREAD *Thread
     );
 
 // begin_ntifs
@@ -1532,28 +1493,25 @@ PsLookupThreadByThreadId(
 // Quota Operations
 //
 
-NTKERNELAPI
 VOID
 PsChargePoolQuota(
-    __in PEPROCESS Process,
-    __in POOL_TYPE PoolType,
-    __in ULONG_PTR Amount
+    IN PEPROCESS Process,
+    IN POOL_TYPE PoolType,
+    IN ULONG_PTR Amount
     );
 
-NTKERNELAPI
 NTSTATUS
 PsChargeProcessPoolQuota(
-    __in PEPROCESS Process,
-    __in POOL_TYPE PoolType,
-    __in ULONG_PTR Amount
+    IN PEPROCESS Process,
+    IN POOL_TYPE PoolType,
+    IN ULONG_PTR Amount
     );
 
-NTKERNELAPI
 VOID
 PsReturnPoolQuota(
-    __in PEPROCESS Process,
-    __in POOL_TYPE PoolType,
-    __in ULONG_PTR Amount
+    IN PEPROCESS Process,
+    IN POOL_TYPE PoolType,
+    IN ULONG_PTR Amount
     );
 
 // end_ntifs
@@ -1573,32 +1531,28 @@ PsReturnProcessQuota (
     IN SIZE_T Amount
     );
 
-NTKERNELAPI
 NTSTATUS
 PsChargeProcessNonPagedPoolQuota(
-    __in PEPROCESS Process,
-    __in SIZE_T Amount
+    IN PEPROCESS Process,
+    IN SIZE_T Amount
     );
 
-NTKERNELAPI
 VOID
 PsReturnProcessNonPagedPoolQuota(
-    __in PEPROCESS Process,
-    __in SIZE_T Amount
+    IN PEPROCESS Process,
+    IN SIZE_T Amount
     );
 
-NTKERNELAPI
 NTSTATUS
 PsChargeProcessPagedPoolQuota(
-    __in PEPROCESS Process,
-    __in SIZE_T Amount
+    IN PEPROCESS Process,
+    IN SIZE_T Amount
     );
 
-NTKERNELAPI
 VOID
 PsReturnProcessPagedPoolQuota(
-    __in PEPROCESS Process,
-    __in SIZE_T Amount
+    IN PEPROCESS Process,
+    IN SIZE_T Amount
     );
 
 NTSTATUS
@@ -1612,6 +1566,7 @@ PsReturnProcessPageFileQuota(
     IN PEPROCESS Process,
     IN SIZE_T Amount
     );
+
 
 //
 // Context Management
@@ -1645,6 +1600,7 @@ PsChargeSharedPoolQuota(
     IN ULONG_PTR NonPagedAmount
     );
 
+
 //
 // Exception Handling
 //
@@ -1665,6 +1621,7 @@ NTSTATUS
     IN BOOLEAN Initialize
     );
 
+
 typedef enum _PSW32JOBCALLOUTTYPE {
     PsW32JobCalloutSetInformation,
     PsW32JobCalloutAddProcess,
@@ -1677,11 +1634,13 @@ typedef struct _WIN32_JOBCALLOUT_PARAMETERS {
     IN PVOID Data;
 } WIN32_JOBCALLOUT_PARAMETERS, *PKWIN32_JOBCALLOUT_PARAMETERS;
 
+
 typedef
 NTSTATUS
 (*PKWIN32_JOB_CALLOUT) (
     IN PKWIN32_JOBCALLOUT_PARAMETERS Parm
      );
+
 
 typedef enum _PSW32THREADCALLOUTTYPE {
     PsW32ThreadCalloutInitialize,
@@ -1712,6 +1671,8 @@ typedef struct _WIN32_POWEREVENT_PARAMETERS {
     PSPOWEREVENTTYPE EventNumber;
     ULONG_PTR Code;
 } WIN32_POWEREVENT_PARAMETERS, *PKWIN32_POWEREVENT_PARAMETERS;
+
+
 
 typedef enum _POWERSTATETASK {
     PowerState_BlockSessionSwitch,
@@ -1753,6 +1714,8 @@ NTSTATUS
     IN PVOID Parm
     );
 
+
+
 typedef struct _WIN32_CALLOUTS_FPNS {
     PKWIN32_PROCESS_CALLOUT ProcessCallout;
     PKWIN32_THREAD_CALLOUT ThreadCallout;
@@ -1775,7 +1738,7 @@ typedef struct _WIN32_CALLOUTS_FPNS {
 NTKERNELAPI
 VOID
 PsEstablishWin32Callouts(
-    __in PKWIN32_CALLOUTS_FPNS pWin32Callouts
+    IN PKWIN32_CALLOUTS_FPNS pWin32Callouts
     );
 
 typedef enum _PSPROCESSPRIORITYMODE {
@@ -1787,8 +1750,8 @@ typedef enum _PSPROCESSPRIORITYMODE {
 NTKERNELAPI
 VOID
 PsSetProcessPriorityByClass(
-    __inout PEPROCESS Process,
-    __in PSPROCESSPRIORITYMODE PriorityMode
+    IN PEPROCESS Process,
+    IN PSPROCESSPRIORITYMODE PriorityMode
     );
 
 // end_ntosp
@@ -1802,33 +1765,27 @@ PsWatchWorkingSet(
 
 // begin_ntddk begin_nthal begin_ntifs begin_ntosp
 
-NTKERNELAPI
-HANDLE
-PsGetCurrentProcessId(
-    VOID
-    );
 
-NTKERNELAPI
 HANDLE
-PsGetCurrentThreadId(
-    VOID
-    );
+PsGetCurrentProcessId( VOID );
+
+HANDLE
+PsGetCurrentThreadId( VOID );
+
 
 // end_ntosp
 
-NTKERNELAPI
 BOOLEAN
 PsGetVersion(
-    __out_opt PULONG MajorVersion,
-    __out_opt PULONG MinorVersion,
-    __out_opt PULONG BuildNumber,
-    __out_opt PUNICODE_STRING CSDVersion
+    PULONG MajorVersion OPTIONAL,
+    PULONG MinorVersion OPTIONAL,
+    PULONG BuildNumber OPTIONAL,
+    PUNICODE_STRING CSDVersion OPTIONAL
     );
 
 // end_ntddk end_nthal end_ntifs
 
 // begin_ntosp
-
 NTKERNELAPI
 ULONG
 PsGetCurrentProcessSessionId(
@@ -1856,61 +1813,60 @@ PsGetCurrentThreadPreviousMode(
 NTKERNELAPI
 PERESOURCE
 PsGetJobLock(
-    __in PEJOB Job
+    PEJOB Job
     );
 
 NTKERNELAPI
 ULONG
 PsGetJobSessionId(
-    __in PEJOB Job
+    PEJOB Job
     );
 
 NTKERNELAPI
 ULONG
 PsGetJobUIRestrictionsClass(
-    __in PEJOB Job
+    PEJOB Job
     );
 
 NTKERNELAPI
 LONGLONG
 PsGetProcessCreateTimeQuadPart(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
 NTKERNELAPI
 PVOID
 PsGetProcessDebugPort(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
-NTKERNELAPI
 BOOLEAN
 PsIsProcessBeingDebugged(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
 NTKERNELAPI
 BOOLEAN
 PsGetProcessExitProcessCalled(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
 NTKERNELAPI
 NTSTATUS
 PsGetProcessExitStatus(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
 NTKERNELAPI
 HANDLE
 PsGetProcessId(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
 NTKERNELAPI
 UCHAR *
 PsGetProcessImageFileName(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
 #define PsGetCurrentProcessImageFileName() PsGetProcessImageFileName(PsGetCurrentProcess())
@@ -1918,51 +1874,52 @@ PsGetProcessImageFileName(
 NTKERNELAPI
 HANDLE
 PsGetProcessInheritedFromUniqueProcessId(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
 NTKERNELAPI
 PEJOB
 PsGetProcessJob(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
 NTKERNELAPI
 ULONG
 PsGetProcessSessionId(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
 NTKERNELAPI
 ULONG
 PsGetProcessSessionIdEx(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
 NTKERNELAPI
 PVOID
 PsGetProcessSectionBaseAddress(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
+
 
 #define PsGetProcessPcb(Process) ((PKPROCESS)(Process))
 
 NTKERNELAPI
 PPEB
 PsGetProcessPeb(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
 NTKERNELAPI
 UCHAR
 PsGetProcessPriorityClass(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
 NTKERNELAPI
 HANDLE
 PsGetProcessWin32WindowStation(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
 #define PsGetCurrentProcessWin32WindowStation() PsGetProcessWin32WindowStation(PsGetCurrentProcess())
@@ -1970,127 +1927,86 @@ PsGetProcessWin32WindowStation(
 NTKERNELAPI
 PVOID
 PsGetProcessWin32Process(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
-NTKERNELAPI
-PVOID
-PsGetCurrentProcessWin32Process(
-    VOID
-    );
+#define PsGetCurrentProcessWin32Process() PsGetProcessWin32Process(PsGetCurrentProcess())
 
 #if defined(_WIN64)
-
 NTKERNELAPI
 PVOID
 PsGetProcessWow64Process(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
-
-NTKERNELAPI
-PVOID
-PsGetCurrentProcessWow64Process(
-    VOID
-    );
-
 #endif
 
 NTKERNELAPI
 HANDLE
 PsGetThreadId(
-    __in PETHREAD Thread
+    PETHREAD Thread
      );
 
 NTKERNELAPI
 CCHAR
 PsGetThreadFreezeCount(
-    __in PETHREAD Thread
+    PETHREAD Thread
     );
 
 NTKERNELAPI
 BOOLEAN
 PsGetThreadHardErrorsAreDisabled(
-    __in PETHREAD Thread
-    );
+    PETHREAD Thread);
 
 NTKERNELAPI
 PEPROCESS
 PsGetThreadProcess(
-    __in PETHREAD Thread
-    );
+    PETHREAD Thread
+     );
 
-NTKERNELAPI
-PEPROCESS
-PsGetCurrentThreadProcess(
-    VOID
-    );
+#define PsGetCurrentThreadProcess() PsGetThreadProcess(PsGetCurrentThread())
 
 NTKERNELAPI
 HANDLE
 PsGetThreadProcessId(
-    __in PETHREAD Thread
-    );
-
-NTKERNELAPI
-HANDLE
-PsGetCurrentThreadProcessId(
-    VOID
-    );
+    PETHREAD Thread
+     );
+#define PsGetCurrentThreadProcessId() PsGetThreadProcessId(PsGetCurrentThread())
 
 NTKERNELAPI
 ULONG
 PsGetThreadSessionId(
-    __in PETHREAD Thread
-    );
+    PETHREAD Thread
+     );
 
 #define  PsGetThreadTcb(Thread) ((PKTHREAD)(Thread))
 
 NTKERNELAPI
 PVOID
 PsGetThreadTeb(
-    __in PETHREAD Thread
-    );
+    PETHREAD Thread
+     );
 
-NTKERNELAPI
-PVOID
-PsGetCurrentThreadTeb(
-    VOID
-    );
+#define PsGetCurrentThreadTeb() PsGetThreadTeb(PsGetCurrentThread())
 
 NTKERNELAPI
 PVOID
 PsGetThreadWin32Thread(
-    __in PETHREAD Thread
-    );
+    PETHREAD Thread
+     );
 
-NTKERNELAPI
-PVOID
-PsGetCurrentThreadWin32Thread(
-    VOID
-    );
+#define PsGetCurrentThreadWin32Thread() PsGetThreadWin32Thread(PsGetCurrentThread())
 
-NTKERNELAPI
-PVOID
-PsGetCurrentThreadWin32ThreadAndEnterCriticalRegion(
-    __out PHANDLE ProcessId
-    );
 
 NTKERNELAPI                         //ntifs
 BOOLEAN                             //ntifs
 PsIsSystemThread(                   //ntifs
-    __in PETHREAD Thread                 //ntifs
-    );                              //ntifs
-
-NTKERNELAPI
-BOOLEAN
-PsIsSystemProcess(
-    __in PEPROCESS Process
-     );   
+    PETHREAD Thread                 //ntifs
+     );                             //ntifs
 
 NTKERNELAPI
 BOOLEAN
 PsIsThreadImpersonating (
-    __in PETHREAD Thread
+    IN PETHREAD Thread
     );
 
 NTSTATUS
@@ -2102,58 +2018,59 @@ PsReferenceProcessFilePointer (
 NTKERNELAPI
 VOID
 PsSetJobUIRestrictionsClass(
-    __out PEJOB Job,
-    __in ULONG UIRestrictionsClass
+    PEJOB Job,
+    ULONG UIRestrictionsClass
     );
 
 NTKERNELAPI
 VOID
 PsSetProcessPriorityClass(
-    __out PEPROCESS Process,
-    __in UCHAR PriorityClass
+    PEPROCESS Process,
+    UCHAR PriorityClass
     );
 
 NTKERNELAPI
 NTSTATUS
 PsSetProcessWin32Process(
-    __in PEPROCESS Process,
-    __in PVOID Win32Process,
-    __in PVOID PrevWin32Process
+    PEPROCESS Process,
+    PVOID Win32Process,
+    PVOID PrevWin32Proces
     );
 
 NTKERNELAPI
 VOID
 PsSetProcessWindowStation(
-    __out PEPROCESS Process,
-    __in HANDLE Win32WindowStation
+    PEPROCESS Process,
+    HANDLE Win32WindowStation
     );
+
 
 NTKERNELAPI
 VOID
 PsSetThreadHardErrorsAreDisabled(
-    __in PETHREAD Thread,
-    __in BOOLEAN HardErrorsAreDisabled
+    PETHREAD Thread,
+    BOOLEAN HardErrorsAreDisabled
     );
 
 NTKERNELAPI
 VOID
 PsSetThreadWin32Thread(
-    __inout PETHREAD Thread,
-    __in PVOID Win32Thread,
-    __in PVOID PrevWin32Thread
+    PETHREAD Thread,
+    PVOID Win32Thread,
+    PVOID PrevWin32Thread
     );
 
 NTKERNELAPI
 PVOID
 PsGetProcessSecurityPort(
-    __in PEPROCESS Process
+    PEPROCESS Process
     );
 
 NTKERNELAPI
 NTSTATUS
 PsSetProcessSecurityPort(
-    __out PEPROCESS Process,
-    __in PVOID Port
+    PEPROCESS Process,
+    PVOID Port
     );
 
 typedef
@@ -2176,6 +2093,7 @@ PsEnumProcesses (
     IN PROCESS_ENUM_ROUTINE CallBack,
     IN PVOID Context
     );
+
 
 NTSTATUS
 PsEnumProcessThreads (
@@ -2255,7 +2173,6 @@ PsResumeThread (
     );
 
 #ifndef _WIN64
-
 NTSTATUS
 PsSetLdtEntries (
     IN ULONG Selector0,
@@ -2271,9 +2188,7 @@ PsSetProcessLdtInfo (
     IN PPROCESS_LDT_INFORMATION LdtInformation,
     IN ULONG LdtInformationLength
     );
-
 #endif
-
 // end_ntosp
 
 #endif // _PS_P

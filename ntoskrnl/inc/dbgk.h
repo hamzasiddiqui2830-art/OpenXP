@@ -1,9 +1,7 @@
 /*++ BUILD Version: 0001    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -14,13 +12,19 @@ Abstract:
     This header file describes public data structures and functions
     that make up the kernel mode portion of the Dbg subsystem.
 
+Author:
+
+    Mark Lucovsky (markl) 19-Jan-1990
+
+Revision History:
+
 --*/
 
 #ifndef _DBGK_
 #define _DBGK_
 
 //
-// Define the debug object thats used to attatch to processes that are being debugged.
+// Define the debug object thats used to atatch to processes that are being debugged.
 //
 #define DEBUG_OBJECT_DELETE_PENDING (0x1) // Debug object is delete pending.
 #define DEBUG_OBJECT_KILL_ON_CLOSE  (0x2) // Kill all debugged processes on close

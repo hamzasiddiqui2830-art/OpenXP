@@ -1,9 +1,6 @@
 /*++
-
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -12,6 +9,20 @@ Module Name:
 Abstract:
 
     This header defines the Dock Interface
+
+Author:
+
+    Adrian J. Oney
+
+Environment:
+
+    kernel mode only
+
+Notes:
+
+
+Revision History:
+    Adrian J. Oney           21-May-1999     Created
 
 --*/
 

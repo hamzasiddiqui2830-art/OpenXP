@@ -1,0 +1,10 @@
+!IF 0
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
+
+!ENDIF
+
+!include $(PROJECT_ROOT)\ntos\ntoskrnl.inc
+!include ..\sources.inc
+C_DEFINES=$(C_DEFINES) /D_X86PAE_

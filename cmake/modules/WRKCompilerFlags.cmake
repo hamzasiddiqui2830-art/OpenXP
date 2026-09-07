@@ -36,6 +36,7 @@ macro(set_wrk_compiler_flags)
     if(MSVC)
         # Base compiler flags mirroring makefile.build
         set(WRK_BASE_C_FLAGS
+            -nostdinc    # No standard include directories (use ReactOS SDK only)
             -Zl          # No default library name in .obj
             -Zp8         # 8-byte packing
             -Gy          # Enable function-level linking
@@ -215,6 +216,7 @@ endmacro()
 
 macro(set_wrk_include_directories)
     # Include directories mirroring WRK structure
+    # These must be set BEFORE any system includes to override VS default headers
     set(WRK_INCLUDE_PATHS
         ${CMAKE_SOURCE_DIR}/ntoskrnl/inc
         ${CMAKE_SOURCE_DIR}/sdk/ddk/inc
@@ -234,5 +236,10 @@ macro(set_wrk_include_directories)
         list(APPEND WRK_INCLUDE_PATHS ${CMAKE_SOURCE_DIR}/ntoskrnl/i386)
     endif()
     
-    include_directories(${WRK_INCLUDE_PATHS})
+    # Use BEFORE flag to ensure ReactOS SDK headers take priority over VS headers
+    include_directories(BEFORE SYSTEM ${WRK_INCLUDE_PATHS})
+    
+    # Also set CMAKE_INCLUDE_PATH to force priority
+    list(APPEND CMAKE_INCLUDE_PATH ${WRK_INCLUDE_PATHS})
+    set(CMAKE_INCLUDE_PATH "${CMAKE_INCLUDE_PATH}" CACHE STRING "WRK Include Paths" FORCE)
 endmacro()

@@ -94,6 +94,28 @@ function(add_wrk_module MODULE_NAME)
     if(ARG_SOURCES)
         add_library(ntos_${MODULE_NAME} STATIC ${ARG_SOURCES})
         
+        # Ensure module uses ReactOS SDK includes with priority
+        target_include_directories(ntos_${MODULE_NAME} BEFORE SYSTEM PRIVATE
+            ${CMAKE_SOURCE_DIR}/ntoskrnl/inc
+            ${CMAKE_SOURCE_DIR}/sdk/ddk/inc
+            ${CMAKE_SOURCE_DIR}/sdk/internal/ds/inc
+            ${CMAKE_SOURCE_DIR}/sdk/internal/sdktools/inc
+            ${CMAKE_SOURCE_DIR}/sdk/internal/base/inc
+            ${CMAKE_SOURCE_DIR}/sdk/sdk/inc
+            ${CMAKE_SOURCE_DIR}/sdk/sdk/inc/crt
+            ${CMAKE_SOURCE_DIR}/sdk/halkit/inc
+            ${CMAKE_SOURCE_DIR}/base/inc
+        )
+        
+        # Add architecture-specific include path
+        if(WRK_ARCH_NAME STREQUAL "amd64")
+            target_include_directories(ntos_${MODULE_NAME} BEFORE SYSTEM PRIVATE
+                ${CMAKE_SOURCE_DIR}/ntoskrnl/amd64)
+        else()
+            target_include_directories(ntos_${MODULE_NAME} BEFORE SYSTEM PRIVATE
+                ${CMAKE_SOURCE_DIR}/ntoskrnl/i386)
+        endif()
+        
         set_target_properties(ntos_${MODULE_NAME} PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY ${ARG_OUTPUT_DIR}
             POSITION_INDEPENDENT_CODE OFF

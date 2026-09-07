@@ -1,4 +1,4 @@
-// Copyright (c) 1998-1999 Microsoft Corporation
+// Copyright (c) OpenXP Contributors
 //
 // This file is used to verify that winincs.c can be successfully compiled
 // by the x86 C compiler.  Do do that, we must undefine __in and __out

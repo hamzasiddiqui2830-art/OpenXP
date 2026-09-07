@@ -1,56 +1,109 @@
 ```
-# Build artifacts
+# Build artifacts and compiled files
 *.o
 *.obj
-*.a
-*.so
-*.dll
-*.exe
 *.out
-build/
-dist/
-target/
+*.dll
+*.so
+*.a
+*.exe
+*.lib
+*.pdb
+*.ilk
 
-# Dependencies
-node_modules/
-venv/
-.venv/
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-.gradle/
-julia-*/
-zig*/
+# Debug and intermediate files
+*.exp
+*.iobj
+*.ipdb
+*.tlog
+*.lastbuildstate
 
-# IDE/Editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
-
-# System files
+# OS generated files
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Icon?
+._*
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Editor-specific files
+.vs/
+.vim/
+.emacs
+*.swp
+*.swo
+
+# Environment files
 .env
 .env.local
 *.env.*
 
-# Logs and coverage
-*.log
+# Coverage reports
 coverage/
 htmlcov/
 .coverage
 
-# Compressed files
+# Build directories (if any subdirectories match common build patterns)
+build/
+dist/
+target/
+bin/
+obj/
+
+# IDE specific directories
+.idea/
+.vscode/
+.settings/
+.project
+.classpath
+
+# Python specific (if detected in project)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.hypothesis/
+
+# Node.js specific (if detected in project)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# C/C++ specific build files
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+*.o
+*.obj
+*.ilk
+*.pdb
+*.lib
+*.exp
+
+# Compressed archives
 *.zip
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.rar
+*.7z
 *.gz
-*.tar
-*.tgz
 *.bz2
 *.xz
-*.7z
-*.rar
 *.zst
 *.lz4
 *.lzh
@@ -61,8 +114,4 @@ htmlcov/
 *.Z
 *.lz
 *.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
 ```

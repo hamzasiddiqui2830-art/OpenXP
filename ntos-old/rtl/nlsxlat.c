@@ -1,7 +1,7 @@
 /****************************** Module Header ******************************\
 * Module Name: nlsxlat.c
 *
-* Copyright (c) Microsoft Corporation. All rights reserved.
+* Copyright (c) OpenXP Contributors
 * Project OpenXP Internal
 *
 * This modules contains the private routines for character translation:

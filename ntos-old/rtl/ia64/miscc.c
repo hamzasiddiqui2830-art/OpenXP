@@ -1,7 +1,7 @@
 /*++
 
 Copyright (c) 1996  Intel Corporation
-Copyright (c) Microsoft Corporation. All rights reserved.
+Copyright (c) OpenXP Contributors
 Project OpenXP Internal
 
 Module Name:

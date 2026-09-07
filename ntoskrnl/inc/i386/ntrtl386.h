@@ -1,5 +1,5 @@
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) OpenXP Contributors
 // Copyright (c) OpenXP Team 2026.
 //
 // You may only use this code if you agree to the terms of the Windows Research Kernel Source Code License agreement (see License.txt).

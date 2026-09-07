@@ -1,7 +1,7 @@
 //depot/main/Base/ntos/inc/cmdata.h#8 - integrate change 19035 (text)
 /*++
 
-Copyright (c) Microsoft Corporation. All rights reserved.
+Copyright (c) OpenXP Contributors
 Project OpenXP Internal
 
 Module Name:

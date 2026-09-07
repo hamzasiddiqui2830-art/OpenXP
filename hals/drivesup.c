@@ -1,7 +1,7 @@
 #if !defined(NO_LEGACY_DRIVERS)
 /*++
 
-Copyright (c) 1989  Microsoft Corporation
+Copyright (c) OpenXP Contributors
 
 Module Name:
 

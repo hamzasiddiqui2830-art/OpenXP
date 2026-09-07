@@ -1,6 +1,6 @@
 /*++ BUILD Version: 0002
 
-Copyright (c) Microsoft Corporation. All rights reserved.
+Copyright (c) OpenXP Contributors
 Project OpenXP Internal
 
 Module Name:

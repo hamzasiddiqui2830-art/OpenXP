@@ -2,7 +2,7 @@
 //  (ie. no FS:, but DATA: specified)
 /*++
 
-Copyright (c) 1995 Microsoft Corporation
+Copyright (c) OpenXP Contributors
 
 Module Name:
 

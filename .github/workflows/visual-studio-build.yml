@@ -19,7 +19,7 @@ jobs:
 
     - name: Configure CMake for Visual Studio (x86)
       run: |
-        cmake -G "Visual Studio 18 2025" -A Win32 `
+        cmake -G "Visual Studio 18 2026" -A Win32 `
           -DWRK_ARCH=i386 `
           -DCMAKE_BINARY_DIR="${{ github.workspace }}/output-VS-i386" `
           -B "${{ github.workspace }}/output-VS-i386/build" `
@@ -58,7 +58,7 @@ jobs:
 
     - name: Configure CMake for Visual Studio (x64)
       run: |
-        cmake -G "Visual Studio 18 2025" -A x64 `
+        cmake -G "Visual Studio 18 2026" -A x64 `
           -DWRK_ARCH=amd64 `
           -DCMAKE_BINARY_DIR="${{ github.workspace }}/output-VS-amd64" `
           -B "${{ github.workspace }}/output-VS-amd64/build" `

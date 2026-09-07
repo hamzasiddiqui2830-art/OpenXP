@@ -92,13 +92,10 @@ Revision History:
 /* Maximum Number of Processors */
 #define MAXIMUM_PROCESSORS 32
 
-/* Exception Handling (GCC-compatible stubs) */
-#define __try
-#define __except(x) if(0)
-#define __finally
-#define __leave goto __end
-#define _exception_code() 0
-#define _exception_info() NULL
-#define AbnormalTermination() FALSE
+/*
+ * SEH (Structured Exception Handling) macros for ARM
+ * Use PSEH3 implementation for proper exception handling support
+ */
+#include "seh.h"
 
 /* End of file */

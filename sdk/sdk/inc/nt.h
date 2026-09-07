@@ -27,7 +27,7 @@ Abstract:
 //
 // GCC compatibility macros
 //
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 #define __forceinline inline __attribute__((always_inline))
 #define __declspec(x) __attribute__((x))
 #define __fastcall __attribute__((fastcall))
@@ -35,24 +35,10 @@ Abstract:
 #define __cdecl __attribute__((cdecl))
 
 //
-// SEH (Structured Exception Handling) macros for GCC
-// These are no-ops in GCC as it doesn't support MSVC-style SEH
+// SEH (Structured Exception Handling) abstraction
+// Use the centralized SEH header for proper compiler support
 //
-#define __try
-#define __except(x) if(0)
-#define __finally if(0)
-#define __leave break
-#define _exception_code() 0
-#define _exception_info() NULL
-#define _abnormal_termination() FALSE
-
-//
-// Map single-underscore versions to double-underscore for GCC
-//
-#define try __try
-#define except __except
-#define finally __finally
-#define AbnormalTermination() _abnormal_termination()
+#include <seh.h>
 
 //
 // Architecture detection for GCC

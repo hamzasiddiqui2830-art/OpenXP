@@ -2156,10 +2156,8 @@ IsVacbLevelReferenced (
 //      #define try_return(S)  { S; goto try_exit; }
 //
 
-#define try __try
-#define except __except
-#define finally __finally
-#define AbnormalTermination() (__abnormal_termination())
+// Include SEH abstraction header for compiler-compatible exception handling
+#include "../inc/seh.h"
 
 #define try_return(S) { S; goto try_exit; }
 

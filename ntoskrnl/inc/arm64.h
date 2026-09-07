@@ -83,22 +83,19 @@ Revision History:
 #define InterlockedCompareExchange(dest, exchange, compare) \
     __atomic_compare_exchange_n((dest), &(compare), (exchange), 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
 
+/* Maximum Number of Processors */
+#define MAXIMUM_PROCESSORS 256
+
 /* Stack Alignment */
 #define STACK_ALIGNMENT 16
 
 /* Page Size */
 #define PAGE_SIZE 4096
 
-/* Maximum Number of Processors */
-#define MAXIMUM_PROCESSORS 256
-
-/* Exception Handling (GCC-compatible stubs) */
-#define __try
-#define __except(x) if(0)
-#define __finally
-#define __leave goto __end
-#define _exception_code() 0
-#define _exception_info() NULL
-#define AbnormalTermination() FALSE
+/*
+ * SEH (Structured Exception Handling) macros for ARM64
+ * Use PSEH3 implementation for proper exception handling support
+ */
+#include "seh.h"
 
 /* End of file */

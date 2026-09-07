@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib/libhalup.a CMakeFiles/halup.dir/up/i386/bushnd.c.o CMakeFiles/halup.dir/up/i386/chiphacks.c.o CMakeFiles/halup.dir/up/i386/drivesup.c.o CMakeFiles/halup.dir/up/i386/rangesup.c.o
+/usr/bin/ranlib ../lib/libhalup.a

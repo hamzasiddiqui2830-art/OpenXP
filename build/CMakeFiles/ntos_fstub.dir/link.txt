@@ -1,0 +1,2 @@
+/usr/bin/ar qc obj/GCC-x86/libntosfstub.a CMakeFiles/ntos_fstub.dir/ntoskrnl/fstub/drivesup.c.o CMakeFiles/ntos_fstub.dir/ntoskrnl/fstub/ex.c.o CMakeFiles/ntos_fstub.dir/ntoskrnl/fstub/halfnc.c.o CMakeFiles/ntos_fstub.dir/ntoskrnl/fstub/translate.c.o
+/usr/bin/ranlib obj/GCC-x86/libntosfstub.a

@@ -17,6 +17,14 @@ Abstract:
 
 #include "dbgkp.h"
 
+/* Define SEH macros for MSVC compatibility */
+#ifdef _MSC_VER
+#define try __try
+#define except __except
+#define finally __finally
+#define leave __leave
+#endif
+
 #pragma hdrstop
 
 #ifdef ALLOC_PRAGMA

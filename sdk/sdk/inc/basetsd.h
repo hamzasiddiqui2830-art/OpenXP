@@ -52,6 +52,17 @@ typedef unsigned long POINTER_64_INT;
 extern "C" {
 #endif
 
+/* GCC compatibility: define MSVC-specific types */
+#ifdef __GNUC__
+#define __int64 long long
+#define __int32 int
+#define __int16 short
+#define __int8 char
+#define __ptr64
+#define __ptr32
+#define __w64
+#endif
+
 typedef signed char         INT8, *PINT8;
 typedef signed short        INT16, *PINT16;
 typedef signed int          INT32, *PINT32;

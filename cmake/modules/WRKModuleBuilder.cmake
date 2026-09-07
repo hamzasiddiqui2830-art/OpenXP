@@ -39,13 +39,31 @@ function(add_wrk_module MODULE_NAME)
     
     # Collect source files if not explicitly provided
     if(NOT ARG_SOURCES)
-        # Collect C source files from module directory
+        # Collect C source files from module directory (excluding arch-specific subdirs)
         file(GLOB_RECURSE MODULE_C_SOURCES
             ${ARG_SOURCE_DIR}/*.c
         )
         
-        # Filter out BUILD directory
+        # Filter out BUILD directory and architecture-specific subdirectories
         list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/BUILD/")
+        list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/i386/")
+        list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/amd64/")
+        list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/ia64/")
+        list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/arm/")
+        list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/arm64/")
+        
+        # Now collect architecture-specific sources for the target architecture
+        if(WRK_ARCH_NAME STREQUAL "x86")
+            file(GLOB ARCH_SPECIFIC_SOURCES
+                ${ARG_SOURCE_DIR}/i386/*.c
+            )
+            list(APPEND MODULE_C_SOURCES ${ARCH_SPECIFIC_SOURCES})
+        elseif(WRK_ARCH_NAME STREQUAL "amd64")
+            file(GLOB ARCH_SPECIFIC_SOURCES
+                ${ARG_SOURCE_DIR}/amd64/*.c
+            )
+            list(APPEND MODULE_C_SOURCES ${ARCH_SPECIFIC_SOURCES})
+        endif()
         
         # Collect assembly files based on architecture and convert to appropriate format
         if(WRK_ARCH_NAME STREQUAL "x86")
@@ -68,7 +86,7 @@ function(add_wrk_module MODULE_NAME)
                 endforeach()
                 set(MODULE_ASM_SOURCES ${MODULE_ASM_SOURCES_CONVERTED})
             endif()
-        else()
+        elseif(WRK_ARCH_NAME STREQUAL "amd64")
             # For amd64, collect .asm files
             file(GLOB MODULE_ASM_SOURCES
                 ${ARG_SOURCE_DIR}/amd64/*.asm
@@ -85,6 +103,9 @@ function(add_wrk_module MODULE_NAME)
                 endforeach()
                 set(MODULE_ASM_SOURCES ${MODULE_ASM_SOURCES_CONVERTED})
             endif()
+        else()
+            # For other architectures (ia64, etc.), don't collect arch-specific asm
+            set(MODULE_ASM_SOURCES "")
         endif()
         
         set(ARG_SOURCES ${MODULE_C_SOURCES} ${MODULE_ASM_SOURCES})
@@ -94,8 +115,8 @@ function(add_wrk_module MODULE_NAME)
     if(ARG_SOURCES)
         add_library(ntos_${MODULE_NAME} STATIC ${ARG_SOURCES})
         
-        # Ensure module uses ReactOS SDK includes with priority
-        target_include_directories(ntos_${MODULE_NAME} BEFORE PRIVATE
+        # Collect all include directories into a single list
+        set(MODULE_INCLUDE_DIRS
             ${CMAKE_SOURCE_DIR}/ntoskrnl/inc
             ${CMAKE_SOURCE_DIR}/sdk/ddk/inc
             ${CMAKE_SOURCE_DIR}/sdk/internal/ds/inc
@@ -109,12 +130,13 @@ function(add_wrk_module MODULE_NAME)
         
         # Add architecture-specific include path
         if(WRK_ARCH_NAME STREQUAL "amd64")
-            target_include_directories(ntos_${MODULE_NAME} BEFORE PRIVATE
-                ${CMAKE_SOURCE_DIR}/ntoskrnl/amd64)
+            list(APPEND MODULE_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ntoskrnl/amd64)
         else()
-            target_include_directories(ntos_${MODULE_NAME} BEFORE PRIVATE
-                ${CMAKE_SOURCE_DIR}/ntoskrnl/i386)
+            list(APPEND MODULE_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ntoskrnl/i386)
         endif()
+        
+        # Ensure module uses ReactOS SDK includes with priority
+        target_include_directories(ntos_${MODULE_NAME} BEFORE PRIVATE ${MODULE_INCLUDE_DIRS})
         
         set_target_properties(ntos_${MODULE_NAME} PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY ${ARG_OUTPUT_DIR}

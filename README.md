@@ -1,10 +1,10 @@
-# ReactOS-WRK
+# ReactOS
 
-ReactOS Windows Research Kernel (WRK) - A free and open-source operating system compatible with Windows applications and drivers.
+ReactOS - A free and open-source operating system compatible with Windows applications and drivers.
 
 ## Overview
 
-This project is based on the Windows Research Kernel (WRK) and aims to create a fully functional, open-source operating system that can run Windows applications and drivers natively. The codebase includes implementations of core Windows kernel components including:
+This project aims to create a fully functional, open-source operating system that can run Windows applications and drivers natively. The codebase includes implementations of core Windows kernel components including:
 
 - **NTOSKRNL**: NT OS Kernel with process/thread management, memory management, I/O subsystem
 - **HAL**: Hardware Abstraction Layer for different architectures
@@ -32,8 +32,6 @@ This program is free software: you can redistribute it and/or modify it under th
 - AMD64 (x86-64) - In progress
 - ARM (32-bit) - Supported
 - ARM64 (AArch64) - Supported
-- IA64 (Itanium) - Removed (legacy architecture)
-
 ### Build Instructions
 
 #### Building with GCC (Linux)
@@ -162,8 +160,6 @@ This is an active research and development project. Many components are function
 - Multi-processor synchronization improvements
 
 ## References
-
-- [Windows Research Kernel Documentation](https://www.microsoft.com/en-us/research/project/windows-research-kernel/)
 - [ReactOS Project](https://reactos.org/)
 - [GNU Compiler Collection](https://gcc.gnu.org/)
 
@@ -172,5 +168,3 @@ This is an active research and development project. Many components are function
 For questions and discussions, please open an issue on the project repository.
 
 ---
-
-**Disclaimer**: This project is for educational and research purposes. It is not affiliated with Microsoft Corporation. Windows and NT are trademarks of Microsoft Corporation.

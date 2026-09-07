@@ -30,7 +30,9 @@ This program is free software: you can redistribute it and/or modify it under th
 
 - x86 (i386) - Primary development target
 - AMD64 (x86-64) - In progress
-- IA64 (Itanium) - Legacy support
+- ARM (32-bit) - Supported
+- ARM64 (AArch64) - Supported
+- IA64 (Itanium) - Removed (legacy architecture)
 
 ### Build Instructions
 
@@ -67,8 +69,15 @@ The project includes compatibility macros to support building with GCC while mai
 - `__declspec(x)` → `__attribute__((x))`
 - Calling conventions (`__stdcall`, `__fastcall`, `__cdecl`)
 - SEH macros (Structured Exception Handling) - implemented as no-ops for GCC
+- Architecture detection for ARM/ARM64 when using GCC
 
 **Note**: SEH (`try`/`except`/`finally`) is implemented as no-op macros when compiling with GCC, as GCC does not support MSVC-style Structured Exception Handling. This may affect error handling behavior in some code paths.
+
+**ARM/ARM64 Support**: The project now includes full GCC compatibility for ARM and ARM64 architectures, including:
+- Memory barriers using ARM assembly instructions
+- Cache flush operations
+- Atomic operations using GCC built-ins
+- Interrupt level management
 
 #### MSVC Compatibility
 

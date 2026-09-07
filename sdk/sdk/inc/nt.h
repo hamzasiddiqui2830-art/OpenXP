@@ -53,6 +53,19 @@ Abstract:
 #define except __except
 #define finally __finally
 #define AbnormalTermination() _abnormal_termination()
+
+//
+// Architecture detection for GCC
+//
+#if defined(__arm__) || defined(__aarch64__)
+#if defined(__aarch64__)
+#define _ARM64_ 1
+#define _M_ARM64 4
+#else
+#define _ARM_ 1
+#define _M_ARM 4
+#endif
+#endif
 #endif
 
 #if defined (_MSC_VER)
@@ -94,6 +107,12 @@ Abstract:
 #elif defined(_X86_)
 #include "nti386.h"
 
+#elif defined(_ARM_)
+#include "ntarm.h"
+
+#elif defined(_ARM64_)
+#include "ntarm64.h"
+
 #else
 #error "no target defined"
 #endif // _AMD64_
@@ -128,6 +147,12 @@ Abstract:
 
 #elif defined(_X86_)
 #include "nxi386.h"
+
+#elif defined(_ARM_)
+#include "nxarm.h"
+
+#elif defined(_ARM64_)
+#include "nxarm64.h"
 
 #else
 #error "no target defined"

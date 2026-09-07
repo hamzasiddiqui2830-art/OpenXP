@@ -1,5 +1,5 @@
 ```
-# Compiled files
+# Build artifacts and intermediate files
 *.o
 *.obj
 *.exe
@@ -7,8 +7,6 @@
 *.so
 *.a
 *.out
-
-# Build directories
 build/
 dist/
 target/
@@ -22,7 +20,7 @@ __pycache__/
 .pytest_cache/
 .gradle/
 
-# Editor/IDE files
+# IDE and editor files
 .vscode/
 .idea/
 *.swp
@@ -36,10 +34,8 @@ Thumbs.db
 .env.local
 *.env.*
 
-# Logs
+# Logs and coverage
 *.log
-
-# Coverage
 coverage/
 htmlcov/
 .coverage

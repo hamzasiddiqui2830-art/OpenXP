@@ -1,0 +1,86 @@
+name: Visual Studio Build
+
+on:
+  push:
+    branches: [ "*" ]
+  pull_request:
+    branches: [ "*" ]
+
+jobs:
+  build-vs-x86:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Configure CMake for Visual Studio (x86)
+      run: |
+        cmake -G "Visual Studio 17 2022" -A Win32 `
+          -DWRK_ARCH=i386 `
+          -DCMAKE_BINARY_DIR="${{ github.workspace }}/output-VS-i386" `
+          -B "${{ github.workspace }}/output-VS-i386/build" `
+          -S "${{ github.workspace }}"
+      working-directory: ${{ github.workspace }}
+
+    - name: Build with MSBuild (x86)
+      run: |
+        msbuild "${{ github.workspace }}/output-VS-i386/build/ReactOS-WRK.sln" `
+          /p:Configuration=Release `
+          /p:Platform=Win32 `
+          /t:Rebuild `
+          /maxcpucount
+      working-directory: ${{ github.workspace }}
+
+    - name: Upload x86 build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: wrk-build-vs-x86
+        path: |
+          ${{ github.workspace }}/output-VS-i386/**/*.exe
+          ${{ github.workspace }}/output-VS-i386/**/*.dll
+          ${{ github.workspace }}/output-VS-i386/**/*.sys
+          ${{ github.workspace }}/output-VS-i386/**/*.lib
+        if-no-files-found: warn
+
+  build-vs-x64:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Configure CMake for Visual Studio (x64)
+      run: |
+        cmake -G "Visual Studio 17 2022" -A x64 `
+          -DWRK_ARCH=amd64 `
+          -DCMAKE_BINARY_DIR="${{ github.workspace }}/output-VS-amd64" `
+          -B "${{ github.workspace }}/output-VS-amd64/build" `
+          -S "${{ github.workspace }}"
+      working-directory: ${{ github.workspace }}
+
+    - name: Build with MSBuild (x64)
+      run: |
+        msbuild "${{ github.workspace }}/output-VS-amd64/build/ReactOS-WRK.sln" `
+          /p:Configuration=Release `
+          /p:Platform=x64 `
+          /t:Rebuild `
+          /maxcpucount
+      working-directory: ${{ github.workspace }}
+
+    - name: Upload x64 build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: wrk-build-vs-x64
+        path: |
+          ${{ github.workspace }}/output-VS-amd64/**/*.exe
+          ${{ github.workspace }}/output-VS-amd64/**/*.dll
+          ${{ github.workspace }}/output-VS-amd64/**/*.sys
+          ${{ github.workspace }}/output-VS-amd64/**/*.lib
+        if-no-files-found: warn

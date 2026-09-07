@@ -231,7 +231,7 @@ InterlockedExchangeAdd(
     IN LONG Value
     );
 
-#if !defined(_X86AMD64_)
+#if !defined(_X86AMD64_) && !defined(_M_AMD64)
 
 __forceinline
 LONG
@@ -275,7 +275,7 @@ InterlockedExchangeAdd64(
     IN LONG64 Value
     );
 
-#if !defined(_X86AMD64_)
+#if !defined(_X86AMD64_) && !defined(_M_AMD64)
 
 __forceinline
 LONG64
@@ -1642,7 +1642,7 @@ typedef struct _KPRCB {
 
 // end_nthal end_ntosp
 
-#if !defined(_X86AMD64_)
+#if !defined(_X86AMD64_) && !defined(_M_AMD64)
 
 C_ASSERT(((FIELD_OFFSET(KPRCB, LockQueue) + 16) & (128 - 1)) == 0);
 C_ASSERT((FIELD_OFFSET(KPRCB, PPLookasideList) & (128 - 1)) == 0);

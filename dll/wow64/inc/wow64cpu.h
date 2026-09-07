@@ -11,6 +11,7 @@ Abstract:
     Public header for wow64.dll
     
 
+    24-May-1998 BarryBo
 
 Revision History:
     8-9-99 [askhalid] added CpuNotifyDllLoad and CpuNotifyDllUnload.

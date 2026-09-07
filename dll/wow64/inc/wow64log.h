@@ -11,6 +11,7 @@ Abstract:
     Public header for wow64log.dll
 
 
+    3-Oct-1999   SamerA
 
 Revision History:
 

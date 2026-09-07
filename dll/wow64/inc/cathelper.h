@@ -11,6 +11,7 @@ Abstract:
     Private header for wow64log.dll
     
 
+    03-May-2001   KenCoope
 
 Revision History:
 

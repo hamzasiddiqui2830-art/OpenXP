@@ -11,8 +11,10 @@ Abstract:
     Public header for wow64.dll
 
 
+    11-May-1998 BarryBo
 
 Revision History:
+    9-Aug-1999 [askhalid] added WOW64IsCurrentProcess
 
 --*/
 

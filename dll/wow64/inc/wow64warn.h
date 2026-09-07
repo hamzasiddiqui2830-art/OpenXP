@@ -11,6 +11,7 @@ Abstract:
     Global warning flags for wow64 project.
     
 
+    5-Jan-1999 mzoran
 
 Revision History:
 

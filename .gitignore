@@ -1,54 +1,39 @@
 ```
-# Build artifacts
-*.o
+# Windows build artifacts
 *.obj
-*.a
 *.lib
 *.dll
-*.so
 *.exe
-*.out
+*.pdb
+*.ilk
 
-# CMake build directories
+# Build directories
 build/
-cmake-build-*/
-CMakeFiles/
-CMakeCache.txt
-Makefile
-cmake_install.cmake
+dist/
+bin/
+obj/
 
-# Dependencies
-node_modules/
-vendor/
-
-# Logs and temp files
-*.log
+# Temporary files
 *.tmp
-*.swp
-*.swo
+*.temp
+*.bak
 
-# Editors
+# Log files
+*.log
+
+# Visual Studio Code
 .vscode/
-.idea/
-*.swp
-*.swo
 
-# System files
-.DS_Store
+# Windows system files
 Thumbs.db
+desktop.ini
 
-# Coverage reports
-coverage/
-htmlcov/
-.coverage
+# Backup files
+*~
+*.bak
+*.backup
 
-# Python specific
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
+# Compiler-specific
+*.pch
+*.ipch
 ```

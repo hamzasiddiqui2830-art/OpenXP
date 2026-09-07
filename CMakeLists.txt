@@ -52,6 +52,13 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
+# HAL configuration options
+option(ENABLE_HAL_ARM "Build ARM HAL" ON)
+option(ENABLE_HAL_UP "Build Uniprocessor HAL" OFF)
+option(ENABLE_HAL_ACPI "Build ACPI HAL" OFF)
+option(ENABLE_HAL_MPS "Build Multiprocessor System HAL" OFF)
+option(ENABLE_HAL_APIC "Build ACPI APIC HAL" OFF)
+
 # Add CMake modules path
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
@@ -148,8 +155,18 @@ foreach(MODULE ${NTOS_MODULES})
     list(APPEND NTOS_MODULE_LIBS ntos_${MODULE_TARGET})
 endforeach()
 
-# Add HAL stub to the module libs (provides HAL implementations without DLL dependency)
-list(APPEND NTOS_MODULE_LIBS hal_stub)
+# Add HAL to the module libs based on architecture
+if(WRK_ARCH_NAME MATCHES "arm|arm64")
+    # Use ARM HAL for ARM architectures
+    if(ENABLE_HAL_ARM)
+        list(APPEND NTOS_MODULE_LIBS halarm)
+    else()
+        list(APPEND NTOS_MODULE_LIBS hal_stub)
+    endif()
+else()
+    # Use stub HAL for other architectures (or real HALs when available)
+    list(APPEND NTOS_MODULE_LIBS hal_stub)
+endif()
 
 # Main kernel executable
 # Note: The actual kernel entry point and startup code would need to be properly configured

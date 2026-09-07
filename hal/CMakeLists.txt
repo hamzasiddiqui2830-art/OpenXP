@@ -15,6 +15,12 @@ set_target_properties(hal_stub PROPERTIES
 )
 
 # HAL target libraries for different HAL configurations
+
+# halarm - HAL ARM (replaces legacy halia64)
+if(ENABLE_HAL_ARM)
+    add_subdirectory(halarm)
+endif()
+
 # halacpim - HAL ACPI Multiprocessor
 add_library(halacpim STATIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/halacpim/halacpim.c

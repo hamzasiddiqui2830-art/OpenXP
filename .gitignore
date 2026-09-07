@@ -1,34 +1,39 @@
 ```
-# CI/CD
+# CI/CD and build artifacts
 .github/
-
-# Editors
-.vscode/
-.idea/
 
 # Logs and temp files
 *.log
 *.tmp
-*.swp
 
-# Environment
+# Environment files
 .env
 .env.local
 *.env.*
 
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
 # Dependencies
 node_modules/
-.venv/
 venv/
+.venv/
 __pycache__/
-.mypy_cache/
-.pytest_cache/
+*.egg-info/
 dist/
 build/
 target/
 .gradle/
+.mypy_cache/
+.pytest_cache/
+coverage/
+htmlcov/
+.coverage
 
-# OS generated files
+# System files
 .DS_Store
 Thumbs.db
 
@@ -42,11 +47,6 @@ Thumbs.db
 *.a
 *.obj
 *.out
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
 
 # Compressed files
 *.zip

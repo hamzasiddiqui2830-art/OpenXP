@@ -29,6 +29,40 @@ Revision History:
 #endif
 
 //
+// GCC compatibility: Define MSVC-specific keywords as empty macros
+//
+
+#if defined(__GNUC__)
+#define __forceinline inline __attribute__((always_inline))
+#define __declspec(x) __attribute__((x))
+#define __fastcall __attribute__((fastcall))
+#define __stdcall __attribute__((stdcall))
+#define __cdecl __attribute__((cdecl))
+#define _ReturnAddress() __builtin_return_address(0)
+#define _AddressOfReturnAddress() ((PVOID)__builtin_frame_address(0))
+
+//
+// SEH (Structured Exception Handling) macros for GCC
+// These are no-ops in GCC as it doesn't support MSVC-style SEH
+//
+#define __try
+#define __except(x) if(0)
+#define __finally if(0)
+#define __leave break
+#define _exception_code() 0
+#define _exception_info() NULL
+#define _abnormal_termination() FALSE
+
+//
+// Map single-underscore versions to double-underscore for GCC
+//
+#define try __try
+#define except __except
+#define finally __finally
+#define AbnormalTermination() _abnormal_termination()
+#endif
+
+//
 // Interruption history
 //
 // N.B. Currently the history records are saved in the 2nd half of the 8K

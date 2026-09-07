@@ -237,7 +237,8 @@ macro(set_wrk_include_directories)
     endif()
     
     # Use BEFORE flag to ensure ReactOS SDK headers take priority over VS headers
-    include_directories(BEFORE SYSTEM ${WRK_INCLUDE_PATHS})
+    # Note: Cannot use SYSTEM with BEFORE, so we use BEFORE instead
+    include_directories(BEFORE ${WRK_INCLUDE_PATHS})
     
     # Also set CMAKE_INCLUDE_PATH to force priority
     list(APPEND CMAKE_INCLUDE_PATH ${WRK_INCLUDE_PATHS})

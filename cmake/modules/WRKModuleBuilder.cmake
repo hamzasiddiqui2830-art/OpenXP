@@ -118,6 +118,7 @@ function(add_wrk_module MODULE_NAME)
         # Collect all include directories into a single list
         set(MODULE_INCLUDE_DIRS
             ${CMAKE_SOURCE_DIR}/ntoskrnl/inc
+            ${CMAKE_SOURCE_DIR}/ntoskrnl/rtl
             ${CMAKE_SOURCE_DIR}/sdk/ddk/inc
             ${CMAKE_SOURCE_DIR}/sdk/internal/ds/inc
             ${CMAKE_SOURCE_DIR}/sdk/internal/sdktools/inc

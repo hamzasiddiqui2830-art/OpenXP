@@ -1,0 +1,1 @@
+void KiSystemStartup(void *Block) { while(1); }

@@ -32,6 +32,37 @@ Revision History:
 #if defined(_X86_)
 
 //
+// GCC compatibility: Define MSVC-specific keywords as empty macros
+//
+
+#if defined(__GNUC__)
+#define __forceinline inline __attribute__((always_inline))
+#define __declspec(x) __attribute__((x))
+#define __fastcall __attribute__((fastcall))
+#define __stdcall __attribute__((stdcall))
+#define __cdecl __attribute__((cdecl))
+#define _ReturnAddress() __builtin_return_address(0)
+#define _AddressOfReturnAddress() ((PVOID)__builtin_frame_address(0))
+
+//
+// SEH (Structured Exception Handling) macros for GCC
+// These are no-ops in GCC as it doesn't support MSVC-style SEH
+//
+#define __try
+#define __except(x) if(0)
+#define __finally if(0)
+#define __leave break
+#define _exception_code() 0
+#define _exception_info() NULL
+#define _abnormal_termination() FALSE
+
+//
+// Disable pragma warning for GCC
+//
+#define _Pragma(x)
+#endif
+
+//
 // Types to use to contain PFNs and their counts.
 //
 

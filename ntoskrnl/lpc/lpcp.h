@@ -26,15 +26,6 @@ Abstract:
 #include <zwapi.h>
 
 //
-// Define SEH macros for structured exception handling
-//
-
-#define try __try
-#define except __except
-#define finally __finally
-#define AbnormalTermination() (__abnormal_termination())
-
-//
 //  Global Mutex to guard the following fields:
 //
 //      ETHREAD.LpcReplyMsg

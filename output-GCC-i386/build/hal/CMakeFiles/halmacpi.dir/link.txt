@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib/libhalmacpi.a CMakeFiles/halmacpi.dir/halmacpi/halmacpi.c.o CMakeFiles/halmacpi.dir/hal_stub.c.o
+/usr/bin/ranlib ../lib/libhalmacpi.a

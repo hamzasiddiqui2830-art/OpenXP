@@ -24,6 +24,37 @@ Abstract:
 #ifndef NT_INCLUDED
 #define NT_INCLUDED
 
+//
+// GCC compatibility macros
+//
+#if defined(__GNUC__)
+#define __forceinline inline __attribute__((always_inline))
+#define __declspec(x) __attribute__((x))
+#define __fastcall __attribute__((fastcall))
+#define __stdcall __attribute__((stdcall))
+#define __cdecl __attribute__((cdecl))
+
+//
+// SEH (Structured Exception Handling) macros for GCC
+// These are no-ops in GCC as it doesn't support MSVC-style SEH
+//
+#define __try
+#define __except(x) if(0)
+#define __finally if(0)
+#define __leave break
+#define _exception_code() 0
+#define _exception_info() NULL
+#define _abnormal_termination() FALSE
+
+//
+// Map single-underscore versions to double-underscore for GCC
+//
+#define try __try
+#define except __except
+#define finally __finally
+#define AbnormalTermination() _abnormal_termination()
+#endif
+
 #if defined (_MSC_VER)
 #if ( _MSC_VER >= 800 )
 #pragma warning(disable:4514)

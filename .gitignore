@@ -1,122 +1,32 @@
 ```
-# Build artifacts and intermediate files
-*.obj
+# Build artifacts
+CMakeFiles/
+cmake_install.cmake
+Makefile
 *.o
-*.exe
-*.dll
+*.obj
+*.a
 *.lib
-*.pdb
-*.ilk
-*.exp
-*.imp
-*.sys
-*.inf
-*.cat
-*.mof
-*.mc
-*.rc
-*.res
-*.manifest
-*.map
-*.lst
-*.asm
-*.s
+*.so
+*.dll
+*.exe
+*.out
 
-# Build directories
+# Dependencies
 build/
 dist/
-Debug/
-Release/
-x64/
-Win32/
-bin/
-obj/
-lib/
 
 # Temporary files
 *.tmp
-*.temp
 *.log
-*.bak
-*.~
-*~
 
 # IDE files
-.vs/
-.vcproj/
-.sln
-.user
-.userosscache
-.vsconfig
-.ipch
-.iobj
-.tlog
-.lastbuildstate
-
-# Windows system files
-Thumbs.db
-desktop.ini
-$RECYCLE.BIN/
-System Volume Information/
-
-# Configuration and cache files
-*.userprefs
-*.userosscache
-.cache/
-.cargo/
-.gradle/
-.nuget/
-.packages/
-
-# Makefiles and build scripts
-makefile*
-Makefile*
-*.mak
-*.mk
-
-# Generated files
-*.inc
-*.h.in
-*.c.in
-*.cpp.in
-*.h.gch
-*.pch
-
-# Package manager files
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Python related (though not typical for kernel development)
-*.pyc
-*.pyo
-__pycache__/
-.pycache/
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Editor backups
+.vscode/
+.idea/
 *.swp
 *.swo
-*~
 
-# Environment files
-.env
-.env.local
-.env.*
-
-# Coverage reports
-coverage/
-htmlcov/
-
-# OS specific
+# System files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 ```

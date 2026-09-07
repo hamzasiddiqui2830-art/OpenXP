@@ -625,30 +625,8 @@ Return Value:
     //  Initialize the fast mutex
     //
 
-    Mcb->GuardedMutex = FsRtlAllocateFastMutex();
-
-    try {
-        
-        KeInitializeGuardedMutex( Mcb->GuardedMutex );
-        FsRtlInitializeBaseMcb( &Mcb->BaseMcb, PoolType );
-
-
-    } finally {
-
-        //
-        //  If this is an abnormal termination then we need to deallocate
-        //  the GuardedMutex and/or mapping (but once the mapping is allocated,
-        //  we can't raise).
-        //
-
-        if (AbnormalTermination()) {
-
-            FsRtlFreeFastMutex( Mcb->GuardedMutex ); 
-            Mcb->GuardedMutex = NULL;    
-        }
-
-        DebugTrace(-1, Dbg, "FsRtlInitializeLargeMcb -> VOID\n", 0 );
-    }
+    ExInitializeGuardedMutex( &Mcb->GuardedMutex );
+    FsRtlInitializeBaseMcb( &Mcb->BaseMcb, PoolType );
 
     //
     //  And return to our caller
@@ -726,19 +704,10 @@ Return Value:
     DebugTrace(+1, Dbg, "FsRtlUninitializeLargeMcb, Mcb = %08lx\n", Mcb );
 
     //
-    //  Protect against some user calling us to uninitialize an mcb twice
+    //  Uninitialize the base Mcb
     //
 
-    if (Mcb->GuardedMutex != NULL) {
-        
-        //
-        //  Deallocate the FastMutex and base Mcb
-        //
-
-        FsRtlFreeFastMutex( Mcb->GuardedMutex );
-        Mcb->GuardedMutex = NULL;
-        FsRtlUninitializeBaseMcb( &Mcb->BaseMcb );
-    }
+    FsRtlUninitializeBaseMcb( &Mcb->BaseMcb );
 
     DebugTrace(-1, Dbg, "FsRtlUninitializeLargeMcb -> VOID\n", 0 );
     return;
@@ -1632,15 +1601,11 @@ Return Value:
     BOOLEAN Result = FALSE;
 
     KeAcquireGuardedMutex( Mcb->GuardedMutex );
-    try {
 
-        Result = FsRtlAddBaseMcbEntry( &Mcb->BaseMcb, LargeVbn, LargeLbn, LargeSectorCount );
+    Result = FsRtlAddBaseMcbEntry( &Mcb->BaseMcb, LargeVbn, LargeLbn, LargeSectorCount );
 
-    } finally {
-
-        KeReleaseGuardedMutex( Mcb->GuardedMutex );
-        DebugTrace(-1, Dbg, "FsRtlAddLargeMcbEntry -> %08lx\n", Result );
-    }
+    KeReleaseGuardedMutex( Mcb->GuardedMutex );
+    DebugTrace(-1, Dbg, "FsRtlAddLargeMcbEntry -> %08lx\n", Result );
 
     return Result;
 }
@@ -2149,16 +2114,11 @@ Return Value:
 
     KeAcquireGuardedMutex( Mcb->GuardedMutex );
 
-    try {
+    FsRtlRemoveBaseMcbEntry( &Mcb->BaseMcb, Vbn, SectorCount );
 
-        FsRtlRemoveBaseMcbEntry( &Mcb->BaseMcb, Vbn, SectorCount );
+    KeReleaseGuardedMutex( Mcb->GuardedMutex );
 
-    } finally {
-
-        KeReleaseGuardedMutex( Mcb->GuardedMutex );
-
-        DebugTrace(-1, Dbg, "FsRtlRemoveLargeMcbEntry -> VOID\n", 0 );
-    }
+    DebugTrace(-1, Dbg, "FsRtlRemoveLargeMcbEntry -> VOID\n", 0 );
 
     return;
 }
@@ -2349,16 +2309,11 @@ Return Value:
     
     KeAcquireGuardedMutex( Mcb->GuardedMutex );
 
-    try {
+    Result = FsRtlLookupBaseMcbEntry( &Mcb->BaseMcb, LargeVbn, LargeLbn, LargeSectorCount, LargeStartingLbn, LargeCountFromStartingLbn, Index );
 
-        Result = FsRtlLookupBaseMcbEntry( &Mcb->BaseMcb, LargeVbn, LargeLbn, LargeSectorCount, LargeStartingLbn, LargeCountFromStartingLbn, Index );
-    
-    } finally {
+    KeReleaseGuardedMutex( Mcb->GuardedMutex );
 
-        KeReleaseGuardedMutex( Mcb->GuardedMutex );
-
-        DebugTrace(-1, Dbg, "FsRtlLookupLargeMcbEntry -> %08lx\n", Result );
-    }
+    DebugTrace(-1, Dbg, "FsRtlLookupLargeMcbEntry -> %08lx\n", Result );
 
     return Result;
 }

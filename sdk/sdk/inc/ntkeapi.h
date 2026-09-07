@@ -28,6 +28,8 @@ Abstract:
 extern "C" {
 #endif
 
+#include <basetsd.h>
+
 // begin_ntddk begin_wdm begin_ntifs begin_nthal
 
 #define LOW_PRIORITY 0              // Lowest thread priority level

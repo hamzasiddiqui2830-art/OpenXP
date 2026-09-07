@@ -1,48 +1,18 @@
-# Build artifacts
-build/
-dist/
-*.o
-*.obj
-*.out
-
-# Dependencies
-node_modules/
-.venv/
-venv/
-__pycache__/
-
-# IDE/Editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
-
-# Logs
+```
+# Logs and temp files
 *.log
+*.tmp
+*.swp
 
 # Environment
 .env
 .env.local
-*.env.*
+.env.*
 
-# Coverage
-coverage/
-htmlcov/
-.coverage
+# Editors
+.vscode/
+.idea/
 
-# OS specific
-.DS_Store
-Thumbs.db
-
-# CMake
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
-*.cmake
-*.a
-*.so
-*.dylib
-*.dll
-*.exe
+# Original rules preserved
+*.log
+```

@@ -26,6 +26,12 @@ Abstract:
 
 #include <ntos.h>
 #include <NtIoLogc.h>
+#include <ntkeapi.h>
+
+//
+// Define ALIGNED_SPINLOCK type
+//
+typedef KSPIN_LOCK ALIGNED_SPINLOCK;
 
 //
 // Define macros to acquire and release cache manager locks.

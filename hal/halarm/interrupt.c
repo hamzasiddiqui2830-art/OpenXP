@@ -1,9 +1,8 @@
 /*
- * PROJECT:         ReactOS HAL
+ * PROJECT:         OpenXP HAL
  * LICENSE:         GPL - See COPYING in the top level directory
  * PURPOSE:         ARM Interrupt Controller Support
- * PROGRAMMER:      ReactOS Team
- */
+ */ 
 
 #include <hal.h>
 #include <armddk.h>

@@ -1,8 +1,7 @@
 /*
- * PROJECT:         ReactOS HAL
+ * PROJECT:         OpenXP HAL
  * LICENSE:         GPL - See COPYING in the top level directory
  * PURPOSE:         ARM DMA Support
- * PROGRAMMER:      ReactOS Team
  */
 
 #include <hal.h>

@@ -1,8 +1,7 @@
 /*
- * PROJECT:         ReactOS Kernel
+ * PROJECT:         OpenXP Kernel
  * LICENSE:         GNU GPL - See COPYING in the top level directory
  * PURPOSE:         Structured Exception Handling (SEH) Abstraction
- * PROGRAMMER:      ReactOS Team
  * 
  * DESCRIPTION:     Abstracts SEH for different compilers.
  *                  - MSVC: Uses native __try/__except/__finally

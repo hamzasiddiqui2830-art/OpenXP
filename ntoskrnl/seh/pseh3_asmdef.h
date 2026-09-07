@@ -1,8 +1,7 @@
 /*
- * PROJECT:         ReactOS system libraries
+ * PROJECT:         OpenXP system libraries
  * LICENSE:         GNU GPL - See COPYING in the top level directory
  * PURPOSE:         Support library for PSEH3 - Assembly definitions
- * PROGRAMMER:      Timo Kreuzer (timo.kreuzer@reactos.org)
  */
 
 #ifndef _PSEH3_ASMDEF_H_

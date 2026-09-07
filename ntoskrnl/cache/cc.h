@@ -2156,6 +2156,11 @@ IsVacbLevelReferenced (
 //      #define try_return(S)  { S; goto try_exit; }
 //
 
+#define try __try
+#define except __except
+#define finally __finally
+#define AbnormalTermination() (__abnormal_termination())
+
 #define try_return(S) { S; goto try_exit; }
 
 #define DebugTrace(INDENT,LEVEL,X,Y) {NOTHING;}

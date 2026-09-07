@@ -1,10 +1,8 @@
 /*++ BUILD Version: 0001    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-Copyright (c) International Business Machines Corporation
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
+Copyright (c) 1994  International Business Machines Corporation
 
 Module Name:
 
@@ -15,12 +13,45 @@ Abstract:
     This module contains the internal structure definitions and APIs used by
     the NT Power Management.
 
+Author:
+
+    Ken Reneris (kenr) 19-July-1994
+    N. Yoshiyama [IBM Corp.] 01-Mar-1994
+
+
+Revision History:
+
+
 --*/
 
 
 
 #ifndef _PO_
 #define _PO_
+
+#include "xpress.h" // XPRESS declarations
+
+//
+// XPRESS compression header (LZNT1 will treat it as erroneous block)
+//
+#define XPRESS_HEADER_STRING        "\x81\x81xpress"
+#define XPRESS_HEADER_STRING_SIZE   8
+
+//
+// size of header (shall be at least 16 and be multiple of XPRESS_ALIGNMENT)
+//
+#define XPRESS_HEADER_SIZE  32
+
+//
+// max # of pages Xpress may handle at once
+//
+#define XPRESS_MAX_PAGES (XPRESS_MAX_BLOCK >> PAGE_SHIFT)
+
+//
+// max size of block aligned on page boundary
+//
+#define XPRESS_MAX_SIZE (XPRESS_MAX_PAGES << PAGE_SHIFT)
+
 
 #if DBG
 
@@ -180,7 +211,7 @@ PoGetLightestSystemStateForEject(
 NTKERNELAPI
 VOID
 PoSetSystemState (
-    __in EXECUTION_STATE Flags
+    IN EXECUTION_STATE Flags
     );
 
 // begin_ntifs
@@ -188,8 +219,8 @@ PoSetSystemState (
 NTKERNELAPI
 PVOID
 PoRegisterSystemState (
-    __inout_opt PVOID StateHandle,
-    __in EXECUTION_STATE Flags
+    IN PVOID StateHandle,
+    IN EXECUTION_STATE Flags
     );
 
 // end_ntifs
@@ -197,22 +228,22 @@ PoRegisterSystemState (
 typedef
 VOID
 (*PREQUEST_POWER_COMPLETE) (
-    __in PDEVICE_OBJECT DeviceObject,
-    __in UCHAR MinorFunction,
-    __in POWER_STATE PowerState,
-    __in_opt PVOID Context,
-    __in PIO_STATUS_BLOCK IoStatus
+    IN PDEVICE_OBJECT DeviceObject,
+    IN UCHAR MinorFunction,
+    IN POWER_STATE PowerState,
+    IN PVOID Context,
+    IN PIO_STATUS_BLOCK IoStatus
     );
 
 NTKERNELAPI
 NTSTATUS
 PoRequestPowerIrp (
-    __in PDEVICE_OBJECT DeviceObject,
-    __in UCHAR MinorFunction,
-    __in POWER_STATE PowerState,
-    __in_opt PREQUEST_POWER_COMPLETE CompletionFunction,
-    __in_opt PVOID Context,
-    __out_opt PIRP *Irp
+    IN PDEVICE_OBJECT DeviceObject,
+    IN UCHAR MinorFunction,
+    IN POWER_STATE PowerState,
+    IN PREQUEST_POWER_COMPLETE CompletionFunction,
+    IN PVOID Context,
+    OUT PIRP *Irp OPTIONAL
     );
 
 NTKERNELAPI
@@ -232,7 +263,7 @@ PoRequestShutdownWait (
 NTKERNELAPI
 VOID
 PoUnregisterSystemState (
-    __in PVOID StateHandle
+    IN PVOID StateHandle
     );
 
 // begin_nthal
@@ -240,32 +271,32 @@ PoUnregisterSystemState (
 NTKERNELAPI
 POWER_STATE
 PoSetPowerState (
-    __in PDEVICE_OBJECT   DeviceObject,
-    __in POWER_STATE_TYPE Type,
-    __in POWER_STATE      State
+    IN PDEVICE_OBJECT   DeviceObject,
+    IN POWER_STATE_TYPE Type,
+    IN POWER_STATE      State
     );
 
 NTKERNELAPI
 NTSTATUS
 PoCallDriver (
-    __in PDEVICE_OBJECT DeviceObject,
-    __inout PIRP        Irp
+    IN PDEVICE_OBJECT   DeviceObject,
+    IN OUT PIRP         Irp
     );
 
 NTKERNELAPI
 VOID
 PoStartNextPowerIrp(
-    __in PIRP   Irp
+    IN PIRP    Irp
     );
 
 
 NTKERNELAPI
 PULONG
 PoRegisterDeviceForIdleDetection (
-    __in PDEVICE_OBJECT     DeviceObject,
-    __in ULONG              ConservationIdleTime,
-    __in ULONG              PerformanceIdleTime,
-    __in DEVICE_POWER_STATE State
+    IN PDEVICE_OBJECT     DeviceObject,
+    IN ULONG              ConservationIdleTime,
+    IN ULONG              PerformanceIdleTime,
+    IN DEVICE_POWER_STATE State
     );
 
 #define PoSetDeviceBusy(IdlePointer) \
@@ -524,6 +555,7 @@ typedef struct _PO_DEVICE_NOTIFY_ORDER {
     PO_NOTIFY_ORDER_LEVEL   OrderLevel[PO_ORDER_MAXIMUM+1];
 } PO_DEVICE_NOTIFY_ORDER, *PPO_DEVICE_NOTIFY_ORDER;
 
+extern KAFFINITY        PoSleepingSummary;
 extern BOOLEAN          PoEnabled;
 extern ULONG            PoPowerSequence;
 extern BOOLEAN          PoPageLockData;

@@ -1,9 +1,8 @@
+//depot/main/Base/ntos/inc/cmdata.h#8 - integrate change 19035 (text)
 /*++
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -13,6 +12,12 @@ Abstract:
 
     This module contains data structures used by the 
     configuration manager.
+
+Author:
+
+    Dragos C. Sambotin (dragoss) 13-Jan-99
+
+Revision History:
 
 --*/
 
@@ -53,24 +58,6 @@ typedef struct _CM_KEY_HASH {
     HCELL_INDEX KeyCell;                        // Cell containing CM_KEY_NODE
 } CM_KEY_HASH, *PCM_KEY_HASH;
 
-typedef struct _CM_NAME_HASH {
-    ULONG   ConvKey;
-    struct _CM_NAME_HASH *NextHash;
-    USHORT  NameLength;      // Length of string value
-    WCHAR   Name[1] ;        // The actual string value
-} CM_NAME_HASH, *PCM_NAME_HASH;
-
-typedef struct _CM_KEY_HASH_TABLE_ENTRY {
-    EX_PUSH_LOCK    Lock;
-    PKTHREAD        Owner;      // exclusive owner so we don't do unnecessary reacquires.
-    PCM_KEY_HASH    Entry;
-} CM_KEY_HASH_TABLE_ENTRY, *PCM_KEY_HASH_TABLE_ENTRY;
-
-typedef struct _CM_NAME_HASH_TABLE_ENTRY {
-    EX_PUSH_LOCK    Lock;
-    PCM_NAME_HASH   Entry;
-} CM_NAME_HASH_TABLE_ENTRY, *PCM_NAME_HASH_TABLE_ENTRY;
-
 #ifdef CM_DEBUG_KCB
 #define KCB_SIGNATURE 'bKmC'
 
@@ -102,7 +89,7 @@ typedef struct _CM_NAME_HASH_TABLE_ENTRY {
 // (which are cached lazily) about its subkeys, value nodes and values' data.
 //
 // The subkey information is distinquished by ExtFlags.  See CM_KCB_* below.
-// The value nodes and data are distinguished by a bit in the variable.
+// The value nodes and data are distinguished by a bit in the vairable.
 // See CMP_IS_CELL_CACHED.
 //
 // Caches for value data will be created during query process, the cached
@@ -114,7 +101,7 @@ typedef struct _CM_NAME_HASH_TABLE_ENTRY {
 // path name of the key in the kcb, instead, we implemented the tree structure
 // (like the registry hive structure) to share name prefix.
 // Also, knowing that there are lots of keys sharing same names,
-// we create NameBlock structure so KCB's of same names
+// we create NameBlock strucuture so KCB's of same names
 // can share the NameBlock.  NameBlock is compressed.
 //
 // Meanings when the following bits are set in ExtFlags:
@@ -138,7 +125,7 @@ typedef struct _CM_NAME_HASH_TABLE_ENTRY {
 //
 // 3. CM_KCB_NO_DELAY_CLOSE: This bit is only used for non-symbolic keys and is
 //                           independent of bits on item 1. When set, it indicates that
-//                           key should not be kept in delay close when the reference
+//                           key should not be kept in delay close when the refererence
 //                           count goes to zero.
 //                           This is for the case when a key has no open handles but
 //                           still has subkeys in the cache.
@@ -217,8 +204,15 @@ typedef struct _CM_NAME_HASH_TABLE_ENTRY {
 //       We can change this by having a RefCount and a CachedSubKeyCount.  To not grow the
 //       structure size, we can merge the boolean Delete into ExtFlags.
 
+typedef struct _CM_NAME_HASH {
+    ULONG   ConvKey;
+    struct _CM_NAME_HASH *NextHash;
+    USHORT  NameLength;      // Length of string value
+    WCHAR   Name[1] ;      // The actual string value
+} CM_NAME_HASH, *PCM_NAME_HASH;
+
 //
-// As of Windows XP, the Name in the NameBlock is Always UpperCase
+// !!! In Whistler, the Name in the NameBlock is Always UpperCase !!!
 //
 typedef struct _CM_NAME_CONTROL_BLOCK {
     BOOLEAN     Compressed;       // Flags to indicate which extension we have.
@@ -281,7 +275,7 @@ typedef enum _SUBKEY_SEARCH_TYPE {
 //
 // ChildList
 //
-//      NOTE:   CHILD_LIST structures are normally referred to
+//      NOTE:   CHILD_LIST structures are normally refered to
 //              with HCELL_INDEX, not PCHILD_LIST vars.
 //
 
@@ -308,7 +302,7 @@ typedef struct  _CM_KEY_REFERENCE {
 //
 // The main advantage of the fast index is that the first four characters of the
 // names are stored within the index itself. This almost always saves us from having
-// to fault in a number of unnecessary pages when searching for a given key.
+// to fault in a number of unneccessary pages when searching for a given key.
 //
 // The main disadvantage is that each subkey requires twice as much storage. One dword
 // for the HCELL_INDEX and one dword to hold the first four characters of the subkey
@@ -389,7 +383,7 @@ typedef struct _CM_KEY_INDEX {
 #define KEY_VOLATILE        0x0001      // This key (and all its children)
                                         // is volatile.
 
-#define KEY_HIVE_EXIT       0x0002      // This key marks a boundary to another
+#define KEY_HIVE_EXIT       0x0002      // This key marks a bounary to another
                                         // hive (sort of a link).  The null
                                         // value entry contains the hive
                                         // and hive index of the root of the
@@ -620,10 +614,9 @@ typedef struct _CM_CACHED_VALUE_INDEX {
 } CM_CACHED_VALUE_INDEX, *PCM_CACHED_VALUE_INDEX; // This is only used as a pointer.
 
 typedef struct _CM_CACHED_VALUE {
-    USHORT          DataCacheType;
-    USHORT          ValueKeySize;
-    ULONG           HashKey;
-    CM_KEY_VALUE    KeyValue;
+    USHORT DataCacheType;
+    USHORT ValueKeySize;
+    CM_KEY_VALUE  KeyValue;
 } CM_CACHED_VALUE, *PCM_CACHED_VALUE; // This is only used as a pointer.
 
 typedef PCM_CACHED_VALUE *PPCM_CACHED_VALUE;
@@ -638,6 +631,10 @@ typedef PCM_CACHED_VALUE *PPCM_CACHED_VALUE;
 #define CMP_MARK_CELL_CACHED(Cell) (((ULONG_PTR) (Cell)) | CMP_CELL_CACHED_MASK)
 
 #define CMP_GET_CACHED_CELL_INDEX(Cell) (PtrToUlong((PVOID) (Cell)))
+
+
+
+// Dragos: From here start the changes!!!
 
 
 //
@@ -660,10 +657,6 @@ typedef PCM_CACHED_VALUE *PPCM_CACHED_VALUE;
                            CM_KCB_SUBKEY_HINT)
 
 #define CM_KCB_READ_ONLY_KEY        0x0080  // this kcb is read-only all write operations onto it are denied.
-
-#define CMP_LOCK_FREE_KEY_BODY_ARRAY_SIZE                   4
-
-#define CMP_KCB_REAL_NAME_UPCASE                            (PCHAR)1
 
 typedef struct _CM_KEY_CONTROL_BLOCK {
 #ifdef CM_DEBUG_KCB
@@ -709,9 +702,6 @@ typedef struct _CM_KEY_CONTROL_BLOCK {
         LIST_ENTRY                  FreeListEntry;      // entry in the free kcbs list inside a page - when we use the private allocator
     };
 
-    struct _CM_KEY_BODY         * KeyBodyArray[CMP_LOCK_FREE_KEY_BODY_ARRAY_SIZE];    // fast path; lock free
-
-    PVOID                       DelayCloseEntry;    // back pointer to delay close table    
     //
     // Bellow is information cached from KEY_NODE for performance reasons.
     // Values here should be IDENTICAL with the ones in the corresponding KEY_NODE
@@ -720,16 +710,12 @@ typedef struct _CM_KEY_CONTROL_BLOCK {
     USHORT                      KcbMaxNameLen;
     USHORT                      KcbMaxValueNameLen;
     ULONG                       KcbMaxValueDataLen;
-#if defined(_WIN64)
-    PCHAR                       RealKeyName;            // == 1 means name is uppercase, NULL name not cached yet
-#endif
-
-#if DBG
-    ULONG                       InDelayClose;
-#endif //DBG
 
 } CM_KEY_CONTROL_BLOCK, *PCM_KEY_CONTROL_BLOCK;
 
 
 #endif //__CM_DATA__
+
+
+
 

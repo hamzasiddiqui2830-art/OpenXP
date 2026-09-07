@@ -1,9 +1,6 @@
 /*++ BUILD Version: 0001    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
 
 Module Name:
 
@@ -15,6 +12,14 @@ Abstract:
     the kernel-mode Plug and Play manager.
 
     This file is included by including "ntos.h".
+
+Author:
+
+    Lonny McMichael (lonnym) 02/09/95
+
+
+Revision History:
+
 
 --*/
 
@@ -1280,8 +1285,6 @@ PpPagePathRelease(
 //
 
 // begin_ntosp
-
-NTKERNELAPI
 ULONG
 IoPnPDeliverServicePowerNotification(
     IN   POWER_ACTION           PowerOperation,
@@ -1289,7 +1292,6 @@ IoPnPDeliverServicePowerNotification(
     IN   ULONG                  PowerNotificationData,
     IN   BOOLEAN                Synchronous
     );
-
 // end_ntosp
 
 #endif // _PNP_

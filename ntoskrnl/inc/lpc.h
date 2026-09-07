@@ -1,9 +1,7 @@
 /*++ BUILD Version: 0002    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -14,6 +12,12 @@ Abstract:
     This module contains the public data structures and procedure
     prototypes for the Local Inter-Process Communication (LPC)
     sub-component of NTOS.
+
+Author:
+
+    Steve Wood (stevewo) 15-May-1989
+
+Revision History:
 
 --*/
 
@@ -42,19 +46,17 @@ LpcDumpThread(
 NTKERNELAPI
 NTSTATUS
 LpcRequestPort(
-    __in PVOID PortAddress,
-    __in PPORT_MESSAGE RequestMessage
+    IN PVOID PortAddress,
+    IN PPORT_MESSAGE RequestMessage
     );
 
-NTKERNELAPI
 NTSTATUS
 LpcRequestWaitReplyPort(
-    __in PVOID PortAddress,
-    __in PPORT_MESSAGE RequestMessage,
-    __out PPORT_MESSAGE ReplyMessage
+    IN PVOID PortAddress,
+    IN PPORT_MESSAGE RequestMessage,
+    OUT PPORT_MESSAGE ReplyMessage
     );
 
-NTKERNELAPI
 NTSTATUS
 LpcRequestWaitReplyPortEx (
     IN PVOID PortAddress,
@@ -62,7 +64,6 @@ LpcRequestWaitReplyPortEx (
     OUT PPORT_MESSAGE ReplyMessage
     );
 
-NTKERNELAPI
 NTSTATUS
 LpcDisconnectPort (
     IN PVOID Port
@@ -79,7 +80,7 @@ extern ULONG LpcCallBackOperationCount;
 extern ULONG LpcDatagramOperationCount;
 
 //
-// Non-pageable portion of a port queue
+// Nonpagable portion of a port queue
 //
 typedef struct _LPCP_NONPAGED_PORT_QUEUE {
     KSEMAPHORE Semaphore;       // Counting semaphore that is incremented

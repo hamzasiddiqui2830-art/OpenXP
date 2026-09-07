@@ -1,9 +1,7 @@
 /*++ BUILD Version: 0014    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -13,33 +11,21 @@ Abstract:
 
     This module contains the i386 hardware specific header file.
 
---*/
+Author:
 
-#if defined(__cplusplus)
-extern "C" {
-#endif // defined(__cplusplus)
+    David N. Cutler (davec) 2-Aug-1989
+
+Revision History:
+
+    25-Jan-1990    shielint
+
+                   Added definitions for 8259 ports and commands and
+                   macros for 8259 irq# and system irql conversion.
+
+--*/
 
 #ifndef _i386_
 #define _i386_
-
-// begin_ntosp
-
-#if defined(_X86_)
-//
-// Image header machine architecture
-//
-
-#define IMAGE_FILE_MACHINE_NATIVE   0x014c
-#endif
-
-// end_ntosp
-
-#if !(defined(_NTDRIVER_) || defined(_NTDDK_) || defined(_NTIFS_) || defined(_NTHAL_) || defined(_NTOSP_)) && !defined(_BLDR_)
-
-#define ExRaiseException RtlRaiseException
-#define ExRaiseStatus RtlRaiseStatus
-
-#endif
 
 // begin_ntddk begin_wdm begin_nthal begin_ntndis begin_ntosp
 
@@ -79,16 +65,17 @@ typedef ULONG PFN_NUMBER, *PPFN_NUMBER;
 //          won't get context switched between the call to it and the
 //          variable reference, OR, were we don't care, (ie TEB pointer)
 
-//  NOTE - we must not macro out things we export
-//      Things like KeFlushIcache and KeFlushDcache cannot be macro-ed
+//  NOTE - bryanwi 11 june 90 - we must not macro out things we export
+//      Things like KeFlushIcache and KeFlushDcache cannot be macroed
 //      out because external code (like drivers) will want to import
 //      them by name.  Therefore, the defines below that turn them into
-//      nothing are inappropriate.
+//      nothing are inappropriate.  But this isn't going to hurt us right
+//      now.
 
 
 //
 // Length on interrupt object dispatch code in longwords.
-//            Reserve 9*4 space for ABIOS stack mapping.  If NO
+// (shielint) Reserve 9*4 space for ABIOS stack mapping.  If NO
 //            ABIOS support the size of DISPATCH_LENGTH should be 74.
 //
 
@@ -611,10 +598,6 @@ KeFlushCurrentTb (                                  // nthal
 #if _MSC_VER >= 1200
 #pragma warning(push)
 #endif
-
-void __cdecl _disable (void);
-void __cdecl _enable (void);
-
 #pragma warning(disable:4164)
 #pragma intrinsic(_disable)
 #pragma intrinsic(_enable)
@@ -1106,13 +1089,14 @@ typedef struct _KPRCB {
 //
 
     UCHAR PrcbPad0[28 + 64];
-    KSPIN_LOCK_QUEUE LockQueue[LockQueueMaximumLock];
+    KSPIN_LOCK_QUEUE LockQueue[16];
+    UCHAR PrcbPad1[8];
 
 // End of the architecturally defined section of the PRCB.
 // end_nthal end_ntosp
 
 //
-// Miscellaneous counters - 64-byte aligned.
+// Micellaneous counters - 64-byte aligned.
 //
 
     struct _KTHREAD *NpxThread;
@@ -1126,14 +1110,11 @@ typedef struct _KPRCB {
     ULONG   PageColor;
     BOOLEAN SkipTick;
     KIRQL   DebuggerSavedIRQL;
-    UCHAR   NodeColor;
-    UCHAR   Spare1;
-    ULONG   NodeShiftedColor;
+    UCHAR   Spare1[6];
     struct _KNODE *ParentNode;
     KAFFINITY MultiThreadProcessorSet;
     struct _KPRCB * MultiThreadSetMaster;
-    ULONG   SecondaryColorMask;
-    LONG    Sleeping;
+    ULONG   ThreadStartCount[2];
 
 //
 // Performance counters - 64-byte aligned.
@@ -1161,18 +1142,7 @@ typedef struct _KPRCB {
     ULONG KeIcacheFlushCount;
     ULONG KeSecondLevelTbFills;
     ULONG KeSystemCalls;
-
-//
-// I/O system counters.
-//
-
-    volatile LONG IoReadOperationCount;
-    volatile LONG IoWriteOperationCount;
-    volatile LONG IoOtherOperationCount;
-    LARGE_INTEGER IoReadTransferCount;
-    LARGE_INTEGER IoWriteTransferCount;
-    LARGE_INTEGER IoOtherTransferCount;
-    ULONG SpareCounter1[8];
+    ULONG SpareCounter1;
 
 //
 // Nonpaged per processor lookaside lists - 64-byte aligned.
@@ -1248,13 +1218,7 @@ typedef struct _KPRCB {
     UCHAR PrcbPad50;
     volatile BOOLEAN IdleSchedule;
     LONG DpcSetEventRequest;
-    UCHAR PrcbPad5[18];
-
-//
-// Number of 100ns units remaining before a tick completes on this processor.
-//
-
-    LONG TickOffset;
+    UCHAR PrcbPad5[22];
 
 //
 // Generic call DPC - 64-byte aligned.
@@ -1272,7 +1236,7 @@ typedef struct _KPRCB {
 
     LIST_ENTRY WaitListHead;
     ULONG ReadySummary;
-    ULONG QueueIndex;
+    ULONG SelectNextLast;
     LIST_ENTRY DispatcherReadyListHead[MAXIMUM_PRIORITY];
     SINGLE_LIST_ENTRY DeferredReadyListHead;
     ULONG PrcbPad72[11];
@@ -1290,28 +1254,10 @@ typedef struct _KPRCB {
     LONG LookasideIrpFloat;
 
 //
-// Memory management counters.
-//
-
-    volatile LONG MmPageFaultCount;
-    volatile LONG MmCopyOnWriteCount;
-    volatile LONG MmTransitionCount;
-    volatile LONG MmCacheTransitionCount;
-    volatile LONG MmDemandZeroCount;
-    volatile LONG MmPageReadCount;
-    volatile LONG MmPageReadIoCount;
-    volatile LONG MmCacheReadCount;
-    volatile LONG MmCacheIoCount;
-    volatile LONG MmDirtyPagesWriteCount;
-    volatile LONG MmDirtyWriteIoCount;
-    volatile LONG MmMappedPagesWriteCount;
-    volatile LONG MmMappedWriteIoCount;
-    
-//
 // Spare fields.
 //
 
-    ULONG   SpareFields0[1];
+    ULONG   SpareFields0[4];
 
 //
 // Processor information.
@@ -1329,7 +1275,6 @@ typedef struct _KPRCB {
 //
 
     volatile ULONGLONG IsrTime;
-    ULONGLONG SpareField1;
 
 //
 // Npx save area - 16-byte aligned.
@@ -1472,11 +1417,6 @@ KeGetContextSwitches (
     return Pcr->ContextSwitches;
 }
 
-BOOLEAN
-KeDisableInterrupts (
-    VOID
-    );
-
 // begin_nthal begin_ntosp
 
 //
@@ -1547,36 +1487,11 @@ KeDisableInterrupts (
                                 // Local enable for Dr0-Dr4,
                                 // Le for "perfect" trapping
 
-//
-// Bits to used track the state of the various debug registers
-//
-
-#define DR7_OVERRIDE_V 0x04
-
-#define DR_MASK(Bit) (((UCHAR)(1UL << (Bit))))
-
-
-#define DR_REG_MASK (DR_MASK(0) | DR_MASK(1) | DR_MASK(2) | DR_MASK(3) | DR_MASK(6))
-#define DR_VALID_MASK (DR_REG_MASK | DR_MASK (7) | DR_MASK (DR7_OVERRIDE_V))
-
-#define DR7_MASK_SHIFT 16   // Shift to translate the valid mask to a spare region in Dr7
-                                             // The region occupied is the LEN & R/W region for Dr0
-                                             
-#define DR7_OVERRIDE_MASK ((0x0FUL) << DR7_MASK_SHIFT)  // This corresponds to a break on R/W of 4
-                                                                                                // bytes from the addres indicated by DR0
-#define DR7_RESERVED_MASK 0x0000DC00    // Bits 10-12, 14-15 are reserved
 #define DR7_ACTIVE  0x00000055  // If any of these bits are set, a Dr is active
 
-C_ASSERT (sizeof(BOOLEAN) == sizeof(UCHAR));
-C_ASSERT ((((ULONG)DR_VALID_MASK) & ~((ULONG)((UCHAR)0xFF))) == 0);
-C_ASSERT ((DR7_ACTIVE & DR7_OVERRIDE_MASK) == 0);
-C_ASSERT ((DR7_RESERVED_MASK & DR7_OVERRIDE_MASK) == 0);
-C_ASSERT ((DR7_OVERRIDE_MASK & DR7_LEGAL) == DR7_OVERRIDE_MASK);
-C_ASSERT ((DR7_RESERVED_MASK & DR7_LEGAL) == 0);
+#define SANITIZE_DR6(Dr6, mode) ((Dr6 & DR6_LEGAL));
 
-#define SANITIZE_DR6(Dr6, mode) (((Dr6) & DR6_LEGAL))
-
-#define SANITIZE_DR7(Dr7, mode) (((Dr7) & DR7_LEGAL))
+#define SANITIZE_DR7(Dr7, mode) ((Dr7 & DR7_LEGAL));
 
 #define SANITIZE_DRADDR(DrReg, mode) (          \
     (mode) == KernelMode ?                      \
@@ -1599,6 +1514,11 @@ extern ULONG KiMXCsrMask;
 //
 // Nonvolatile context pointers
 //
+// bryanwi 21 feb 90 - This is bogus.  The 386 doesn't have
+//                     enough nonvolatile context to make this
+//                     structure worthwhile.  Can't declare a
+//                     field to be void, so declare a Junk structure
+//                     instead.
 
 typedef struct _KNONVOLATILE_CONTEXT_POINTERS {
     ULONG   Junk;
@@ -1866,8 +1786,6 @@ typedef struct _KFLOATING_SAVE {
 #define PPI_SHIFT 30
 #endif
 
-#define GUARD_PAGE_SIZE   PAGE_SIZE
-
 //
 // Define the number of bits to shift to right justify the Page Table Index
 // field of a PTE.
@@ -1879,25 +1797,35 @@ typedef struct _KFLOATING_SAVE {
 // Define the highest user address and user probe address.
 //
 
-extern NTKERNELAPI PVOID MmHighestUserAddress;
-extern NTKERNELAPI PVOID MmSystemRangeStart;
-extern NTKERNELAPI ULONG MmUserProbeAddress;
+// end_ntddk end_nthal end_ntosp
 
-#define MM_HIGHEST_USER_ADDRESS MmHighestUserAddress
-#define MM_SYSTEM_RANGE_START MmSystemRangeStart
+#if defined(_NTDRIVER_) || defined(_NTDDK_) || defined(_NTIFS_) || defined(_NTHAL_)
 
-#if defined(_LOCAL_COPY_USER_PROBE_ADDRESS_)
+// begin_ntddk begin_nthal begin_ntosp
 
-#define MM_USER_PROBE_ADDRESS _LOCAL_COPY_USER_PROBE_ADDRESS_
+extern PVOID *MmHighestUserAddress;
+extern PVOID *MmSystemRangeStart;
+extern ULONG *MmUserProbeAddress;
 
-extern ULONG _LOCAL_COPY_USER_PROBE_ADDRESS_;
+#define MM_HIGHEST_USER_ADDRESS *MmHighestUserAddress
+#define MM_SYSTEM_RANGE_START *MmSystemRangeStart
+#define MM_USER_PROBE_ADDRESS *MmUserProbeAddress
+
+// end_ntddk end_nthal end_ntosp
 
 #else
 
+extern PVOID MmHighestUserAddress;
+extern PVOID MmSystemRangeStart;
+extern ULONG MmUserProbeAddress;
+
+#define MM_HIGHEST_USER_ADDRESS MmHighestUserAddress
+#define MM_SYSTEM_RANGE_START MmSystemRangeStart
 #define MM_USER_PROBE_ADDRESS MmUserProbeAddress
 
 #endif
 
+// begin_ntddk begin_nthal begin_ntosp
 //
 // The lowest user address reserves the low 64k.
 //
@@ -1917,9 +1845,7 @@ extern ULONG _LOCAL_COPY_USER_PROBE_ADDRESS_;
 // begin_wdm
 
 #define MmGetProcedureAddress(Address) (Address)
-#define MmLockPageableCodeSection(Address) MmLockPageableDataSection(Address)
-#define MmLockPagableCodeSection(Address) MmLockPageableDataSection(Address)
-#define MmLockPagableDataSection(Address) MmLockPageableDataSection(Address)
+#define MmLockPagableCodeSection(Address) MmLockPagableDataSection(Address)
 
 // end_ntddk end_wdm
 
@@ -2156,7 +2082,6 @@ InterlockedCompareExchange(
 #define InterlockedCompareExchange64(Destination, ExChange, Comperand) \
     ExfInterlockedCompareExchange64(Destination, &(ExChange), &(Comperand))
 
-
 NTKERNELAPI
 LONGLONG
 FASTCALL
@@ -2202,6 +2127,36 @@ _InterlockedDecrement(
 #else
 #define InterlockedDecrement(Addend) (InterlockedExchangeAdd (Addend, -1)-1)
 #endif
+
+//FORCEINLINE
+//LONG
+//FASTCALL
+//InterlockedIncrement(
+//    IN PLONG Addend
+//    )
+//{
+//    __asm {
+//        mov     eax, 1
+//        mov     ecx, Addend
+//        xadd    [ecx], eax
+//        inc     eax
+//    }
+//}
+
+//FORCEINLINE
+//LONG
+//FASTCALL
+//InterlockedDecrement(
+//    IN PLONG Addend
+//    )
+//{
+//    __asm {
+//        mov     eax, -1
+//        mov     ecx, Addend
+//        xadd    [ecx], eax
+//        dec     eax
+//    }
+//}
 
 #if (_MSC_FULL_VER > 13009037)
 LONG
@@ -2295,8 +2250,6 @@ InterlockedCompareExchange(
 #define InterlockedCompareExchange64(Destination, ExChange, Comperand) \
     ExfInterlockedCompareExchange64(Destination, &(ExChange), &(Comperand))
 
-
-NTKERNELAPI
 LONGLONG
 FASTCALL
 ExfInterlockedCompareExchange64(
@@ -2304,7 +2257,6 @@ ExfInterlockedCompareExchange64(
     IN PLONGLONG ExChange,
     IN PLONGLONG Comperand
     );
-
 
 #else   // NT_UP
 
@@ -2437,7 +2389,6 @@ ExfInterlockedCompareExchange64(
     IN PLONGLONG Comperand
     );
 
-
 // end_ntosp end_ntddk end_nthal
 #endif      // NT_UP
 // begin_ntddk begin_nthal begin_ntosp
@@ -2454,12 +2405,6 @@ ExfInterlockedCompareExchange64(
 #define InterlockedCompareExchangeRelease InterlockedCompareExchange
 #define InterlockedCompareExchangeAcquire64 InterlockedCompareExchange64
 #define InterlockedCompareExchangeRelease64 InterlockedCompareExchange64
-#define InterlockedCompareExchangePointerAcquire InterlockedCompareExchangePointer
-#define InterlockedCompareExchangePointerRelease InterlockedCompareExchangePointer
-
-#define InterlockedExchangeAddSizeT(a, b) InterlockedExchangeAdd((LONG *)a, b)
-#define InterlockedIncrementSizeT(a) InterlockedIncrement((LONG *)a)
-#define InterlockedDecrementSizeT(a) InterlockedDecrement((LONG *)a)
 
 // end_ntosp end_ntddk end_nthal end_wdm
 #if _MSC_VER >= 1200
@@ -2472,7 +2417,7 @@ ExfInterlockedCompareExchange64(
 #endif      // __WINBASE__ && !NONTOSPINTERLOCK
 // end_ntosp end_ntddk end_nthal
 
-// begin_nthal begin_ntddk begin_ntosp
+// begin_nthal begin_ntddk
 
 //
 // Turn these instrinsics off until the compiler can handle them
@@ -2488,7 +2433,6 @@ _InterlockedOr (
 #pragma intrinsic (_InterlockedOr)
 
 #define InterlockedOr _InterlockedOr
-#define InterlockedOrAffinity InterlockedOr
 
 LONG
 _InterlockedAnd (
@@ -2499,7 +2443,6 @@ _InterlockedAnd (
 #pragma intrinsic (_InterlockedAnd)
 
 #define InterlockedAnd _InterlockedAnd
-#define InterlockedAndAffinity InterlockedAnd
 
 LONG
 _InterlockedXor (
@@ -2557,12 +2500,9 @@ InterlockedOr (
     return j;
 }
 
-
 #endif // compiler version
 
-
-
-// end_nthal end_ntddk end_ntosp
+// end_nthal end_ntddk
 
 //
 // Structure for Ldt information in x86 processes
@@ -2656,22 +2596,7 @@ KeGetPcr(VOID)
 #endif
 }
 
-// end_nthal
-//
-// Get current node shifted color.
-//
-
-FORCEINLINE
-ULONG
-KeGetCurrentNodeShiftedColor (
-    VOID
-    )
-
-{
-    return __readfsdword(FIELD_OFFSET(KPCR, PrcbData.NodeShiftedColor));
-}
-
-// begin_nthal begin_ntosp
+// begin_ntosp
 
 //
 // Get address of current processor block.
@@ -2764,7 +2689,7 @@ NTAPI
 KeIsExecutingDpc(VOID)
 {
 #if (_MSC_FULL_VER >= 13012035)
-    return (ULONG) __readfsword (FIELD_OFFSET (KPCR, PrcbData.DpcRoutineActive));
+    return (ULONG) __readfsbyte (FIELD_OFFSET (KPCR, PrcbData.DpcRoutineActive));
 #else
     __asm {  movzx eax, word ptr fs:[0] KPCR.PrcbData.DpcRoutineActive }
 #endif
@@ -2782,8 +2707,6 @@ KeIsExecutingDpc(VOID)
 #endif // !defined(MIDL_PASS) && defined(_M_IX86)
 
 // end_nthal end_ntddk end_wdm end_ntosp
-
-#define KeIsIdleHaltSet(Prcb, Number) ((Prcb)->Sleeping != 0)
 
 // begin_ntddk begin_nthal begin_ntndis begin_wdm begin_ntosp
 
@@ -2829,8 +2752,6 @@ _ReadWriteBarrier(
 
 #pragma intrinsic (_ReadWriteBarrier)
 
-#pragma warning( push )
-#pragma warning( disable : 4793 )
 
 FORCEINLINE
 VOID
@@ -2843,8 +2764,6 @@ KeMemoryBarrier (
         xchg Barrier, eax
     }
 }
-
-#pragma warning( pop )
 
 #define KeMemoryBarrierWithoutFence() _ReadWriteBarrier()
 
@@ -3333,7 +3252,6 @@ extern BOOLEAN KeI386FxsrPresent;
 //
 // i386 Feature bit definitions
 //
-// N.B. The no execute feature flags must be identical on all platforms.
 
 #define KF_V86_VIS          0x00000001
 #define KF_RDTSC            0x00000002
@@ -3353,9 +3271,6 @@ extern BOOLEAN KeI386FxsrPresent;
 #define KF_AMDK6MTRR        0x00008000
 #define KF_XMMI64           0x00010000
 #define KF_DTS              0x00020000
-#define KF_NOEXECUTE        0x20000000
-#define KF_GLOBAL_32BIT_EXECUTE 0x40000000
-#define KF_GLOBAL_32BIT_NOEXECUTE 0x80000000
 
 //
 // Define macro to test if x86 feature is present.
@@ -3366,7 +3281,3 @@ extern ULONG KiBootFeatureBits;
 #define Isx86FeaturePresent(_f_) ((KiBootFeatureBits & (_f_)) != 0)
 
 #endif // _i386_
-
-#if defined(__cplusplus)
-} // extern "C"
-#endif // defined(__cplusplus)

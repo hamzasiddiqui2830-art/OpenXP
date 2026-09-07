@@ -1,0 +1,14 @@
+!IF 0
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
+
+!ENDIF
+
+!include $(PROJECT_ROOT)\ntos\ntoskrnl.inc
+!include ..\sources.inc
+
+NTTARGETFILE1=$(O)\ntoskrnl.c
+
+MISCFILES= \
+    $(O)\ntoskrnl.c

@@ -1,9 +1,7 @@
 /*++ BUILD Version: 0003    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -14,25 +12,16 @@ Abstract:
     Common type definitions for the NTOS component that are private to
     NTOS, but shared between NTOS sub-components.
 
+Author:
+
+    Steve Wood (stevewo) 08-May-1989
+
+Revision History:
+
 --*/
 
 #ifndef _NTOSDEF_
 #define _NTOSDEF_
-
-//
-// On UP systems high frequency spin locks are naturally aligned whereas on
-// MP systems they cache aligned.
-//
-
-#if defined(NT_UP)
-
-#define ALIGNED_SPINLOCK KSPIN_LOCK
-
-#else
-
-#define ALIGNED_SPINLOCK DECLSPEC_CACHEALIGN KSPIN_LOCK
-
-#endif
 
 //
 // disable these for compiling w4
@@ -97,7 +86,7 @@ typedef struct _PP_LOOKASIDE_LIST {
 
 // end_ntddk end_wdm end_nthal end_ntifs end_ntosp
 //
-// Global flag set by NtPartyByNumber(6) controls behavior of
+// Global flag set by NtPartyByNumber(6) controls behaviour of
 // NT.  See \nt\sdk\inc\ntexapi.h for flag definitions
 //
 // begin_ntddk begin_wdm begin_nthal begin_ntifs begin_ntosp
@@ -180,15 +169,12 @@ BOOLEAN
 //
 // Asynchronous Procedure Call (APC) object
 //
-// N.B. The size of this structure cannot change since it has been exported.
 //
 
 typedef struct _KAPC {
-    UCHAR Type;
-    UCHAR SpareByte0;
-    UCHAR Size;
-    UCHAR SpareByte1;
-    ULONG SpareLong0;
+    CSHORT Type;
+    CSHORT Size;
+    ULONG Spare0;
     struct _KTHREAD *Thread;
     LIST_ENTRY ApcListEntry;
     PKKERNEL_ROUTINE KernelRoutine;
@@ -205,15 +191,7 @@ typedef struct _KAPC {
     CCHAR ApcStateIndex;
     KPROCESSOR_MODE ApcMode;
     BOOLEAN Inserted;
-} KAPC, *PKAPC, *PRKAPC;
-
-#define KAPC_OFFSET_TO_SPARE_BYTE0 FIELD_OFFSET(KAPC, SpareByte0)
-#define KAPC_OFFSET_TO_SPARE_BYTE1 FIELD_OFFSET(KAPC, SpareByte1)
-#define KAPC_OFFSET_TO_SPARE_LONG FIELD_OFFSET(KAPC, SpareLong0)
-#define KAPC_OFFSET_TO_SYSTEMARGUMENT1 FIELD_OFFSET(KAPC, SystemArgument1)
-#define KAPC_OFFSET_TO_SYSTEMARGUMENT2 FIELD_OFFSET(KAPC, SystemArgument2)
-#define KAPC_OFFSET_TO_APCSTATEINDEX FIELD_OFFSET(KAPC, ApcStateIndex)
-#define KAPC_ACTUAL_LENGTH (FIELD_OFFSET(KAPC, Inserted) + sizeof(BOOLEAN))
+} KAPC, *PKAPC, *RESTRICTED_POINTER PRKAPC;
 
 // begin_ntndis
 //
@@ -267,7 +245,7 @@ VOID
 // Otherwise, the DPC execution will be delayed on the target processor until
 // the DPC queue depth on the target processor is greater that the maximum
 // target depth or the minimum DPC rate on the target processor is less than
-// the target minimum rate.
+// the target mimimum rate.
 //
 // If the DPC is being queued to the current processor and the DPC is not of
 // low importance, the current DPC queue depth is greater than the maximum
@@ -296,22 +274,17 @@ typedef enum _KDPC_IMPORTANCE {
 // Deferred Procedure Call (DPC) object
 //
 
-#define ASSERT_DPC(Object)                                                   \
-    ASSERT(((Object)->Type == DpcObject) ||                                  \
-           ((Object)->Type == ThreadedDpcObject))
-
 typedef struct _KDPC {
-    UCHAR Type;
-    UCHAR Importance;
+    CSHORT Type;
     UCHAR Number;
-    UCHAR Expedite;
+    UCHAR Importance;
     LIST_ENTRY DpcListEntry;
     PKDEFERRED_ROUTINE DeferredRoutine;
     PVOID DeferredContext;
     PVOID SystemArgument1;
     PVOID SystemArgument2;
     PVOID DpcData;
-} KDPC, *PKDPC, *PRKDPC;
+} KDPC, *PKDPC, *RESTRICTED_POINTER PRKDPC;
 
 //
 // Interprocessor interrupt worker routine function prototype.
@@ -566,16 +539,8 @@ typedef struct _DISPATCHER_HEADER {
     union {
         struct {
             UCHAR Type;
-            union {
-                UCHAR Absolute;
-                UCHAR NpxIrql;
-            };
-
-            union {
-                UCHAR Size;
-                UCHAR Hand;
-            };
-
+            UCHAR Absolute;
+            UCHAR Size;
             union {
                 UCHAR Inserted;
                 BOOLEAN DebugActive;
@@ -595,40 +560,10 @@ typedef struct _DISPATCHER_HEADER {
 
 typedef struct _KEVENT {
     DISPATCHER_HEADER Header;
-} KEVENT, *PKEVENT, *PRKEVENT;
-
-//
-// Gate object
-//
-// N.B. Gate object services allow the specification of synchronization
-//      events. This allows fast mutex to be transparently replaced with
-//      gates.
-//
-
-#define ASSERT_GATE(object)                                                  \
-    ASSERT((((object)->Header.Type & KOBJECT_TYPE_MASK) == GateObject) ||    \
-          (((object)->Header.Type & KOBJECT_TYPE_MASK) == EventSynchronizationObject))
-
-typedef struct _KGATE {
-    DISPATCHER_HEADER Header;
-} KGATE, *PKGATE;
-
-//
-// Define timer table size.
-//
-// N.B. The size of the timer table must be less than or equal to 256 and a
-//      power of 2 in size.
-
-#define TIMER_TABLE_SIZE 512
-#define TIMER_TABLE_SHIFT 9
-
-C_ASSERT((1 << TIMER_TABLE_SHIFT) == TIMER_TABLE_SIZE);
-C_ASSERT((TIMER_TABLE_SIZE & (TIMER_TABLE_SIZE - 1)) == 0);
+} KEVENT, *PKEVENT, *RESTRICTED_POINTER PRKEVENT;
 
 //
 // Timer object
-//
-// N.B. The period field must be the last member of this structure.
 //
 
 typedef struct _KTIMER {
@@ -637,10 +572,7 @@ typedef struct _KTIMER {
     LIST_ENTRY TimerListEntry;
     struct _KDPC *Dpc;
     LONG Period;
-} KTIMER, *PKTIMER, *PRKTIMER;
-
-#define KTIMER_ACTUAL_LENGTH                                                \
-    (FIELD_OFFSET(KTIMER, Period) + sizeof(LONG))
+} KTIMER, *PKTIMER, *RESTRICTED_POINTER PRKTIMER;
 
 typedef enum _LOCK_OPERATION {
     IoReadAccess,
@@ -649,17 +581,5 @@ typedef enum _LOCK_OPERATION {
 } LOCK_OPERATION;
 
 // end_ntddk end_wdm end_nthal end_ntifs end_ntndis end_ntosp
-
-//
-// Define kernel stack segment.
-//
-
-typedef struct _KERNEL_STACK_SEGMENT {
-    ULONG_PTR StackBase;
-    ULONG_PTR StackLimit;
-    ULONG_PTR KernelStack;
-    ULONG_PTR InitialStack;
-    ULONG_PTR ActualLimit;
-} KERNEL_STACK_SEGMENT, *PKERNEL_STACK_SEGMENT;
 
 #endif // _NTOSDEF_

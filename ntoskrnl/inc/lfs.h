@@ -1,9 +1,7 @@
 /*++ BUILD Version: 0000    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -13,6 +11,12 @@ Abstract:
 
     This module contains the public data structures and procedure
     prototypes for the Log File Service.
+
+Author:
+    Brian Andrew    [BrianAn]   20-June-1991
+
+
+Revision History:
 
 --*/
 
@@ -62,7 +66,7 @@ Abstract:
 //
 // The Update Sequence Array should be included at the end of the header of
 // the structure it is protecting, since it is variable size.  Its user must
-// ensure that the correct size is reserved for it, namely:
+// insure that the correct size is reserved for it, namely:
 //
 //      (sizeof-structure / SEQUENCE_NUMBER_STRIDE + 1) * sizeof(USHORT)
 //

@@ -1,10 +1,7 @@
 ;++
 ;
 ; Copyright (c) Microsoft Corporation. All rights reserved.
-;
-; You may only use this code if you agree to the terms of the Windows Research Kernel Source Code License agreement (see License.txt).
-; If you do not agree to the terms, do not use the code.
-;
+; Project OpenXP Internal
 ;
 ; Module Name:
 ;
@@ -18,6 +15,11 @@
 ;
 ;   If _APIC_TPR_ is defined, IRQL is manipulated directly via the PIC.
 ;   Otherwise, the appropriate HAL routine is called.
+;
+; Author:
+;
+;   Forrest Foltz (forrestf) 1/30/2001
+;
 ;
 ; This module exposes four public macros:
 ;
@@ -344,4 +346,8 @@ endif
 endm
 
 endif
+
+
+
+
 

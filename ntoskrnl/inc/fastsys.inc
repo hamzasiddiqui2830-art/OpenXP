@@ -1,10 +1,7 @@
 ; /*
 ;
-; Copyright (c) Microsoft Corporation. All rights reserved. 
-;
-; You may only use this code if you agree to the terms of the Windows Research Kernel Source Code License agreement (see License.txt).
-; If you do not agree to the terms, do not use the code.
-;
+; Copyright (c) Microsoft Corporation. All rights reserved.
+; Project OpenXP Internal
 ;
 ; Module Name:
 ;
@@ -14,6 +11,19 @@
 ;
 ;    This module implements the header for Fast System Calls for Intel
 ;    x86 family processors.
+;
+; Author:
+;
+;    Bryan M. Willman (bryanwi) 09-Jan-1998
+;
+; Environment:
+;
+;    kernel mode.
+;
+; Revision History:
+;
+;   Peter Johnston (peterj) 07-May-1998
+;       Add support for AMD implementation.
 ;
 ;--
 

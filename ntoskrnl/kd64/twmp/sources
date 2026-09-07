@@ -1,0 +1,11 @@
+!IF 0
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
+
+!ENDIF
+
+C_DEFINES= $(C_DEFINES) -DTRUSTED_WINDOWS=1
+NT_UP=0
+!include $(PROJECT_ROOT)\ntos\ntoskrnl.inc
+!include ..\sources.inc

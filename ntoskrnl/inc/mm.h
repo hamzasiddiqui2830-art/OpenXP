@@ -1,9 +1,7 @@
 /*-- BUILD Version: 0005    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -13,6 +11,13 @@ Abstract:
 
     This module contains the public data structures and procedure
     prototypes for the memory management system.
+
+Author:
+
+    Lou Perazzoli (loup) 20-Mar-1989
+    Landy Wang (landyw) 02-June-1997
+
+Revision History:
 
 --*/
 
@@ -378,12 +383,6 @@ extern BOOLEAN Mm64BitPhysicalAddress;
 // end_ntddk end_wdm end_nthal end_ntifs end_ntosp
 
 //
-// Mask for isolating secondary color from physical page number.
-//
-
-extern ULONG MmSecondaryColorMask;
-
-//
 // Section object type.
 //
 
@@ -407,12 +406,6 @@ extern ULONG MmReadClusterSize;
 //
 
 extern ULONG MmNumberOfColors;
-
-//
-// Number of available pages.
-//
-
-extern PFN_NUMBER MmAvailablePages;
 
 //
 // Number of physical pages.
@@ -441,11 +434,6 @@ extern SIZE_T MmTotalCommittedPages;
 extern SIZE_T MmTotalCommitLimit;
 
 extern SIZE_T MmPeakCommitment;
-
-ULONG
-MmGetNumberOfFreeSystemPtes (
-    VOID
-    );
 
 typedef enum _MMSYSTEM_PTE_POOL_TYPE {
     SystemPteSpace,
@@ -504,6 +492,28 @@ MmIsThisAnNtAsSystem (
 
 extern ULONG MmProductType;
 
+typedef struct _MMINFO_COUNTERS {
+    ULONG PageFaultCount;
+    ULONG CopyOnWriteCount;
+    ULONG TransitionCount;
+    ULONG CacheTransitionCount;
+    ULONG DemandZeroCount;
+    ULONG PageReadCount;
+    ULONG PageReadIoCount;
+    ULONG CacheReadCount;
+    ULONG CacheIoCount;
+    ULONG DirtyPagesWriteCount;
+    ULONG DirtyWriteIoCount;
+    ULONG MappedPagesWriteCount;
+    ULONG MappedWriteIoCount;
+} MMINFO_COUNTERS;
+
+typedef MMINFO_COUNTERS *PMMINFO_COUNTERS;
+
+extern MMINFO_COUNTERS MmInfoCounters;
+
+
+
 //
 // Memory management initialization routine (for both phases).
 //
@@ -537,12 +547,11 @@ MmAllocateIndependentPages (
     IN ULONG NodeNumber
     );
 
-NTKERNELAPI
 BOOLEAN
 MmSetPageProtection (
-    __in_bcount(NumberOfBytes) PVOID VirtualAddress,
-    __in SIZE_T NumberOfBytes,
-    __in ULONG NewProtect
+    IN PVOID VirtualAddress,
+    IN SIZE_T NumberOfBytes,
+    IN ULONG NewProtect
     );
 
 VOID
@@ -568,6 +577,11 @@ LOGICAL
 MmAssignProcessToJob (
     IN PEPROCESS Process
     );
+
+#define MM_WORKING_SET_MAX_HARD_ENABLE      0x1
+#define MM_WORKING_SET_MAX_HARD_DISABLE     0x2
+#define MM_WORKING_SET_MIN_HARD_ENABLE      0x4
+#define MM_WORKING_SET_MIN_HARD_DISABLE     0x8
 
 NTSTATUS
 MmEnforceWorkingSetLimit (
@@ -659,32 +673,6 @@ MmGetSessionMappedViewInformation (
     IN PULONG SessionId OPTIONAL
     );
 
-//++
-//
-// LOGICAL
-// MmIsSessionLeaderProcess (
-//     __in PEPROCESS Process
-//     );
-//
-// Routine Description:
-//
-//
-// This macro checks whether or not the process is the session leader on
-// the system. Mm ensures that there is only ever one such process.
-//
-// Arguments:
-//
-//     Process - The EPROCESS object to query.
-//
-// Return Value:
-//
-//     TRUE if the passed process object is the session leader.
-//
-//--
-
-#define MmIsSessionLeaderProcess(Process)   \
-            ((Process)->Vm.Flags.SessionLeader == 1)
-               
 //
 // Pool support routines to allocate complete pages, not for
 // general consumption, these are only used by the executive pool allocator.
@@ -809,6 +797,16 @@ MmAccessFault (
     IN PVOID TrapInformation
     );
 
+#if defined(_IA64_)
+NTSTATUS
+MmX86Fault (
+    IN ULONG_PTR FaultStatus,
+    IN PVOID VirtualAddress,
+    IN KPROCESSOR_MODE PreviousMode,
+    IN PVOID TrapInformation
+    );
+#endif
+
 //
 // Process Support Routines.
 //
@@ -825,8 +823,7 @@ MmInitializeProcessAddressSpace (
     IN PEPROCESS ProcessToInitialize,
     IN PEPROCESS ProcessToClone OPTIONAL,
     IN PVOID SectionToMap OPTIONAL,
-    IN OUT PULONG CreateFlags,
-    OUT POBJECT_NAME_INFORMATION *AuditName OPTIONAL
+    OUT POBJECT_NAME_INFORMATION * pAuditName OPTIONAL
     );
 
 NTSTATUS
@@ -848,21 +845,6 @@ MmDeleteProcessAddressSpace (
 VOID
 MmCleanProcessAddressSpace (
     IN PEPROCESS Process
-    );
-
-NTSTATUS
-MmGetExecuteOptions (
-    IN PULONG ExecuteOptions
-    );
-
-VOID
-MmGetImageInformation (
-    OUT PSECTION_IMAGE_INFORMATION Imageinformation
-    );
-
-NTSTATUS
-MmSetExecuteOptions (
-    IN ULONG ExecuteOptions
     );
 
 PFN_NUMBER
@@ -893,21 +875,19 @@ MmIsFileObjectAPagingFile (
     );
 
 // begin_ntosp
-
 NTKERNELAPI
 NTSTATUS
 MmGrowKernelStack (
-    __in PVOID CurrentStack
+    IN PVOID CurrentStack
     );
-
-NTKERNELAPI
-NTSTATUS
-MmGrowKernelStackEx (
-    __in PVOID CurrentStack,
-    __in SIZE_T CommitSize
-    );
-
 // end_ntosp
+
+#if defined(_IA64_)
+NTSTATUS
+MmGrowKernelBackingStore (
+    IN PVOID CurrentStack
+    );
+#endif
 
 VOID
 MmOutPageKernelStack (
@@ -954,10 +934,10 @@ MmDeleteTeb (
 NTKERNELAPI
 NTSTATUS
 MmAdjustWorkingSetSize (
-    __in SIZE_T WorkingSetMinimumInBytes,
-    __in SIZE_T WorkingSetMaximumInBytes,
-    __in ULONG SystemCache,
-    __in BOOLEAN IncreaseOkay
+    IN SIZE_T WorkingSetMinimum,
+    IN SIZE_T WorkingSetMaximum,
+    IN ULONG SystemCache,
+    IN BOOLEAN IncreaseOkay
     );
 // end_ntosp
 
@@ -967,8 +947,7 @@ MmAdjustWorkingSetSizeEx (
     IN SIZE_T WorkingSetMaximum,
     IN ULONG SystemCache,
     IN BOOLEAN IncreaseOkay,
-    IN ULONG Flags,
-    OUT PBOOLEAN IncreaseRequested
+    IN ULONG Flags
     );
 
 NTSTATUS
@@ -978,11 +957,6 @@ MmQueryWorkingSetInformation (
     IN PSIZE_T MinimumWorkingSetSize,
     IN PSIZE_T MaximumWorkingSetSize,
     IN PULONG HardEnforcementFlags
-    );
-
-VOID
-MmQuerySystemCacheWorkingSetInformation (
-    OUT PSYSTEM_FILECACHE_INFORMATION Info
     );
 
 VOID
@@ -1001,14 +975,6 @@ MmSetMemoryPriorityProcess (
     IN UCHAR MemoryPriority
     );
 
-BOOLEAN
-MmCheckForSafeExecution (
-    IN PVOID InstructionPointer,
-    IN PVOID StackPointer,
-    IN PVOID BranchTarget,
-    IN BOOLEAN PermitStackExecution
-    );
-
 //
 // Dynamic system loading support
 //
@@ -1024,12 +990,6 @@ MmLoadSystemImage (
     IN ULONG LoadFlags,
     OUT PVOID *Section,
     OUT PVOID *ImageBaseAddress
-    );
-
-NTSTATUS
-MmCheckSystemImage(
-    IN HANDLE ImageFileHandle,
-    IN LOGICAL PurgeSection
     );
 
 VOID
@@ -1389,54 +1349,50 @@ extern PFN_NUMBER MmThrottleBottom;
              (((MmModifiedPageListHead.Total < 1000)) && \
                (MmAvailablePages > MmThrottleBottom)))
 
-// begin_ntosp begin_ntifs
-
+// begin_ntosp
 
 NTKERNELAPI
 NTSTATUS
 MmCreateSection (
-    __deref_out PVOID *SectionObject,
-    __in ACCESS_MASK DesiredAccess,
-    __in_opt POBJECT_ATTRIBUTES ObjectAttributes,
-    __in PLARGE_INTEGER InputMaximumSize,
-    __in ULONG SectionPageProtection,
-    __in ULONG AllocationAttributes,
-    __in_opt HANDLE FileHandle,
-    __in_opt PFILE_OBJECT FileObject
+    OUT PVOID *SectionObject,
+    IN ACCESS_MASK DesiredAccess,
+    IN POBJECT_ATTRIBUTES ObjectAttributes OPTIONAL,
+    IN PLARGE_INTEGER MaximumSize,
+    IN ULONG SectionPageProtection,
+    IN ULONG AllocationAttributes,
+    IN HANDLE FileHandle OPTIONAL,
+    IN PFILE_OBJECT File OPTIONAL
     );
-
-// end_ntifs
 
 
 NTKERNELAPI
 NTSTATUS
 MmMapViewOfSection (
-    __in PVOID SectionToMap,
-    __in PEPROCESS Process,
-    __deref_inout_bcount(*CapturedViewSize) PVOID *CapturedBase,
-    __in ULONG_PTR ZeroBits,
-    __in SIZE_T CommitSize,
-    __inout PLARGE_INTEGER SectionOffset,
-    __inout PSIZE_T CapturedViewSize,
-    __in SECTION_INHERIT InheritDisposition,
-    __in ULONG AllocationType,
-    __in ULONG Win32Protect
+    IN PVOID SectionToMap,
+    IN PEPROCESS Process,
+    IN OUT PVOID *CapturedBase,
+    IN ULONG_PTR ZeroBits,
+    IN SIZE_T CommitSize,
+    IN OUT PLARGE_INTEGER SectionOffset,
+    IN OUT PSIZE_T CapturedViewSize,
+    IN SECTION_INHERIT InheritDisposition,
+    IN ULONG AllocationType,
+    IN ULONG Protect
     );
 
 NTKERNELAPI
 NTSTATUS
 MmUnmapViewOfSection (
-    __in PEPROCESS Process,
-    __in PVOID BaseAddress
+    IN PEPROCESS Process,
+    IN PVOID BaseAddress
      );
 
 // end_ntosp begin_ntifs
 
-NTKERNELAPI
 BOOLEAN
 MmForceSectionClosed (
-    __in PSECTION_OBJECT_POINTERS SectionObjectPointer,
-    __in BOOLEAN DelayClose
+    IN PSECTION_OBJECT_POINTERS SectionObjectPointer,
+    IN BOOLEAN DelayClose
     );
 
 // end_ntifs
@@ -1444,7 +1400,7 @@ MmForceSectionClosed (
 NTSTATUS
 MmGetFileNameForSection (
     IN PVOID SectionObject,
-    OUT POBJECT_NAME_INFORMATION *FileNameInfo
+    OUT PSTRING FileName
     );
 
 NTSTATUS
@@ -1460,17 +1416,15 @@ MmRemoveVerifierEntry (
 
 // begin_ntddk begin_wdm begin_ntifs begin_ntosp
 
-NTKERNELAPI
 NTSTATUS
 MmIsVerifierEnabled (
-    __out PULONG VerifierFlags
+    OUT PULONG VerifierFlags
     );
 
-NTKERNELAPI
 NTSTATUS
 MmAddVerifierThunks (
-    __in_bcount(ThunkBufferSize) PVOID ThunkBuffer,
-    __in ULONG ThunkBufferSize
+    IN PVOID ThunkBuffer,
+    IN ULONG ThunkBufferSize
     );
 
 // end_ntddk end_wdm end_ntifs end_ntosp
@@ -1543,22 +1497,13 @@ MmPurgeSection (
     IN ULONG IgnoreCacheViews
     );
 
-#define MM_FLUSH_ACQUIRE_FILE       0x1     // Flush must acquire the file.
-#define MM_FLUSH_FAIL_COLLISIONS    0x2     // Fail if write in progress is
-                                            // already ongoing for any page.
-#define MM_FLUSH_IN_PARALLEL        0x4     // Don't serialize the flush.
-#define MM_FLUSH_ASYNCHRONOUS       0x8     // Issue overlapped I/Os.
-
-#define MM_FLUSH_SEG_DEREF   0x80000000     // Top level segment dereference
-                                            // thread issue - Mm internal only.
-
 NTSTATUS
 MmFlushSection (
     IN PSECTION_OBJECT_POINTERS SectionObjectPointer,
     IN PLARGE_INTEGER Offset OPTIONAL,
     IN SIZE_T RegionSize,
     OUT PIO_STATUS_BLOCK IoStatus,
-    IN ULONG Flags
+    IN ULONG AcquireFile
     );
 
 // begin_ntifs
@@ -1568,18 +1513,17 @@ typedef enum _MMFLUSH_TYPE {
     MmFlushForWrite
 } MMFLUSH_TYPE;
 
-NTKERNELAPI
+
 BOOLEAN
 MmFlushImageSection (
-    __in PSECTION_OBJECT_POINTERS SectionPointer,
-    __in MMFLUSH_TYPE FlushType
+    IN PSECTION_OBJECT_POINTERS SectionObjectPointer,
+    IN MMFLUSH_TYPE FlushType
     );
 
-NTKERNELAPI
 BOOLEAN
 MmCanFileBeTruncated (
-    __in PSECTION_OBJECT_POINTERS SectionPointer,
-    __in_opt PLARGE_INTEGER NewFileSize
+    IN PSECTION_OBJECT_POINTERS SectionPointer,
+    IN PLARGE_INTEGER NewFileSize
     );
 
 
@@ -1590,10 +1534,9 @@ MmDoesFileHaveUserWritableReferences (
     IN PSECTION_OBJECT_POINTERS SectionPointer
     );
 
-NTKERNELAPI
 BOOLEAN
 MmDisableModifiedWriteOfSection (
-    __in PSECTION_OBJECT_POINTERS SectionObjectPointer
+    IN PSECTION_OBJECT_POINTERS SectionObjectPointer
     );
 
 BOOLEAN
@@ -1608,11 +1551,10 @@ MmPurgeWorkingSet (
      IN SIZE_T RegionSize
      );
 
-NTKERNELAPI                                 // ntifs
 BOOLEAN                                     // ntifs
 MmSetAddressRangeModified (                 // ntifs
-    __in_bcount(Length) PVOID Address,                       // ntifs
-    __in SIZE_T Length                        // ntifs
+    IN PVOID Address,                       // ntifs
+    IN SIZE_T Length                        // ntifs
     );                                      // ntifs
 
 BOOLEAN
@@ -1627,7 +1569,7 @@ MmCopyToCachedPage (
     IN PVOID UserBuffer,
     IN ULONG Offset,
     IN SIZE_T CountInBytes,
-    IN LOGICAL ExposeZeroPageOk
+    IN BOOLEAN DontZero
     );
 
 VOID
@@ -1659,11 +1601,6 @@ MmDbgIsLowMemOk (
     IN OUT PULONG CorruptionOffset
     );
 
-LOGICAL
-MmCanThreadFault (
-    VOID
-    );
-
 VOID
 MmHibernateInformation (
     IN PVOID MemoryMap,
@@ -1683,10 +1620,10 @@ MmUpdateMdlTracker (
 NTKERNELAPI
 VOID
 MmProbeAndLockProcessPages (
-    __inout PMDL MemoryDescriptorList,
-    __in PEPROCESS Process,
-    __in KPROCESSOR_MODE AccessMode,
-    __in LOCK_OPERATION Operation
+    IN OUT PMDL MemoryDescriptorList,
+    IN PEPROCESS Process,
+    IN KPROCESSOR_MODE AccessMode,
+    IN LOCK_OPERATION Operation
     );
 
 
@@ -1698,50 +1635,49 @@ MmProbeAndLockProcessPages (
 NTKERNELAPI
 VOID
 MmProbeAndLockPages (
-    __inout PMDL MemoryDescriptorList,
-    __in KPROCESSOR_MODE AccessMode,
-    __in LOCK_OPERATION Operation
+    IN OUT PMDL MemoryDescriptorList,
+    IN KPROCESSOR_MODE AccessMode,
+    IN LOCK_OPERATION Operation
     );
 
 
 NTKERNELAPI
 VOID
 MmUnlockPages (
-    __inout PMDL MemoryDescriptorList
+    IN PMDL MemoryDescriptorList
     );
 
 
 NTKERNELAPI
 VOID
 MmBuildMdlForNonPagedPool (
-    __inout PMDL MemoryDescriptorList
+    IN OUT PMDL MemoryDescriptorList
     );
 
 NTKERNELAPI
 PVOID
 MmMapLockedPages (
-    __in PMDL MemoryDescriptorList,
-    __in KPROCESSOR_MODE AccessMode
+    IN PMDL MemoryDescriptorList,
+    IN KPROCESSOR_MODE AccessMode
     );
 
-NTKERNELAPI
 LOGICAL
 MmIsIoSpaceActive (
-    __in PHYSICAL_ADDRESS StartAddress,
-    __in SIZE_T NumberOfBytes
+    IN PHYSICAL_ADDRESS StartAddress,
+    IN SIZE_T NumberOfBytes
     );
 
 NTKERNELAPI
 PVOID
 MmGetSystemRoutineAddress (
-    __in PUNICODE_STRING SystemRoutineName
+    IN PUNICODE_STRING SystemRoutineName
     );
 
 NTKERNELAPI
 NTSTATUS
 MmAdvanceMdl (
-    __inout PMDL Mdl,
-    __in ULONG NumberOfBytes
+    IN PMDL Mdl,
+    IN ULONG NumberOfBytes
     );
 
 // end_wdm
@@ -1749,17 +1685,17 @@ MmAdvanceMdl (
 NTKERNELAPI
 NTSTATUS
 MmMapUserAddressesToPage (
-    __in_bcount(NumberOfBytes) PVOID BaseAddress,
-    __in SIZE_T NumberOfBytes,
-    __in PVOID PageAddress
+    IN PVOID BaseAddress,
+    IN SIZE_T NumberOfBytes,
+    IN PVOID PageAddress
     );
 
 // begin_wdm
 NTKERNELAPI
 NTSTATUS
 MmProtectMdlSystemAddress (
-    __in PMDL MemoryDescriptorList,
-    __in ULONG NewProtect
+    IN PMDL MemoryDescriptorList,
+    IN ULONG NewProtect
     );
 
 //
@@ -1796,45 +1732,41 @@ typedef enum _MM_PAGE_PRIORITY {
 NTKERNELAPI
 PVOID
 MmMapLockedPagesSpecifyCache (
-     __in PMDL MemoryDescriptorList,
-     __in KPROCESSOR_MODE AccessMode,
-     __in MEMORY_CACHING_TYPE CacheType,
-     __in_opt PVOID RequestedAddress,
-     __in ULONG BugCheckOnFailure,
-     __in MM_PAGE_PRIORITY Priority
+     IN PMDL MemoryDescriptorList,
+     IN KPROCESSOR_MODE AccessMode,
+     IN MEMORY_CACHING_TYPE CacheType,
+     IN PVOID BaseAddress,
+     IN ULONG BugCheckOnFailure,
+     IN MM_PAGE_PRIORITY Priority
      );
 
 NTKERNELAPI
 VOID
 MmUnmapLockedPages (
-    __in PVOID BaseAddress,
-    __in PMDL MemoryDescriptorList
+    IN PVOID BaseAddress,
+    IN PMDL MemoryDescriptorList
     );
 
-NTKERNELAPI
-__bcount(NumberOfBytes) PVOID
+PVOID
 MmAllocateMappingAddress (
-     __in SIZE_T NumberOfBytes,
-     __in ULONG PoolTag
+     IN SIZE_T NumberOfBytes,
+     IN ULONG PoolTag
      );
 
-NTKERNELAPI
 VOID
 MmFreeMappingAddress (
-     __in PVOID BaseAddress,
-     __in ULONG PoolTag
+     IN PVOID BaseAddress,
+     IN ULONG PoolTag
      );
 
-NTKERNELAPI
 PVOID
 MmMapLockedPagesWithReservedMapping (
-    __in PVOID MappingAddress,
-    __in ULONG PoolTag,
-    __in PMDL MemoryDescriptorList,
-    __in MEMORY_CACHING_TYPE CacheType
+    IN PVOID MappingAddress,
+    IN ULONG PoolTag,
+    IN PMDL MemoryDescriptorList,
+    IN MEMORY_CACHING_TYPE CacheType
     );
 
-NTKERNELAPI
 VOID
 MmUnmapReservedMapping (
      IN PVOID BaseAddress,
@@ -1852,8 +1784,8 @@ typedef struct _PHYSICAL_MEMORY_RANGE {
 NTKERNELAPI
 NTSTATUS
 MmAddPhysicalMemory (
-    __in PPHYSICAL_ADDRESS StartAddress,
-    __inout PLARGE_INTEGER NumberOfBytes
+    IN PPHYSICAL_ADDRESS StartAddress,
+    IN OUT PLARGE_INTEGER NumberOfBytes
     );
 
 // end_ntddk end_nthal end_ntifs
@@ -1869,8 +1801,8 @@ MmAddPhysicalMemoryEx (
 NTKERNELAPI
 NTSTATUS
 MmRemovePhysicalMemory (
-    __in PPHYSICAL_ADDRESS StartAddress,
-    __inout PLARGE_INTEGER NumberOfBytes
+    IN PPHYSICAL_ADDRESS StartAddress,
+    IN OUT PLARGE_INTEGER NumberOfBytes
     );
 
 // end_ntddk end_nthal end_ntifs
@@ -1890,65 +1822,48 @@ MmGetPhysicalMemoryRanges (
     );
 
 // end_ntddk end_ntifs
-
-NTKERNELAPI
 NTSTATUS
 MmMarkPhysicalMemoryAsGood (
-    __in PPHYSICAL_ADDRESS StartAddress,
-    __inout PLARGE_INTEGER NumberOfBytes
+    IN PPHYSICAL_ADDRESS StartAddress,
+    IN OUT PLARGE_INTEGER NumberOfBytes
     );
 
-NTKERNELAPI
 NTSTATUS
 MmMarkPhysicalMemoryAsBad (
-    __in PPHYSICAL_ADDRESS StartAddress,
-    __inout PLARGE_INTEGER NumberOfBytes
+    IN PPHYSICAL_ADDRESS StartAddress,
+    IN OUT PLARGE_INTEGER NumberOfBytes
     );
 
 // begin_wdm begin_ntddk begin_ntifs
 
-#define MM_DONT_ZERO_ALLOCATION             0x00000001
-#define MM_ALLOCATE_FROM_LOCAL_NODE_ONLY    0x00000002
-
-NTKERNELAPI
-PMDL
-MmAllocatePagesForMdlEx (
-    __in PHYSICAL_ADDRESS LowAddress,
-    __in PHYSICAL_ADDRESS HighAddress,
-    __in PHYSICAL_ADDRESS SkipBytes,
-    __in SIZE_T TotalBytes,
-    __in MEMORY_CACHING_TYPE CacheType,
-    __in ULONG Flags
-    );
-
 NTKERNELAPI
 PMDL
 MmAllocatePagesForMdl (
-    __in PHYSICAL_ADDRESS LowAddress,
-    __in PHYSICAL_ADDRESS HighAddress,
-    __in PHYSICAL_ADDRESS SkipBytes,
-    __in SIZE_T TotalBytes
+    IN PHYSICAL_ADDRESS LowAddress,
+    IN PHYSICAL_ADDRESS HighAddress,
+    IN PHYSICAL_ADDRESS SkipBytes,
+    IN SIZE_T TotalBytes
     );
 
 NTKERNELAPI
 VOID
 MmFreePagesFromMdl (
-    __in PMDL MemoryDescriptorList
+    IN PMDL MemoryDescriptorList
     );
 
 NTKERNELAPI
-__out_bcount(NumberOfBytes) PVOID
+PVOID
 MmMapIoSpace (
-    __in PHYSICAL_ADDRESS PhysicalAddress,
-    __in SIZE_T NumberOfBytes,
-    __in MEMORY_CACHING_TYPE CacheType
+    IN PHYSICAL_ADDRESS PhysicalAddress,
+    IN SIZE_T NumberOfBytes,
+    IN MEMORY_CACHING_TYPE CacheType
     );
 
 NTKERNELAPI
 VOID
 MmUnmapIoSpace (
-    __in_bcount(NumberOfBytes) PVOID BaseAddress,
-    __in SIZE_T NumberOfBytes
+    IN PVOID BaseAddress,
+    IN SIZE_T NumberOfBytes
     );
 
 // end_wdm end_ntddk end_ntifs end_ntosp
@@ -1956,70 +1871,70 @@ MmUnmapIoSpace (
 NTKERNELAPI
 VOID
 MmProbeAndLockSelectedPages (
-    __inout PMDL MemoryDescriptorList,
-    __in PFILE_SEGMENT_ELEMENT PagedSegmentArray,
-    __in KPROCESSOR_MODE AccessMode,
-    __in LOCK_OPERATION Operation
+    IN OUT PMDL MemoryDescriptorList,
+    IN PFILE_SEGMENT_ELEMENT SegmentArray,
+    IN KPROCESSOR_MODE AccessMode,
+    IN LOCK_OPERATION Operation
     );
 
 // begin_ntddk begin_ntifs begin_ntosp
 
 NTKERNELAPI
-__out_bcount(NumberOfBytes) PVOID
+PVOID
 MmMapVideoDisplay (
-     __in PHYSICAL_ADDRESS PhysicalAddress,
-     __in SIZE_T NumberOfBytes,
-     __in MEMORY_CACHING_TYPE CacheType
+    IN PHYSICAL_ADDRESS PhysicalAddress,
+    IN SIZE_T NumberOfBytes,
+    IN MEMORY_CACHING_TYPE CacheType
      );
 
 NTKERNELAPI
 VOID
 MmUnmapVideoDisplay (
-     __in_bcount(NumberOfBytes) PVOID BaseAddress,
-     __in SIZE_T NumberOfBytes
+     IN PVOID BaseAddress,
+     IN SIZE_T NumberOfBytes
      );
 
 NTKERNELAPI
 PHYSICAL_ADDRESS
 MmGetPhysicalAddress (
-    __in PVOID BaseAddress
+    IN PVOID BaseAddress
     );
 
 NTKERNELAPI
 PVOID
 MmGetVirtualForPhysical (
-    __in PHYSICAL_ADDRESS PhysicalAddress
+    IN PHYSICAL_ADDRESS PhysicalAddress
     );
 
 NTKERNELAPI
-__bcount(NumberOfBytes) PVOID
+PVOID
 MmAllocateContiguousMemory (
-    __in SIZE_T NumberOfBytes,
-    __in PHYSICAL_ADDRESS HighestAcceptableAddress
+    IN SIZE_T NumberOfBytes,
+    IN PHYSICAL_ADDRESS HighestAcceptableAddress
     );
 
 NTKERNELAPI
-__bcount(NumberOfBytes) PVOID
+PVOID
 MmAllocateContiguousMemorySpecifyCache (
-    __in SIZE_T NumberOfBytes,
-    __in PHYSICAL_ADDRESS LowestAcceptableAddress,
-    __in PHYSICAL_ADDRESS HighestAcceptableAddress,
-    __in PHYSICAL_ADDRESS BoundaryAddressMultiple,
-    __in MEMORY_CACHING_TYPE CacheType
+    IN SIZE_T NumberOfBytes,
+    IN PHYSICAL_ADDRESS LowestAcceptableAddress,
+    IN PHYSICAL_ADDRESS HighestAcceptableAddress,
+    IN PHYSICAL_ADDRESS BoundaryAddressMultiple OPTIONAL,
+    IN MEMORY_CACHING_TYPE CacheType
     );
 
 NTKERNELAPI
 VOID
 MmFreeContiguousMemory (
-    __in PVOID BaseAddress
+    IN PVOID BaseAddress
     );
 
 NTKERNELAPI
 VOID
 MmFreeContiguousMemorySpecifyCache (
-    __in_bcount(NumberOfBytes) PVOID BaseAddress,
-    __in SIZE_T NumberOfBytes,
-    __in MEMORY_CACHING_TYPE CacheType
+    IN PVOID BaseAddress,
+    IN SIZE_T NumberOfBytes,
+    IN MEMORY_CACHING_TYPE CacheType
     );
 
 // end_ntddk end_ntifs end_ntosp end_nthal
@@ -2045,29 +1960,29 @@ MmReleaseDumpAddresses (
 // begin_ntddk begin_ntifs begin_nthal begin_ntosp
 
 NTKERNELAPI
-__out_bcount(NumberOfBytes) PVOID
+PVOID
 MmAllocateNonCachedMemory (
-    __in SIZE_T NumberOfBytes
+    IN SIZE_T NumberOfBytes
     );
 
 NTKERNELAPI
 VOID
 MmFreeNonCachedMemory (
-    __in_bcount(NumberOfBytes) PVOID BaseAddress,
-    __in SIZE_T NumberOfBytes
+    IN PVOID BaseAddress,
+    IN SIZE_T NumberOfBytes
     );
 
 NTKERNELAPI
 BOOLEAN
 MmIsAddressValid (
-    __in PVOID VirtualAddress
+    IN PVOID VirtualAddress
     );
 
 DECLSPEC_DEPRECATED_DDK
 NTKERNELAPI
 BOOLEAN
 MmIsNonPagedSystemAddressValid (
-    __in PVOID VirtualAddress
+    IN PVOID VirtualAddress
     );
 
 // begin_wdm
@@ -2075,31 +1990,31 @@ MmIsNonPagedSystemAddressValid (
 NTKERNELAPI
 SIZE_T
 MmSizeOfMdl (
-    __in_bcount_opt(Length) PVOID Base,
-    __in SIZE_T Length
+    IN PVOID Base,
+    IN SIZE_T Length
     );
 
 DECLSPEC_DEPRECATED_DDK                 // Use IoAllocateMdl
 NTKERNELAPI
 PMDL
 MmCreateMdl (
-    __in_opt PMDL MemoryDescriptorList,
-    __in_bcount_opt(Length) PVOID Base,
-    __in SIZE_T Length
+    IN PMDL MemoryDescriptorList OPTIONAL,
+    IN PVOID Base,
+    IN SIZE_T Length
     );
 
 NTKERNELAPI
 PVOID
-MmLockPageableDataSection (
-    __in PVOID AddressWithinSection
+MmLockPagableDataSection (
+    IN PVOID AddressWithinSection
     );
 
 // end_wdm
 
 NTKERNELAPI
 VOID
-MmLockPageableSectionByHandle (
-    __in PVOID ImageSectionHandle
+MmLockPagableSectionByHandle (
+    IN PVOID ImageSectionHandle
     );
 
 // end_ntddk end_ntifs end_ntosp
@@ -2121,20 +2036,20 @@ MmUnlockPagedPool (
 NTKERNELAPI
 VOID
 MmResetDriverPaging (
-    __in PVOID AddressWithinSection
+    IN PVOID AddressWithinSection
     );
 
 
 NTKERNELAPI
 PVOID
 MmPageEntireDriver (
-    __in PVOID AddressWithinSection
+    IN PVOID AddressWithinSection
     );
 
 NTKERNELAPI
 VOID
-MmUnlockPageableImageSection(
-    __in PVOID ImageSectionHandle
+MmUnlockPagableImageSection(
+    IN PVOID ImageSectionHandle
     );
 
 // end_wdm end_ntosp
@@ -2150,15 +2065,15 @@ MmUnlockPageableImageSection(
 NTKERNELAPI
 HANDLE
 MmSecureVirtualMemory (
-    __in_bcount(Size) PVOID Address,
-    __in SIZE_T Size,
-    __in ULONG ProbeMode
+    IN PVOID Address,
+    IN SIZE_T Size,
+    IN ULONG ProbeMode
     );
 
 NTKERNELAPI
 VOID
 MmUnsecureVirtualMemory (
-    __in HANDLE SecureHandle
+    IN HANDLE SecureHandle
     );
 
 // end_ntosp
@@ -2166,39 +2081,39 @@ MmUnsecureVirtualMemory (
 NTKERNELAPI
 NTSTATUS
 MmMapViewInSystemSpace (
-    __in PVOID Section,
-    __deref_inout_bcount(*ViewSize) PVOID *MappedBase,
-    __inout PSIZE_T ViewSize
+    IN PVOID Section,
+    OUT PVOID *MappedBase,
+    IN PSIZE_T ViewSize
     );
 
 NTKERNELAPI
 NTSTATUS
 MmUnmapViewInSystemSpace (
-    __in PVOID MappedBase
+    IN PVOID MappedBase
     );
 
 // begin_ntosp
 NTKERNELAPI
 NTSTATUS
 MmMapViewInSessionSpace (
-    __in PVOID Section,
-    __deref_inout_bcount(*ViewSize) PVOID *MappedBase,
-    __inout PSIZE_T ViewSize
+    IN PVOID Section,
+    OUT PVOID *MappedBase,
+    IN OUT PSIZE_T ViewSize
     );
 
 // end_ntddk end_ntifs
 NTKERNELAPI
 NTSTATUS
 MmCommitSessionMappedView (
-    __in_bcount(ViewSize) PVOID MappedAddress,
-    __in SIZE_T ViewSize
+    IN PVOID MappedAddress,
+    IN SIZE_T ViewSize
     );
 // begin_ntddk begin_ntifs
 
 NTKERNELAPI
 NTSTATUS
 MmUnmapViewInSessionSpace (
-    __in PVOID MappedBase
+    IN PVOID MappedBase
     );
 // end_ntosp
 
@@ -2438,15 +2353,14 @@ struct _DRIVER_OBJECT;
 NTKERNELAPI
 LOGICAL
 MmIsDriverVerifying (
-    __in struct _DRIVER_OBJECT *DriverObject
+    IN struct _DRIVER_OBJECT *DriverObject
     );
 
 // end_ntddk end_wdm end_ntosp
 
-NTKERNELAPI
 LOGICAL
-MmTrimAllSystemPageableMemory (
-    __in LOGICAL PurgeTransition
+MmTrimAllSystemPagableMemory (
+    IN LOGICAL PurgeTransition
     );
 
 #define MMNONPAGED_QUOTA_INCREASE (64*1024)
@@ -2498,11 +2412,9 @@ MmGetSectionRange (
     );
 
 // begin_ntosp
-
-NTKERNELAPI
 VOID
 MmMapMemoryDumpMdl (
-    __inout PMDL MemoryDumpMdl
+    IN OUT PMDL MemoryDumpMdl
     );
 
 
@@ -2522,17 +2434,14 @@ VOID
 
 // end_ntminiport
 
-NTKERNELAPI
 NTSTATUS
 MmSetBankedSection (
-    __in HANDLE ProcessHandle,
-    __in_bcount(BankLength) PVOID VirtualAddress,
-    __in ULONG BankLength,
-    __in BOOLEAN ReadWriteBank,
-    __in PBANKED_SECTION_ROUTINE BankRoutine,
-    __in PVOID Context
-    );
-
+    IN HANDLE ProcessHandle,
+    IN PVOID VirtualAddress,
+    IN ULONG BankLength,
+    IN BOOLEAN ReadWriteBank,
+    IN PBANKED_SECTION_ROUTINE BankRoutine,
+    IN PVOID Context);
 // end_ntosp
 
 BOOLEAN
@@ -2618,11 +2527,10 @@ typedef struct _READ_LIST {
     FILE_SEGMENT_ELEMENT List[ANYSIZE_ARRAY];
 } READ_LIST, *PREAD_LIST;
 
-NTKERNELAPI
 NTSTATUS
 MmPrefetchPages (
-    __in ULONG NumberOfLists,
-    __in_ecount(NumberOfLists) PREAD_LIST *ReadLists
+    IN ULONG NumberOfLists,
+    IN PREAD_LIST *ReadLists
     );
 
 // end_ntifs
@@ -2633,13 +2541,6 @@ MmPrefetchPagesIntoLockedMdl (
     IN PLARGE_INTEGER FileOffset,
     IN SIZE_T Length,
     OUT PMDL *MdlOut
-    );
-
-LOGICAL
-MmPrefetchForCacheManager (
-    IN PFILE_OBJECT FileObject,
-    IN LARGE_INTEGER SectionOffset,
-    IN SIZE_T NumberOfBytes
     );
 
 LOGICAL

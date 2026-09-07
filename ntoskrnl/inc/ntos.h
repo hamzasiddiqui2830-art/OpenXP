@@ -1,9 +1,7 @@
 /*++ BUILD Version: 0006    // Increment this if a change has global effects
 
-Copyright (c) OpenXP Team 2026.
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
 
 Module Name:
 
@@ -12,6 +10,13 @@ Module Name:
 Abstract:
 
     Top level include file for the NTOS component.
+
+Author:
+
+    Steve Wood (stevewo) 28-Feb-1989
+
+
+Revision History:
 
 --*/
 
@@ -33,6 +38,9 @@ Abstract:
 
 #elif defined(_X86_)
 #include "i386.h"
+
+#elif defined(_IA64_)
+#include "ia64.h"
 
 #else
 #error "no target defined"

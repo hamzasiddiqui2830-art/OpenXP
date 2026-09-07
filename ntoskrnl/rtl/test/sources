@@ -1,0 +1,9 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Project OpenXP Internal
+
+TARGETPATH=obj
+TARGETTYPE=PROGRAM
+TARGETNAME=
+SOURCES=
+UMAPPL=toverflow
+UMTYPE=console

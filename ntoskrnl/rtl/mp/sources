@@ -1,0 +1,9 @@
+!IF 0
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+Project OpenXP Internal
+
+!ENDIF
+
+NT_UP=0
+!include ..\up\sources

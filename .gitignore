@@ -4,63 +4,119 @@
 *.o
 *.exe
 *.dll
-*.so
-*.a
-*.out
+*.lib
 *.pdb
 *.ilk
-*.lib
 *.exp
+*.imp
+*.sys
+*.inf
+*.cat
+*.mof
+*.mc
+*.rc
+*.res
+*.manifest
+*.map
+*.lst
+*.asm
+*.s
 
 # Build directories
 build/
 dist/
+Debug/
+Release/
+x64/
+Win32/
 bin/
 obj/
+lib/
 
 # Temporary files
 *.tmp
 *.temp
 *.log
+*.bak
+*.~
+*~
 
-# OS specific
-.DS_Store
+# IDE files
+.vs/
+.vcproj/
+.sln
+.user
+.userosscache
+.vsconfig
+.ipch
+.iobj
+.tlog
+.lastbuildstate
+
+# Windows system files
 Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+System Volume Information/
 
-# IDE/Editor files
-.vscode/
-.idea/
-*.swp
-*.swo
+# Configuration and cache files
+*.userprefs
+*.userosscache
+.cache/
+.cargo/
+.gradle/
+.nuget/
+.packages/
+
+# Makefiles and build scripts
+makefile*
+Makefile*
+*.mak
+*.mk
 
 # Generated files
-*.tab
-*.yy
-*.m4
-*.stb
+*.inc
+*.h.in
+*.c.in
+*.cpp.in
+*.h.gch
+*.pch
+
+# Package manager files
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python related (though not typical for kernel development)
+*.pyc
+*.pyo
+__pycache__/
+.pycache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor backups
+*.swp
+*.swo
+*~
 
 # Environment files
 .env
 .env.local
-*.env.*
+.env.*
 
 # Coverage reports
 coverage/
 htmlcov/
-.coverage
 
-# Package management
-node_modules/
-__pycache__/
-*.egg-info/
-.Python
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Testing
-*.pyc
-*.pyo
-*.pyd
-*.so
-*.egg
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 ```

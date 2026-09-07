@@ -168,6 +168,11 @@ else()
     list(APPEND NTOS_MODULE_LIBS hal_stub)
 endif()
 
+# Add DLL subsystem (WOW64 and other DLLs)
+if(EXISTS ${CMAKE_SOURCE_DIR}/dll/CMakeLists.txt)
+    add_subdirectory(dll)
+endif()
+
 # Main kernel executable
 # Note: The actual kernel entry point and startup code would need to be properly configured
 # This is a simplified version that demonstrates the CMake structure

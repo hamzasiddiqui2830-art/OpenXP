@@ -1768,6 +1768,9 @@ KeGetContextSwitches (
     return Pcr->ContextSwitches;
 }
 
+// Define LEGACY_SAVE_AREA as XMM_SAVE_AREA32
+typedef XMM_SAVE_AREA32 LEGACY_SAVE_AREA, *PLEGACY_SAVE_AREA;
+
 VOID
 KeRestoreLegacyFloatingPointState (
     PLEGACY_SAVE_AREA NpxFrame

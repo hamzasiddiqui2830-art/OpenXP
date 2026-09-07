@@ -22,6 +22,8 @@ Revision History:
 #ifndef _CACHE_
 #define _CACHE_
 
+#include "prefetch.h"
+
 // Prefetch intrinsics are defined in ntamd64.h (for amd64) or provided by compiler
 // Include prefetch.h only if it exists, otherwise use intrinsic definitions
 #if defined(_AMD64_)

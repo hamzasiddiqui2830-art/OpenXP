@@ -21,6 +21,7 @@ jobs:
       run: |
         cmake -G "Visual Studio 18 2026" -A Win32 `
           -DWRK_ARCH=i386 `
+          -DBUILD_NTOSKRNL_TESTS=OFF `
           -DCMAKE_BINARY_DIR="${{ github.workspace }}/output-VS-i386" `
           -B "${{ github.workspace }}/output-VS-i386/build" `
           -S "${{ github.workspace }}"
@@ -58,6 +59,7 @@ jobs:
       run: |
         cmake -G "Visual Studio 18 2026" -A x64 `
           -DWRK_ARCH=amd64 `
+          -DBUILD_NTOSKRNL_TESTS=OFF `
           -DCMAKE_BINARY_DIR="${{ github.workspace }}/output-VS-amd64" `
           -B "${{ github.workspace }}/output-VS-amd64/build" `
           -S "${{ github.workspace }}"

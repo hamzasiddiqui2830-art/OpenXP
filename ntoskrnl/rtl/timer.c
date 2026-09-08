@@ -2003,7 +2003,7 @@ Return Value:
                HandleToUlong(NtCurrentTeb()->ClientId.UniqueProcess));
 #endif
 
-    try {
+    __try {
         RtlpResync64BitTickCount( ) ;
 
         CHECK_SIGNATURE(Timer) ;
@@ -2011,7 +2011,7 @@ Return Value:
         Queue = Timer->Queue ;
 
         if (IS_DEL_SIGNATURE_SET(Queue)) {
-            leave;
+            __leave;
         }
         
         // Update the periodic time on the timer
@@ -2021,7 +2021,7 @@ Return Value:
         // if timer is not in active state, then dont update it
 
         if ( ! ( Timer->State & STATE_ACTIVE ) ) {
-            leave;
+            __leave;
         }
 
         // Get the time remaining on the NT timer
@@ -2059,7 +2059,7 @@ Return Value:
                 }
 
             }
-    } finally {
+    } __finally {
         RtlpFreeTPHeap( UpdatedTimer ) ;
     }
 }

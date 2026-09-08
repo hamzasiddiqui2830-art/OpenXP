@@ -29,21 +29,8 @@
 
 //
 // Bit scan operations
+// These are declared in ntrtl.h, no need to redeclare here
 //
-
-NTSYSAPI
-UCHAR
-FASTCALL
-RtlFindLeastSignificantBit(
-    __in ULONG_PTR Set
-    );
-
-NTSYSAPI
-UCHAR
-FASTCALL
-RtlFindMostSignificantBit(
-    __in ULONG_PTR Set
-    );
 
 //
 // Memory barrier
@@ -76,12 +63,8 @@ typedef struct _RTL_FRAME {
 
 //
 // Exception handling frame
+// This is declared in nti386.h, no need to redeclare here
 //
-
-typedef struct _EXCEPTION_REGISTRATION_RECORD {
-    struct _EXCEPTION_REGISTRATION_RECORD *Next;
-    PEXCEPTION_ROUTINE Handler;
-} EXCEPTION_REGISTRATION_RECORD, *PEXCEPTION_REGISTRATION_RECORD;
 
 //
 // Get current TEB/PEB

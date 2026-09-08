@@ -40,6 +40,10 @@ if(NOT DEFINED WRK_ARCH)
     endif()
 endif()
 
+# Tests are never part of kernel module source globs unless explicitly enabled.
+option(BUILD_NTOSKRNL_TESTS "Build ntoskrnl test targets" OFF)
+message(STATUS "NTOSKRNL tests: ${BUILD_NTOSKRNL_TESTS}")
+
 # Project definition
 project(wrk VERSION 5.2 LANGUAGES C ASM)
 
@@ -178,86 +182,3 @@ endif()
 
 # Main kernel executable
 # Note: The actual kernel entry point and startup code would need to be properly configured
-# This is a simplified version that demonstrates the CMake structure
-
-# Check for kernel startup code
-if(EXISTS ${NTOSKRNL_SOURCE_DIR}/BUILD/ki${WRK_ARCH_NAME}.c)
-    set(KERNEL_STARTUP ${NTOSKRNL_SOURCE_DIR}/BUILD/ki${WRK_ARCH_NAME}.c)
-elseif(EXISTS ${NTOSKRNL_SOURCE_DIR}/ke/BUILD/ki${WRK_ARCH_NAME}.c)
-    set(KERNEL_STARTUP ${NTOSKRNL_SOURCE_DIR}/ke/BUILD/ki${WRK_ARCH_NAME}.c)
-else()
-    # Create a minimal placeholder if no startup code found
-    set(KERNEL_STARTUP ${CMAKE_BINARY_DIR}/kernel_startup.c)
-    file(WRITE ${KERNEL_STARTUP} "void KiSystemStartup(void *Block) { while(1); }")
-endif()
-
-add_executable(wrk${WRK_ARCH_NAME} ${KERNEL_STARTUP})
-
-# Set kernel entry point based on compiler
-if(MSVC)
-    if(WRK_ARCH_NAME STREQUAL "x86")
-        set_target_properties(wrk${WRK_ARCH_NAME} PROPERTIES
-            LINK_FLAGS "/ENTRY:KiSystemStartup@4"
-        )
-    else()
-        set_target_properties(wrk${WRK_ARCH_NAME} PROPERTIES
-            LINK_FLAGS "/ENTRY:KiSystemStartup"
-        )
-    endif()
-else()
-    # GCC/MinGW/Clang - use linker flags
-    if(WRK_ARCH_NAME STREQUAL "x86")
-        set_target_properties(wrk${WRK_ARCH_NAME} PROPERTIES
-            LINK_FLAGS "-Wl,--entry,KiSystemStartup@4"
-        )
-    else()
-        set_target_properties(wrk${WRK_ARCH_NAME} PROPERTIES
-            LINK_FLAGS "-Wl,--entry,KiSystemStartup"
-        )
-    endif()
-endif()
-
-# Configure kernel output
-set_target_properties(wrk${WRK_ARCH_NAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/EXE
-    OUTPUT_NAME wrk${WRK_ARCH_NAME}
-    SUFFIX ".exe"
-    LINK_LIBRARIES "${NTOS_MODULE_LIBS}"
-)
-
-
-add_subdirectory(hal)
-
-# Add pre-built resources if they exist
-if(EXISTS ${NTOSKRNL_SOURCE_DIR}/BUILD/PREBUILT/${WRK_ARCH_NAME})
-    include_directories(${NTOSKRNL_SOURCE_DIR}/BUILD/PREBUILT/${WRK_ARCH_NAME})
-endif()
-
-# Installation rules
-install(TARGETS wrk${WRK_ARCH_NAME}
-    RUNTIME DESTINATION bin
-)
-
-# Custom targets for clean and rebuild
-add_custom_target(clean_all
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/obj
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/EXE
-    COMMENT "Cleaning all build artifacts"
-)
-
-add_custom_target(rebuild
-    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target clean
-    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}
-    COMMENT "Rebuilding entire project"
-)
-
-# Print configuration summary
-message(STATUS "=== WRK CMake Configuration Summary ===")
-message(STATUS "Architecture: ${WRK_ARCH_NAME}")
-message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
-message(STATUS "NTOSKRNL Source: ${NTOSKRNL_SOURCE_DIR}")
-message(STATUS "SDK Source: ${SDK_SOURCE_DIR}")
-message(STATUS "Output Directory: ${CMAKE_BINARY_DIR}")
-message(STATUS "Modules: ${NTOS_MODULES}")
-message(STATUS "===========================================")

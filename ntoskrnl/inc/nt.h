@@ -12,16 +12,18 @@ Abstract:
 
 --*/
 
-#ifndef NT_INCLUDED
-#define NT_INCLUDED
+#ifndef NTOSKRNL_NT_H_INCLUDED
+#define NTOSKRNL_NT_H_INCLUDED
 
 /*
- * The Windows SDK's minwindef.h uses SAL annotations such as
- * _Null_terminated_.  winternl.h normally reaches sal.h through the normal
- * SDK include chain, but this compatibility header is included directly by
- * WRK sources and must establish that contract itself.  Without sal.h MSVC
- * parses the annotation as an identifier and reports C2054/C2085 in
- * minwindef.h.
+ * Do not define NT_INCLUDED here. The Windows SDK's minwindef.h uses
+ * NT_INCLUDED to decide whether it must include winnt.h. Defining it before
+ * including winternl.h prevents winnt.h from being pulled in, which leaves
+ * fundamental types such as UINT_PTR undefined and causes the later WPARAM /
+ * LPARAM typedefs in minwindef.h to fail.
+ *
+ * The compatibility header therefore has its own guard and lets the Windows
+ * SDK own NT_INCLUDED while processing winternl.h.
  */
 #if defined(_MSC_VER)
 #include <sal.h>
@@ -36,4 +38,4 @@ Abstract:
 #endif
 #endif
 
-#endif /* NT_INCLUDED */
+#endif /* NTOSKRNL_NT_H_INCLUDED */

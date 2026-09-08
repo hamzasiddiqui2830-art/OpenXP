@@ -27,6 +27,25 @@ Abstract:
  */
 #if defined(_MSC_VER)
 #include <sal.h>
+
+/*
+ * winternl.h uses these legacy SpecStrings entry-point annotations directly.
+ * They must be defined before winternl.h is parsed because nt.h is often the
+ * first compatibility header included by converted WRK sources.
+ */
+#ifndef __kernel_entry
+#define __kernel_entry
+#endif
+#ifndef __rpc_entry
+#define __rpc_entry
+#endif
+#ifndef __gdi_entry
+#define __gdi_entry
+#endif
+#ifndef __control_entrypoint
+#define __control_entrypoint(category)
+#endif
+
 #include <winternl.h>
 #else
 #include <stdint.h>

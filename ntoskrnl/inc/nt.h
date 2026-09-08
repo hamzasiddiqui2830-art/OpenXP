@@ -31,8 +31,8 @@ Abstract:
 /*
  * Load the NTOSKRNL SpecStrings compatibility layer explicitly before
  * winternl.h. This prevents the Windows SDK from selecting a different
- * SpecStrings definition later in the include chain and guarantees that the
- * legacy entry-point annotations are available while winternl.h is parsed.
+ * SpecStrings definition later in the include chain and guarantees that
+ * the legacy entry-point annotations are available while winternl.h is parsed.
  */
 #include "specstrings.h"
 
@@ -50,6 +50,19 @@ Abstract:
 #endif
 
 #include <winternl.h>
+
+/*
+ * Legacy WRK declarations in ntrtl.h use FASTCALL and CLONG. Modern Windows
+ * SDK headers do not provide these WRK spellings consistently, so provide
+ * the compatibility definitions here after the SDK has supplied the base
+ * Windows types.
+ */
+#ifndef FASTCALL
+#define FASTCALL __fastcall
+#endif
+#ifndef CLONG
+typedef LONG CLONG;
+#endif
 #else
 #include <stdint.h>
 #include <stddef.h>

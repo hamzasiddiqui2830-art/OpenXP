@@ -699,6 +699,8 @@ typedef enum _DBGKD_MAJOR_TYPES
 // This is the version packet for pre-NT5 Beta 2 systems.
 // For now, it is also still used on x86
 //
+#ifndef _DBGKD_GET_VERSION32_DEFINED
+#define _DBGKD_GET_VERSION32_DEFINED
 typedef struct _DBGKD_GET_VERSION32 {
     USHORT  MajorVersion;
     USHORT  MinorVersion;
@@ -759,6 +761,7 @@ typedef struct _DBGKD_GET_VERSION32 {
     ULONG   DebuggerDataList;
 
 } DBGKD_GET_VERSION32, *PDBGKD_GET_VERSION32;
+#endif // _DBGKD_GET_VERSION32_DEFINED
 
 
 //
@@ -888,6 +891,8 @@ enum
 #define CURRENT_KD_SECONDARY_VERSION KD_SECONDARY_VERSION_DEFAULT
 #endif
 
+#ifndef _DBGKD_GET_VERSION64_DEFINED
+#define _DBGKD_GET_VERSION64_DEFINED
 typedef struct _DBGKD_GET_VERSION64 {
     USHORT  MajorVersion;
     USHORT  MinorVersion;
@@ -930,6 +935,7 @@ typedef struct _DBGKD_GET_VERSION64 {
     ULONG64 DebuggerDataList;
 
 } DBGKD_GET_VERSION64, *PDBGKD_GET_VERSION64;
+#endif // _DBGKD_GET_VERSION64_DEFINED
 
 
 //

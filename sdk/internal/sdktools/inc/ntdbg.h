@@ -3794,8 +3794,10 @@ typedef struct _DBGKD_SWITCH_PARTITION {
 
 
 //
-// Get Version structures
+// Get Version structures - only define if not already defined in wdbgexts.h
 //
+
+#ifndef _WDBGEXTS_
 
 typedef struct _DBGKD_GET_VERSION32 {
     USHORT  MajorVersion;
@@ -3883,6 +3885,8 @@ typedef struct _DBGKD_GET_VERSION64 {
     ULONG64 PsLoadedModuleList;
     ULONG64 DebuggerDataList;
 } DBGKD_GET_VERSION64, *PDBGKD_GET_VERSION64;
+
+#endif // _WDBGEXTS_
 
 
 #include <pshpack4.h>

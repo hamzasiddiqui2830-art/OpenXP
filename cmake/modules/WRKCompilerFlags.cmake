@@ -50,6 +50,7 @@ macro(set_wrk_compiler_flags)
             /O2
             /Oy-
             /wd4101
+            /FI${CMAKE_SOURCE_DIR}/ntoskrnl/inc/wrk_msvc_compat.h
         )
         
         if(WRK_ARCH_NAME STREQUAL "amd64")

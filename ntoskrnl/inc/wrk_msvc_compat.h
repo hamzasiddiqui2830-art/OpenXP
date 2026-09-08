@@ -61,6 +61,46 @@
 #define GET_PAGING_FILE_OFFSET(_PteContents) ((_PteContents).u.Soft.PageFileHigh)
 #endif
 
+/* Reduced WRK memory-manager headers do not provide the PTE write helpers.
+ * These preserve the WRK operation at the source level while avoiding the
+ * missing architecture-specific inline wrappers. */
+#ifndef MI_WRITE_ZERO_PTE
+#define MI_WRITE_ZERO_PTE(_PointerPte) \
+    RtlZeroMemory((_PointerPte), sizeof(MMPTE))
+#endif
+
+#ifndef MI_WRITE_VALID_PTE
+#define MI_WRITE_VALID_PTE(_PointerPte, _TempPte) \
+    (*(_PointerPte) = (_TempPte))
+#endif
+
+#ifndef MI_WRITE_INVALID_PTE
+#define MI_WRITE_INVALID_PTE(_PointerPte, _TempPte) \
+    (*(_PointerPte) = (_TempPte))
+#endif
+
+#ifndef MI_SET_PFN_DELETED
+#define MI_SET_PFN_DELETED(_Pfn) \
+    ((_Pfn)->PteAddress = (PMMPTE)((ULONG_PTR)(_Pfn)->PteAddress | 1))
+#endif
+
+#ifndef MI_MAKE_VALID_PTE_TRANSITION
+#define MI_MAKE_VALID_PTE_TRANSITION(_Pte, _Protect) do { \
+    (_Pte).u.Soft.Transition = 1; \
+    (_Pte).u.Soft.Valid = 0; \
+    (_Pte).u.Soft.Prototype = 0; \
+    (_Pte).u.Soft.Protection = (_Protect); \
+} while (0)
+#endif
+
+#ifndef MI_CAPTURE_DIRTY_BIT_TO_PFN
+#define MI_CAPTURE_DIRTY_BIT_TO_PFN(_PointerPte, _Pfn) ((void)0)
+#endif
+
+#ifndef MI_IS_PHYSICAL_ADDRESS
+#define MI_IS_PHYSICAL_ADDRESS(_Address) (FALSE)
+#endif
+
 /* The reduced PRCB does not carry the newer color bookkeeping fields. Keep
  * the existing PageColor as the backing value so the WRK inline remains
  * compilable on this x86 layout. */

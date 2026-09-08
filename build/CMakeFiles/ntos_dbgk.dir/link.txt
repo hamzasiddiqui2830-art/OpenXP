@@ -1,0 +1,2 @@
+/usr/bin/ar qc obj/GCC-x86/libntosdbgk.a CMakeFiles/ntos_dbgk.dir/ntoskrnl/dbgk/dbgkobj.c.o CMakeFiles/ntos_dbgk.dir/ntoskrnl/dbgk/dbgkport.c.o CMakeFiles/ntos_dbgk.dir/ntoskrnl/dbgk/dbgkproc.c.o CMakeFiles/ntos_dbgk.dir/ntoskrnl/dbgk/udbgk.c.o
+/usr/bin/ranlib obj/GCC-x86/libntosdbgk.a

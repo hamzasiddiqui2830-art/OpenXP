@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../lib/libhalarm.a CMakeFiles/halarm.dir/halarm.c.o CMakeFiles/halarm.dir/interrupt.c.o CMakeFiles/halarm.dir/timer.c.o CMakeFiles/halarm.dir/bus.c.o CMakeFiles/halarm.dir/dma.c.o
+/usr/bin/ranlib ../../lib/libhalarm.a

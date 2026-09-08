@@ -79,7 +79,10 @@ else()
     target_compile_options(${TARGET_NAME} PRIVATE -Wall -Werror)
 endif()
 
-# Include tests subdirectory for separate test targets
-add_subdirectory(tests)
+# Tests are opt-in and are not configured or compiled unless explicitly enabled.
+if(BUILD_NTOSKRNL_TESTS)
+    add_subdirectory(tests)
+    message(STATUS "Configured PO test targets")
+endif()
 
 message(STATUS "Configured po module: ${TARGET_NAME} with 24 sources")

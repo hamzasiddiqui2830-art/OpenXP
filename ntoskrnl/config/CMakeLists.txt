@@ -141,12 +141,10 @@ else()
     target_compile_options(${TARGET_NAME} PRIVATE -Wall -Werror)
 endif()
 
-# Precompiled header configuration (optional)
-# set_target_properties(${TARGET_NAME} PROPERTIES
-#     COMPILE_PCH_OUTPUT_INIT "cmp.obj"
-# )
-
-# Include test subdirectory for separate test targets
-add_subdirectory(test)
+# Tests are opt-in and are not configured or compiled unless explicitly enabled.
+if(BUILD_NTOSKRNL_TESTS)
+    add_subdirectory(test)
+    message(STATUS "Configured config test targets")
+endif()
 
 message(STATUS "Configured config module: ${TARGET_NAME} with 54 sources")

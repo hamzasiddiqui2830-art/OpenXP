@@ -72,5 +72,56 @@ typedef LONG CLONG;
 # endif
 #endif
 #endif
+/*
+ * Some host Windows SDK headers expose AVL RTL routines as macros.
+ * ntrtl.h provides the WRK declarations for these routines, so prevent
+ * host SDK macros from rewriting the function names while ntrtl.h is parsed.
+ */
+#ifdef RtlInitializeGenericTableAvl
+#undef RtlInitializeGenericTableAvl
+#endif
 
+#ifdef RtlInsertElementGenericTableAvl
+#undef RtlInsertElementGenericTableAvl
+#endif
+
+#ifdef RtlInsertElementGenericTableFullAvl
+#undef RtlInsertElementGenericTableFullAvl
+#endif
+
+#ifdef RtlDeleteElementGenericTableAvl
+#undef RtlDeleteElementGenericTableAvl
+#endif
+
+#ifdef RtlLookupElementGenericTableAvl
+#undef RtlLookupElementGenericTableAvl
+#endif
+
+#ifdef RtlLookupElementGenericTableFullAvl
+#undef RtlLookupElementGenericTableFullAvl
+#endif
+
+#ifdef RtlEnumerateGenericTableAvl
+#undef RtlEnumerateGenericTableAvl
+#endif
+
+#ifdef RtlEnumerateGenericTableWithoutSplayingAvl
+#undef RtlEnumerateGenericTableWithoutSplayingAvl
+#endif
+
+#ifdef RtlEnumerateGenericTableLikeADirectory
+#undef RtlEnumerateGenericTableLikeADirectory
+#endif
+
+#ifdef RtlGetElementGenericTableAvl
+#undef RtlGetElementGenericTableAvl
+#endif
+
+#ifdef RtlNumberGenericTableElementsAvl
+#undef RtlNumberGenericTableElementsAvl
+#endif
+
+#ifdef RtlIsGenericTableEmptyAvl
+#undef RtlIsGenericTableEmptyAvl
+#endif
 #endif /* NTOSKRNL_NT_H_INCLUDED */

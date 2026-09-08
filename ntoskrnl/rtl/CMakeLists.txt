@@ -110,7 +110,12 @@ else()
     target_compile_options(${TARGET_NAME} PRIVATE -Wall -Werror)
 endif()
 
-# Include test subdirectory for separate test targets
-add_subdirectory(test)
+# Test targets are opt-in. Normal ntoskrnl builds do not configure or compile them.
+if(BUILD_NTOSKRNL_TESTS)
+    add_subdirectory(test)
+endif()
 
 message(STATUS "Configured rtl module: ${TARGET_NAME}")
+if(BUILD_NTOSKRNL_TESTS)
+    message(STATUS "Configured RTL test targets")
+endif()

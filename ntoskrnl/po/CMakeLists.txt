@@ -56,4 +56,7 @@ else()
     target_compile_options(${TARGET_NAME} PRIVATE -Wall -Werror)
 endif()
 
+# Include tests subdirectory for separate test targets
+add_subdirectory(tests)
+
 message(STATUS "Configured po module: ${TARGET_NAME} with 24 sources")

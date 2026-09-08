@@ -39,31 +39,36 @@ function(add_wrk_module MODULE_NAME)
     
     # Collect source files if not explicitly provided
     if(NOT ARG_SOURCES)
-        # Collect C source files from module directory (excluding tests, BUILD,
-        # and architecture-specific subdirectories).
-        file(GLOB_RECURSE MODULE_C_SOURCES
-            ${ARG_SOURCE_DIR}/*.c
+        # Collect C source files from module directory. Test sources are always
+        # excluded here because tests are separate targets and are controlled by
+        # BUILD_NTOSKRNL_TESTS.
+        file(GLOB_RECURSE MODULE_C_SOURCES CONFIGURE_DEPENDS
+            "${ARG_SOURCE_DIR}/*.c"
         )
-        
-        # Tests are separate targets and must never enter a normal module library.
-        list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/test(s)?/")
-        list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/tests?/")
-        list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/BUILD/")
-        list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/i386/")
-        list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/amd64/")
-        list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/ia64/")
-        list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/arm/")
-        list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/arm64/")
+
+        # Normalize paths before filtering so the exclusion works consistently
+        # with Windows and POSIX path separators.
+        set(MODULE_C_SOURCES_FILTERED "")
+        foreach(SOURCE_FILE IN LISTS MODULE_C_SOURCES)
+            file(TO_CMAKE_PATH "${SOURCE_FILE}" SOURCE_FILE_NORMALIZED)
+            if(SOURCE_FILE_NORMALIZED MATCHES "(^|/)tests?(/|$)" OR
+               SOURCE_FILE_NORMALIZED MATCHES "(^|/)BUILD(/|$)" OR
+               SOURCE_FILE_NORMALIZED MATCHES "(^|/)(i386|amd64|ia64|arm|arm64)(/|$)")
+                continue()
+            endif()
+            list(APPEND MODULE_C_SOURCES_FILTERED "${SOURCE_FILE}")
+        endforeach()
+        set(MODULE_C_SOURCES ${MODULE_C_SOURCES_FILTERED})
         
         # Now collect architecture-specific sources for the target architecture
         if(WRK_ARCH_NAME STREQUAL "x86")
-            file(GLOB ARCH_SPECIFIC_SOURCES
-                ${ARG_SOURCE_DIR}/i386/*.c
+            file(GLOB ARCH_SPECIFIC_SOURCES CONFIGURE_DEPENDS
+                "${ARG_SOURCE_DIR}/i386/*.c"
             )
             list(APPEND MODULE_C_SOURCES ${ARCH_SPECIFIC_SOURCES})
         elseif(WRK_ARCH_NAME STREQUAL "amd64")
-            file(GLOB ARCH_SPECIFIC_SOURCES
-                ${ARG_SOURCE_DIR}/amd64/*.c
+            file(GLOB ARCH_SPECIFIC_SOURCES CONFIGURE_DEPENDS
+                "${ARG_SOURCE_DIR}/amd64/*.c"
             )
             list(APPEND MODULE_C_SOURCES ${ARCH_SPECIFIC_SOURCES})
         endif()
@@ -71,8 +76,8 @@ function(add_wrk_module MODULE_NAME)
         # Collect assembly files based on architecture and convert to appropriate format
         if(WRK_ARCH_NAME STREQUAL "x86")
             # For x86, collect .asm files
-            file(GLOB MODULE_ASM_SOURCES
-                ${ARG_SOURCE_DIR}/i386/*.asm
+            file(GLOB MODULE_ASM_SOURCES CONFIGURE_DEPENDS
+                "${ARG_SOURCE_DIR}/i386/*.asm"
             )
             
             # Convert MASM-style .asm to GAS-style .S for non-MSVC compilers
@@ -91,8 +96,8 @@ function(add_wrk_module MODULE_NAME)
             endif()
         elseif(WRK_ARCH_NAME STREQUAL "amd64")
             # For amd64, collect .asm files
-            file(GLOB MODULE_ASM_SOURCES
-                ${ARG_SOURCE_DIR}/amd64/*.asm
+            file(GLOB MODULE_ASM_SOURCES CONFIGURE_DEPENDS
+                "${ARG_SOURCE_DIR}/amd64/*.asm"
             )
             
             # Convert MASM-style .asm to GAS-style .S for non-MSVC compilers

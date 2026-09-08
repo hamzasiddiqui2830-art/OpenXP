@@ -5,6 +5,15 @@
  * the kernel base types before declaring WRK compatibility helpers. */
 #include "ntos.h"
 
+/* The x86 architecture header and mi.h both contain the WRK TB timestamp
+ * helper. Pre-include the architecture copy under a private name so mi.h's
+ * generic copy remains the public helper. */
+#if defined(_MSC_VER) && defined(_X86_)
+#define MiCompareTbFlushTimeStamp MiCompareTbFlushTimeStamp_X86
+#include "../mm/i386/mi386.h"
+#undef MiCompareTbFlushTimeStamp
+#endif
+
 /* WRK uses compiler-neutral exception keywords that MSVC C does not expose. */
 #if defined(_MSC_VER) && !defined(__cplusplus)
 #ifndef try

@@ -6,31 +6,56 @@ set(TARGET_NAME ntosverifier)
 
 # Source files from sources.inc
 set(MODULE_SOURCES
-    ..vfbugcheck.c
-    ..vfddi.c
-    ..vfdeadlock.c
-    ..vfdebug.c
-    ..vfdevobj.c
-    ..vffileio.c
-    ..vffilter.c
-    ..vfhal.c
-    ..vfinit.c
-    ..vfirp.c
-    ..vfirpdb.c
-    ..vfirplog.c
-    ..vfgeneric.c
-    ..vfmajor.c
-    ..vfmessage.c
-    ..vfpacket.c
-    ..vfpnp.c
-    ..vfpower.c
-    ..vfprint.c
-    ..vfrandom.c
-    ..vfsettings.c
-    ..vfstack.c
-    ..vfutil.c
-    ..vfwmi.c
-    ..vfzwapi.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfbugcheck.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfddi.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfdeadlock.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfdebug.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfdevobj.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vffileio.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vffilter.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfhal.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfinit.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfirp.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfirpdb.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfirplog.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfgeneric.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfmajor.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfmessage.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfpacket.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfpnp.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfpower.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfprint.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfrandom.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfsettings.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfstack.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfutil.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfwmi.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vfzwapi.c
+
 )
 
 # Create library target
@@ -38,10 +63,9 @@ add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 
 # Set include directories
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ke
-    ${CMAKE_CURRENT_SOURCE_DIR}/../inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/verifier
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ke
 )
 
 # Compile definitions

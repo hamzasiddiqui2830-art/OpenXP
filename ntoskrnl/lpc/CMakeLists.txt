@@ -7,18 +7,30 @@ set(TARGET_NAME ntoslpc)
 # Source files from sources.inc
 set(MODULE_SOURCES
     lpcinit.c  
-    ..lpccreat.c
-    ..lpclistn.c
-    ..lpcconn.c
-    ..lpccompl.c
-    ..lpcsend.c
-    ..lpcrecv.c
-    ..lpcreply.c
-    ..lpcquery.c
-    ..lpcqueue.c
-    ..lpcclose.c
-    ..lpcpriv.c
-    ..lpclog.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/lpccreat.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/lpclistn.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/lpcconn.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/lpccompl.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/lpcsend.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/lpcrecv.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/lpcreply.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/lpcquery.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/lpcqueue.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/lpcclose.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/lpcpriv.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/lpclog.c
+
 )
 
 # Create library target
@@ -26,10 +38,10 @@ add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 
 # Set include directories
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/lpc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl
+    ${REACTOS_SOURCE_DIR}/inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
 )
 
 # Compile definitions

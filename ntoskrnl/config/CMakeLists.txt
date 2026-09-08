@@ -7,59 +7,112 @@ set(TARGET_NAME ntosconfig)
 # Source files from sources.inc
 set(MODULE_SOURCES
     cmapi.c     
-    ..cmapi2.c
-    ..cmboot.c
-    ..cmchek.c
-    ..cmchek2.c
-    ..cmclose.c
-    ..cmconfig.c
-    ..cmcontrl.c
-    ..cmdat.c
-    ..cmdat2.c
-    ..cmdat3.c
-    ..cmdatini.c
-    ..cmdelete.c
-    ..cmgquota.c
-    ..cmhvlist.c
-    ..cmindex.c
-    ..cminit.c
-    ..cmname.c
-    ..cmnotify.c
-    ..cmparse.c
-    ..cmparse2.c
-    ..cmquery.c
-    ..cmsavres.c
-    ..cmsubs.c
-    ..cmsubs2.c
-    ..cmsubs3.c
-    ..cmse.c
-    ..cmsysini.c
-    ..cmtrecpy.c
-    ..cmtredel.c
-    ..cmtree.c
-    ..cmworker.c
-    ..cmwrapr.c
-    ..cmwrapr2.c
-    ..cmwmi.c
-    ..cmmapvw.c
-    ..cmdelay.c
-    ..cmvalue.c
-    ..cmsecache.c
-    ..cmdown.c
-    ..cmalloc.c
-    ..cmhook.c
-    ..hivebin.c
-    ..hivecell.c
-    ..hivechek.c
-    ..hivefree.c
-    ..hiveinit.c
-    ..hiveload.c
-    ..hivemap.c
-    ..hivesum.c
-    ..hivesync.c
-    ..hivehint.c
-    ..ntapi.c
-    ..hwprofil.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmapi2.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmboot.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmchek.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmchek2.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmclose.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmconfig.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmcontrl.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmdat.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmdat2.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmdat3.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmdatini.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmdelete.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmgquota.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmhvlist.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmindex.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cminit.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmname.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmnotify.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmparse.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmparse2.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmquery.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmsavres.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmsubs.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmsubs2.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmsubs3.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmse.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmsysini.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmtrecpy.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmtredel.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmtree.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmworker.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmwrapr.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmwrapr2.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmwmi.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmmapvw.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmdelay.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmvalue.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmsecache.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmdown.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmalloc.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cmhook.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/hivebin.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/hivecell.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/hivechek.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/hivefree.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/hiveinit.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/hiveload.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/hivemap.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/hivesum.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/hivesync.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/hivehint.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ntapi.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/hwprofil.c
+
 )
 
 # Create library target
@@ -67,11 +120,11 @@ add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 
 # Set include directories
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../ke
-    ${CMAKE_CURRENT_SOURCE_DIR}/../inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/config
+    ${REACTOS_SOURCE_DIR}/ntoskrnl
+    ${REACTOS_SOURCE_DIR}/inc
+    ${REACTOS_SOURCE_DIR}/ke
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
 )
 
 # Compile definitions

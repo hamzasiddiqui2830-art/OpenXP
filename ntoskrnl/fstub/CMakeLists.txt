@@ -7,9 +7,12 @@ set(TARGET_NAME ntosfstub)
 # Source files from sources.inc
 set(MODULE_SOURCES
     halfnc.c     
-    ..drivesup.c
-    ..translate.c
-    ..ex.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/drivesup.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/translate.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex.c
+
 )
 
 # Create library target
@@ -17,9 +20,8 @@ add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 
 # Set include directories
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/fstub
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
 )
 
 # Compile definitions

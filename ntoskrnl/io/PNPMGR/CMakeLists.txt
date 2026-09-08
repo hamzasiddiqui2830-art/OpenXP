@@ -6,45 +6,84 @@ set(TARGET_NAME ntospnpmgr)
 
 # Source files from sources.inc
 set(MODULE_SOURCES
-    ..assign.c
-    ..devices.c
-    ..devnode.c
-    ..devintrf.c
-    ..dockhwp.c
-    ..iofileutil.c
-    ..mapper.c
-    ..notify.c
-    ..pnpbusno.c
-    ..pnpcvrt.c
-    ..pnpdata.c
-    ..pnpdd.c
-    ..pnpdel.c
-    ..pnpdma.c
-    ..pnpeisa.c
-    ..pnpenum.c
-    ..pnpevent.c
-    ..pnpinit.c
-    ..pnpioapi.c
-    ..pnpirp.c
-    ..pnpirq.c
-    ..pnpmap.c
-    ..pnpmemio.c
-    ..pnppower.c
-    ..pnpres.c
-    ..pnprlist.c
-    ..pnpstart.c
-    ..pnpsubs.c
-    ..ppcddb.c
-    ..ppcontrol.c
-    ..pphandle.c
-    ..pphotswap.c
-    ..pplastgood.c
-    ..pppagepath.c
-    ..ppdrvdb.c
-    ..ppprofile.c
-    ..ppvutil.c
-    ..remlock.c
-    ..report.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/assign.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/devices.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/devnode.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/devintrf.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/dockhwp.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/iofileutil.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/mapper.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/notify.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpbusno.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpcvrt.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpdata.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpdd.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpdel.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpdma.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpeisa.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpenum.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpevent.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpinit.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpioapi.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpirp.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpirq.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpmap.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpmemio.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnppower.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpres.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnprlist.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpstart.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpsubs.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/ppcddb.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/ppcontrol.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pphandle.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pphotswap.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pplastgood.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pppagepath.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/ppdrvdb.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/ppprofile.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/ppvutil.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/remlock.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/report.c
+
 )
 
 # Create library target
@@ -52,13 +91,11 @@ add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 
 # Set include directories
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}/../..
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../pnp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/sdk/inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/PNPMGR
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/pnp
+    ${REACTOS_SOURCE_DIR}/sdk/sdk/inc
 )
 
 # Compile definitions

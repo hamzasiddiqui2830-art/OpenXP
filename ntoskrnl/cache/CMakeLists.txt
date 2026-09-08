@@ -7,18 +7,30 @@ set(TARGET_NAME ntoscache)
 # Source files from sources.inc
 set(MODULE_SOURCES
     cachedat.c   
-    ..cachesub.c
-    ..copysup.c
-    ..fssup.c
-    ..lazyrite.c
-    ..logsup.c
-    ..mdlsup.c
-    ..pinsup.c
-    ..prefboot.c
-    ..prefetch.c
-    ..prefparm.c
-    ..ccperf.c
-    ..vacbsup.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cachesub.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/copysup.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/fssup.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/lazyrite.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/logsup.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/mdlsup.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/pinsup.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/prefboot.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/prefetch.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/prefparm.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ccperf.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/vacbsup.c
+
 )
 
 # Create library target
@@ -26,10 +38,10 @@ add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 
 # Set include directories
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/cache
+    ${REACTOS_SOURCE_DIR}/ntoskrnl
+    ${REACTOS_SOURCE_DIR}/inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
 )
 
 # Compile definitions

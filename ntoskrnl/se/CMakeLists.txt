@@ -6,33 +6,60 @@ set(TARGET_NAME ntosse)
 
 # Source files from sources.inc
 set(MODULE_SOURCES
-    ..accessck.c
-    ..capture.c
-    ..privileg.c
-    ..rmlogon.c
-    ..rmmain.c
-    ..rmvars.c
-    ..seassign.c
-    ..seaudit.c
-    ..sepaudit.c
-    ..seclient.c
-    ..seglobal.c
-    ..seinit.c
-    ..semethod.c
-    ..sep.c
-    ..subject.c
-    ..seastate.c
-    ..token.c
-    ..tokenadj.c
-    ..tokendup.c
-    ..tokenopn.c
-    ..tokenqry.c
-    ..tokenset.c
-    ..adtlog.c
-    ..adtinit.c
-    ..adtvars.c
-    ..adtutil.c
-    ..rmaudit.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/accessck.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/capture.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/privileg.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/rmlogon.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/rmmain.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/rmvars.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/seassign.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/seaudit.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/sepaudit.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/seclient.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/seglobal.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/seinit.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/semethod.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/sep.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/subject.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/seastate.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/token.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/tokenadj.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/tokendup.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/tokenopn.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/tokenqry.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/tokenset.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/adtlog.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/adtinit.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/adtvars.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/adtutil.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/rmaudit.c
+
 )
 
 # Create library target
@@ -40,10 +67,10 @@ add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 
 # Set include directories
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/se
+    ${REACTOS_SOURCE_DIR}/ntoskrnl
+    ${REACTOS_SOURCE_DIR}/inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
 )
 
 # Compile definitions

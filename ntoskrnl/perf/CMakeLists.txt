@@ -6,10 +6,14 @@ set(TARGET_NAME ntosperf)
 
 # Source files from sources.inc
 set(MODULE_SOURCES
-    ..hooks.c
-    ..logging.c
-    ..perfdata.c
-    ..perfsup.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/hooks.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/logging.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/perfdata.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/perfsup.c
+
 )
 
 # Create library target
@@ -17,10 +21,8 @@ add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 
 # Set include directories
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/perf
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
 )
 
 # Compile definitions

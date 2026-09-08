@@ -28,15 +28,30 @@ Abstract:
 #define __specstrings
 #endif
 
+/*
+ * Windows native headers still use these legacy SpecStrings entry-point
+ * annotations. Modern sal.h does not provide the old __kernel_entry family,
+ * so keep them as no-op compatibility annotations for the WRK build.
+ */
+#ifndef __control_entrypoint
+#define __control_entrypoint(category)
+#endif
+#ifndef __rpc_entry
+#define __rpc_entry
+#endif
+#ifndef __kernel_entry
+#define __kernel_entry
+#endif
+#ifndef __gdi_entry
+#define __gdi_entry
+#endif
+
 /* WRK-specific aliases which are not part of the modern SAL surface. */
 #ifndef __out_awcount
 #define __out_awcount(expr,size) __out_bcount(size)
 #endif
 #ifndef __in_awcount
 #define __in_awcount(expr,size) __in_bcount(size)
-#endif
-#ifndef __control_entrypoint
-#define __control_entrypoint(category)
 #endif
 #ifndef __data_entrypoint
 #define __data_entrypoint(category)

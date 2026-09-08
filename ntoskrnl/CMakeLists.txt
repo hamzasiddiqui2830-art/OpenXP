@@ -9,6 +9,7 @@ project(ntoskrnl C ASM)
 
 # Build configuration options
 option(BUILD_CHECKED_KERNEL "Build checked kernel with debug features" OFF)
+option(BUILD_NTOSKRNL_TESTS "Build ntoskrnl test targets" OFF)
 option(NT_UP "Build uniprocessor kernel (0 for MP)" 1)
 
 # Set default build type
@@ -118,4 +119,5 @@ endforeach()
 # This is handled in the BUILD subdirectory
 
 message(STATUS "NTOSKRNL build configured for ${ARCH}")
+message(STATUS "NTOSKRNL tests: ${BUILD_NTOSKRNL_TESTS}")
 message(STATUS "Modules: ${MODULES}")

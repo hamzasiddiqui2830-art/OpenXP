@@ -29,10 +29,13 @@ Abstract:
 #include <sal.h>
 
 /*
- * winternl.h uses these legacy SpecStrings entry-point annotations directly.
- * They must be defined before winternl.h is parsed because nt.h is often the
- * first compatibility header included by converted WRK sources.
+ * Load the NTOSKRNL SpecStrings compatibility layer explicitly before
+ * winternl.h. This prevents the Windows SDK from selecting a different
+ * SpecStrings definition later in the include chain and guarantees that the
+ * legacy entry-point annotations are available while winternl.h is parsed.
  */
+#include "specstrings.h"
+
 #ifndef __kernel_entry
 #define __kernel_entry
 #endif

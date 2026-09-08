@@ -24,7 +24,6 @@ macro(set_wrk_compiler_flags)
         NTOS_KERNEL_RUNTIME=1
     )
     
-    # Use WRK_ARCH_NAME if already set (from CMakeLists.txt), otherwise detect
     if(NOT DEFINED WRK_ARCH_NAME)
         if(WRK_ARCH STREQUAL "amd64")
             set(WRK_ARCH_NAME amd64)
@@ -34,59 +33,54 @@ macro(set_wrk_compiler_flags)
     endif()
     
     if(MSVC)
-        # Base compiler flags mirroring makefile.build
         set(WRK_BASE_C_FLAGS
-            -nostdinc    # No standard include directories (use ReactOS SDK only)
-            -Zl          # No default library name in .obj
-            -Zp8         # 8-byte packing
-            -Gy          # Enable function-level linking
-            -W3          # Warning level 3
-            -WX          # Warnings as errors
-            -GR-         # Disable RTTI
-            -GF          # Read-only string pooling
-            -GS-         # Disable buffer security checks
-            -GL-         # Disable whole program optimization
-            -MT          # Static runtime (will be overridden)
-            -U_MT        # Undefine _MT
-            -Z7          # Debug info in .obj
-            /O2          # Optimize for speed
-            /Oy-         # Don't omit frame pointers
+            -nostdinc
+            -Zl
+            -Zp8
+            -Gy
+            -W3
+            -WX
+            -GR-
+            -GF
+            -GS-
+            -GL-
+            -MT
+            -U_MT
+            -Z7
+            /O2
+            /Oy-
+            /wd4101
         )
         
-        # Architecture-specific flags
         if(WRK_ARCH_NAME STREQUAL "amd64")
-            # AMD64
             list(APPEND WRK_BASE_C_FLAGS -Wp64)
             set(WRK_MACHINE_TYPE AMD64)
         else()
-            # x86
             list(APPEND WRK_BASE_C_FLAGS
-                -Gm-       # Disable minimal rebuild
-                -Gz        # Stdcall calling convention
-                -GX-       # Disable exception handling
-                -G6        # Optimize for Pentium Pro
-                -Ze        # Enable language extensions
-                -Gi-       # Disable intrinsic functions
-                -QIfdiv-   # No FDIV bug workaround
+                -Gm-
+                -Gz
+                -GX-
+                -G6
+                -Ze
+                -Gi-
+                -QIfdiv-
             )
             set(WRK_MACHINE_TYPE x86)
         endif()
         
-        # Linker flags mirroring WRK BUILD/makefile
         set(WRK_LINKER_FLAGS
             /IGNORE:4087,4001,4010,4037,4039,4065,4070,4078,4087,4089,4221,4198
-            /WX              # Warnings as errors
-            /NODEFAULTLIB    # No default libraries
+            /WX
+            /NODEFAULTLIB
             /machine:${WRK_MACHINE_TYPE}
-            /driver          # Driver mode
-            /OPT:REF         # Eliminate unreferenced data
-            /OPT:ICF         # Identical COMDAT folding
-            /INCREMENTAL:NO  # No incremental linking
-            /debug           # Generate debug info
-            /pdbcompress     # Compress PDB
+            /driver
+            /OPT:REF
+            /OPT:ICF
+            /INCREMENTAL:NO
+            /debug
+            /pdbcompress
         )
         
-        # Architecture-specific linker flags
         if(WRK_ARCH_NAME STREQUAL "x86")
             list(APPEND WRK_LINKER_FLAGS
                 /safeseh
@@ -102,7 +96,6 @@ macro(set_wrk_compiler_flags)
             set(WRK_ENTRY_POINT "KiSystemStartup")
         endif()
         
-        # Section merge options
         set(WRK_SECTION_MERGE
             /merge:PAGECONST=PAGE
             /merge:INITCONST=INIT
@@ -114,7 +107,6 @@ macro(set_wrk_compiler_flags)
             /merge:.rdata=.text
         )
         
-        # Version information
         set(WRK_VERSION_INFO
             /release
             /version:5.2
@@ -122,26 +114,19 @@ macro(set_wrk_compiler_flags)
             /subsystem:native,5.02
         )
         
-        # Convert lists to strings
         string(REPLACE ";" " " WRK_C_FLAGS_STR "${WRK_BASE_C_FLAGS}")
         string(REPLACE ";" " " WRK_LINKER_FLAGS_STR "${WRK_LINKER_FLAGS}")
         string(REPLACE ";" " " WRK_SECTION_MERGE_STR "${WRK_SECTION_MERGE}")
         string(REPLACE ";" " " WRK_VERSION_INFO_STR "${WRK_VERSION_INFO}")
         
-        # Set global compiler flags
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WRK_C_FLAGS_STR}")
-        
-        # Store linker flags for later use
         set(WRK_EXE_LINKER_FLAGS "${WRK_LINKER_FLAGS_STR} ${WRK_SECTION_MERGE_STR} ${WRK_VERSION_INFO_STR}" CACHE STRING "WRK Linker Flags")
-        
-        # Add common definitions
         add_compile_definitions(${WRK_COMMON_DEFINES})
         
         message(STATUS "WRK Compiler: MSVC ${MSVC_VERSION}")
         message(STATUS "WRK Architecture: ${WRK_ARCH_NAME}")
         
     elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-        # GCC/MinGW/Clang flags for cross-compilation
         set(WRK_GCC_C_FLAGS
             -fno-builtin
             -fno-pie
@@ -154,7 +139,6 @@ macro(set_wrk_compiler_flags)
             -Wno-unused-variable
         )
         
-        # Windows-specific flags
         if(WIN32 OR MINGW)
             list(APPEND WRK_GCC_C_FLAGS
                 -D_WIN32_WINNT=0x0502
@@ -165,17 +149,15 @@ macro(set_wrk_compiler_flags)
             )
         endif()
         
-        # Architecture-specific flags
         if(WRK_ARCH_NAME STREQUAL "amd64")
             list(APPEND WRK_GCC_C_FLAGS -m64)
         else()
-            list(APPEND WRK_GCC_C_FLAGS 
+            list(APPEND WRK_GCC_C_FLAGS
                 -m32
                 -march=i586
             )
         endif()
         
-        # Linker flags for GCC/MinGW/Clang
         set(WRK_GCC_LD_FLAGS
             -nostdlib
             -nodefaultlibs
@@ -184,21 +166,15 @@ macro(set_wrk_compiler_flags)
         )
         
         if(WRK_ARCH_NAME STREQUAL "x86")
-            list(APPEND WRK_GCC_LD_FLAGS
-                -Wl,--stack,0x40000,0x2000
-            )
+            list(APPEND WRK_GCC_LD_FLAGS -Wl,--stack,0x40000,0x2000)
         else()
-            list(APPEND WRK_GCC_LD_FLAGS
-                -Wl,--stack,0x80000,0x2000
-            )
+            list(APPEND WRK_GCC_LD_FLAGS -Wl,--stack,0x80000,0x2000)
         endif()
         
         string(REPLACE ";" " " WRK_GCC_C_FLAGS_STR "${WRK_GCC_C_FLAGS}")
         string(REPLACE ";" " " WRK_GCC_LD_FLAGS_STR "${WRK_GCC_LD_FLAGS}")
-        
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WRK_GCC_C_FLAGS_STR}")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${WRK_GCC_LD_FLAGS_STR}")
-        
         add_compile_definitions(${WRK_COMMON_DEFINES})
         
         if(MINGW)
@@ -215,8 +191,6 @@ macro(set_wrk_compiler_flags)
 endmacro()
 
 macro(set_wrk_include_directories)
-    # Include directories mirroring WRK structure
-    # These must be set BEFORE any system includes to override VS default headers
     set(WRK_INCLUDE_PATHS
         ${CMAKE_SOURCE_DIR}/ntoskrnl/inc
         ${CMAKE_SOURCE_DIR}/sdk/ddk/inc
@@ -229,18 +203,13 @@ macro(set_wrk_include_directories)
         ${CMAKE_SOURCE_DIR}/base/inc
     )
     
-    # Add architecture-specific include path
     if(WRK_ARCH_NAME STREQUAL "amd64")
         list(APPEND WRK_INCLUDE_PATHS ${CMAKE_SOURCE_DIR}/ntoskrnl/amd64)
     else()
         list(APPEND WRK_INCLUDE_PATHS ${CMAKE_SOURCE_DIR}/ntoskrnl/i386)
     endif()
     
-    # Use BEFORE flag to ensure ReactOS SDK headers take priority over VS headers
-    # Note: Cannot use SYSTEM with BEFORE, so we use BEFORE instead
     include_directories(BEFORE ${WRK_INCLUDE_PATHS})
-    
-    # Also set CMAKE_INCLUDE_PATH to force priority
     list(APPEND CMAKE_INCLUDE_PATH ${WRK_INCLUDE_PATHS})
     set(CMAKE_INCLUDE_PATH "${CMAKE_INCLUDE_PATH}" CACHE STRING "WRK Include Paths" FORCE)
 endmacro()

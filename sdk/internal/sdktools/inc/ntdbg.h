@@ -3793,6 +3793,98 @@ typedef struct _DBGKD_SWITCH_PARTITION {
 } DBGKD_SWITCH_PARTITION;
 
 
+//
+// Get Version structures
+//
+
+typedef struct _DBGKD_GET_VERSION32 {
+    USHORT  MajorVersion;
+    USHORT  MinorVersion;
+    USHORT  ProtocolVersion;
+    USHORT  Flags;
+    ULONG   KernBase;
+    ULONG   PsLoadedModuleList;
+
+    USHORT  MachineType;
+
+    //
+    // help for walking stacks with user callbacks:
+    //
+
+    //
+    // The address of the thread structure is provided in the
+    // WAIT_STATE_CHANGE packet.  This is the offset from the base of
+    // the thread structure to the pointer to the kernel stack frame
+    // for the currently active usermode callback.
+    //
+
+    USHORT  ThCallbackStack;            // offset in thread data
+
+    //
+    // these values are offsets into that frame:
+    //
+
+    USHORT  NextCallback;               // saved pointer to next callback frame
+    USHORT  FramePointer;               // saved frame pointer
+
+    //
+    // Address of the loaded module list
+    //
+
+    ULONG   KiCallUserMode;             // kernel user mode dispatcher
+
+    //
+    // Base address of the system thread
+    //
+
+    ULONG   KeUserCallbackDispatcher;   // interrupt user mode dispatcher
+
+    //
+    // DbgKd protocol version info
+    //
+
+    ULONG   BreakpointWithStatus;       // address of breakpoint w/status
+    ULONG   Reserved1;
+    USHORT  ProcessorArchitecture;
+    USHORT  BuildType;
+} DBGKD_GET_VERSION32, *PDBGKD_GET_VERSION32;
+
+
+typedef struct _DBGKD_GET_VERSION64 {
+    USHORT  MajorVersion;
+    USHORT  MinorVersion;
+    UCHAR   ProtocolVersion;
+    UCHAR   KdSecondaryVersion; // Cannot be 'A' for compat with dump header
+    USHORT  Flags;
+    USHORT  MachineType;
+
+    //
+    // Protocol command support descriptions.
+    // These allow the debugger to automatically
+    // adapt to different levels of command support
+    // in different kernels.
+    //
+
+    // One beyond highest packet type understood, zero based.
+    UCHAR   MaxPacketType;
+    // One beyond highest state change understood, zero based.
+    UCHAR   MaxStateChange;
+    // One beyond highest state manipulate message understood, zero based.
+    UCHAR   MaxManipulate;
+
+    // Kind of execution environment the kernel is running in,
+    // such as a real machine or a simulator.  Written back
+    // by the simulation if one exists.
+    UCHAR   Simulation;
+
+    USHORT  Unused[1];
+
+    ULONG64 KernBase;
+    ULONG64 PsLoadedModuleList;
+    ULONG64 DebuggerDataList;
+} DBGKD_GET_VERSION64, *PDBGKD_GET_VERSION64;
+
+
 #include <pshpack4.h>
 
 typedef struct _DBGKD_MANIPULATE_STATE32 {

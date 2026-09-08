@@ -70,7 +70,9 @@ else()
 endif()
 
 if(MSVC)
-    add_compile_options(/W4 /WX)
+    # The WRK's legacy specstrings.h redefines annotation macros already
+    # provided by modern MSVC sal.h. Suppress only C4005 while keeping /WX.
+    add_compile_options(/W4 /WX /wd4005)
 else()
     add_compile_options(-Wall -Wextra -Werror)
 endif()

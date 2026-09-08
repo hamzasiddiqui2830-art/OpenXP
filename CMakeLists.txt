@@ -40,7 +40,8 @@ if(NOT DEFINED WRK_ARCH)
     endif()
 endif()
 
-# Tests are never part of kernel module source globs unless explicitly enabled.
+# Tests are separate targets and are never included in normal module source
+# discovery. They are configured only when explicitly requested.
 option(BUILD_NTOSKRNL_TESTS "Build ntoskrnl test targets" OFF)
 message(STATUS "NTOSKRNL tests: ${BUILD_NTOSKRNL_TESTS}")
 
@@ -148,12 +149,29 @@ set(NTOS_MODULES
     init
 )
 
-# Add all NTOS modules as static libraries
+# Add all NTOS modules as static libraries. The module builder deliberately
+# excludes test directories, so BUILD_NTOSKRNL_TESTS cannot leak test sources
+# into the normal kernel libraries.
 foreach(MODULE ${NTOS_MODULES})
-    # Replace slashes with underscores for target name
     string(REPLACE "/" "_" MODULE_TARGET "${MODULE}")
     add_wrk_module(${MODULE_TARGET} SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/${MODULE})
 endforeach()
+
+# Test programs are opt-in. Keep them outside the normal module targets so a
+# default configure/build cannot compile a single test source accidentally.
+if(BUILD_NTOSKRNL_TESTS)
+    set(NTOSKRNL_TEST_DIRECTORIES
+        ${NTOSKRNL_SOURCE_DIR}/rtl/test
+        ${NTOSKRNL_SOURCE_DIR}/config/test
+        ${NTOSKRNL_SOURCE_DIR}/ke/tests
+        ${NTOSKRNL_SOURCE_DIR}/po/test
+    )
+    foreach(TEST_DIRECTORY IN LISTS NTOSKRNL_TEST_DIRECTORIES)
+        if(EXISTS "${TEST_DIRECTORY}/CMakeLists.txt")
+            add_subdirectory("${TEST_DIRECTORY}")
+        endif()
+    endforeach()
+endif()
 
 # Collect all module libraries for linking
 set(NTOS_MODULE_LIBS "")

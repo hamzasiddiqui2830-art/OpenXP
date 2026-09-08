@@ -39,12 +39,15 @@ function(add_wrk_module MODULE_NAME)
     
     # Collect source files if not explicitly provided
     if(NOT ARG_SOURCES)
-        # Collect C source files from module directory (excluding arch-specific subdirs)
+        # Collect C source files from module directory (excluding tests, BUILD,
+        # and architecture-specific subdirectories).
         file(GLOB_RECURSE MODULE_C_SOURCES
             ${ARG_SOURCE_DIR}/*.c
         )
         
-        # Filter out BUILD directory and architecture-specific subdirectories
+        # Tests are separate targets and must never enter a normal module library.
+        list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/test(s)?/")
+        list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/tests?/")
         list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/BUILD/")
         list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/i386/")
         list(FILTER MODULE_C_SOURCES EXCLUDE REGEX "/amd64/")

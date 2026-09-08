@@ -1,6 +1,6 @@
-# ReactOS
+# OpenXP
 
-ReactOS - A free and open-source operating system compatible with Windows applications and drivers.
+OpenXP - A free and open-source operating system compatible with Windows applications and drivers.
 
 ## Overview
 

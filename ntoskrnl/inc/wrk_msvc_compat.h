@@ -1,6 +1,10 @@
 #ifndef _WRK_MSVC_COMPAT_H_
 #define _WRK_MSVC_COMPAT_H_
 
+/* The force-included header is processed before each source file. Pull in
+ * the kernel base types before declaring WRK compatibility helpers. */
+#include "ntos.h"
+
 /* WRK uses compiler-neutral exception keywords that MSVC C does not expose. */
 #if defined(_MSC_VER) && !defined(__cplusplus)
 #ifndef try

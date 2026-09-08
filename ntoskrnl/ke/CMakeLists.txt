@@ -96,12 +96,10 @@ else()
     target_compile_options(${TARGET_NAME} PRIVATE -Wall -Werror)
 endif()
 
-# Precompiled header configuration (optional)
-# set_target_properties(${TARGET_NAME} PROPERTIES
-#     COMPILE_PCH_OUTPUT_INIT "ki.obj"
-# )
-
-# Include tests subdirectory for separate test targets
-add_subdirectory(tests)
+# Tests are opt-in and are not configured or compiled unless explicitly enabled.
+if(BUILD_NTOSKRNL_TESTS)
+    add_subdirectory(tests)
+    message(STATUS "Configured KE test targets")
+endif()
 
 message(STATUS "Configured ke module: ${TARGET_NAME} with 31 sources")

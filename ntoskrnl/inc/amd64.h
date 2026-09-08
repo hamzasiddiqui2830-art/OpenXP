@@ -1984,6 +1984,49 @@ typedef struct _KEXCEPTION_FRAME {
 // Saved nonvolatile floating registers.
 //
 
+    // MSVC defines Xmm6-Xmm15 as macros in x64 builds, which conflicts with
+    // structure member names. Undefine them locally for the structure definition.
+#ifdef Xmm6
+#pragma push_macro("Xmm6")
+#undef Xmm6
+#endif
+#ifdef Xmm7
+#pragma push_macro("Xmm7")
+#undef Xmm7
+#endif
+#ifdef Xmm8
+#pragma push_macro("Xmm8")
+#undef Xmm8
+#endif
+#ifdef Xmm9
+#pragma push_macro("Xmm9")
+#undef Xmm9
+#endif
+#ifdef Xmm10
+#pragma push_macro("Xmm10")
+#undef Xmm10
+#endif
+#ifdef Xmm11
+#pragma push_macro("Xmm11")
+#undef Xmm11
+#endif
+#ifdef Xmm12
+#pragma push_macro("Xmm12")
+#undef Xmm12
+#endif
+#ifdef Xmm13
+#pragma push_macro("Xmm13")
+#undef Xmm13
+#endif
+#ifdef Xmm14
+#pragma push_macro("Xmm14")
+#undef Xmm14
+#endif
+#ifdef Xmm15
+#pragma push_macro("Xmm15")
+#undef Xmm15
+#endif
+
     M128 Xmm6;
     M128 Xmm7;
     M128 Xmm8;
@@ -1994,6 +2037,37 @@ typedef struct _KEXCEPTION_FRAME {
     M128 Xmm13;
     M128 Xmm14;
     M128 Xmm15;
+
+#ifdef Xmm6
+#pragma pop_macro("Xmm6")
+#endif
+#ifdef Xmm7
+#pragma pop_macro("Xmm7")
+#endif
+#ifdef Xmm8
+#pragma pop_macro("Xmm8")
+#endif
+#ifdef Xmm9
+#pragma pop_macro("Xmm9")
+#endif
+#ifdef Xmm10
+#pragma pop_macro("Xmm10")
+#endif
+#ifdef Xmm11
+#pragma pop_macro("Xmm11")
+#endif
+#ifdef Xmm12
+#pragma pop_macro("Xmm12")
+#endif
+#ifdef Xmm13
+#pragma pop_macro("Xmm13")
+#endif
+#ifdef Xmm14
+#pragma pop_macro("Xmm14")
+#endif
+#ifdef Xmm15
+#pragma pop_macro("Xmm15")
+#endif
 
 //
 // Kernel callout frame variables.

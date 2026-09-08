@@ -65,6 +65,7 @@ set(NTOS_INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}/inc
     ${CMAKE_SOURCE_DIR}/ke
     ${CMAKE_SOURCE_DIR}/kd64
+    ${CMAKE_SOURCE_DIR}/rtl
 )
 
 # ============================================================================

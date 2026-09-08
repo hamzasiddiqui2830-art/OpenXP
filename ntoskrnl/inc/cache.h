@@ -23,6 +23,24 @@ Revision History:
 #define _CACHE_
 
 #include "prefetch.h"
+
+// Prefetch intrinsics are defined in ntamd64.h (for amd64) or provided by compiler
+// Include prefetch.h only if it exists, otherwise use intrinsic definitions
+#if defined(_AMD64_)
+// Prefetch functions will be available through ntamd64.h included via nt.h
+#else
+// For x86 and other architectures, define stub macros if not already defined
+#ifndef PreFetchCacheLine
+#define PreFetchCacheLine(l, a)
+#endif
+#ifndef PrefetchForWrite
+#define PrefetchForWrite(p)
+#endif
+#ifndef ReadForWriteAccess
+#define ReadForWriteAccess(p) (*(p))
+#endif
+#endif
+
 #include "perf.h"
 
 // begin_ntifs

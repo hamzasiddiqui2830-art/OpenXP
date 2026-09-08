@@ -24,6 +24,7 @@ Abstract:
 #endif
 
 #include <ctype.h>  // winnt ntndis
+#include <excpt.h>
 
 // begin_ntminiport begin_ntndis begin_ntminitape
 

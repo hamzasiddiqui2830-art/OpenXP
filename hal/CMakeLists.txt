@@ -1,5 +1,5 @@
 # Add HAL stub source file - provides HAL implementations without DLL dependency
-add_library(hal_stub STATIC ${CMAKE_SOURCE_DIR}/hal_stub.c)
+add_library(hal_stub STATIC ${CMAKE_CURRENT_SOURCE_DIR}/hal_stub.c)
 
 target_include_directories(hal_stub PRIVATE
     ${CMAKE_SOURCE_DIR}/ntoskrnl/inc
@@ -17,8 +17,8 @@ set_target_properties(hal_stub PROPERTIES
 # HAL target libraries for different HAL configurations
 # halacpim - HAL ACPI Multiprocessor
 add_library(halacpim STATIC 
-    ${CMAKE_SOURCE_DIR}/halacpim/halacpim.c
-    ${CMAKE_SOURCE_DIR}/hal_stub.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/halacpim/halacpim.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/hal_stub.c
 )
 target_include_directories(halacpim PRIVATE
     ${CMAKE_SOURCE_DIR}/ntoskrnl/inc
@@ -34,8 +34,8 @@ set_target_properties(halacpim PROPERTIES
 
 # halmacpi - HAL ACPI
 add_library(halmacpi STATIC 
-    ${CMAKE_SOURCE_DIR}/halmacpi/halmacpi.c
-    ${CMAKE_SOURCE_DIR}/hal_stub.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/halmacpi/halmacpi.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/hal_stub.c
 )
 target_include_directories(halmacpi PRIVATE
     ${CMAKE_SOURCE_DIR}/ntoskrnl/inc
@@ -51,8 +51,8 @@ set_target_properties(halmacpi PROPERTIES
 
 # halmps - HAL Multiprocessor System
 add_library(halmps STATIC 
-    ${CMAKE_SOURCE_DIR}/halmps/halmps.c
-    ${CMAKE_SOURCE_DIR}/hal_stub.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/halmps/halmps.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/hal_stub.c
 )
 target_include_directories(halmps PRIVATE
     ${CMAKE_SOURCE_DIR}/ntoskrnl/inc

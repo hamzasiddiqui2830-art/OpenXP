@@ -73,10 +73,10 @@ Tkm (
 
     DbgPrint("    test1...");
     Counter = 0;
-    try {
+    __try {
         Counter += 1;
 
-    } finally {
+    } __finally {
         if (abnormal_termination() == FALSE) {
             Counter += 1;
         }
@@ -96,10 +96,10 @@ Tkm (
 
     DbgPrint("    test2...");
     Counter = 0;
-    try {
+    __try {
         Counter += 1;
 
-    } except (Counter) {
+    } __except (Counter) {
         Counter += 1;
     }
 
@@ -117,11 +117,11 @@ Tkm (
 
     DbgPrint("    test3...");
     Counter = 0;
-    try {
+    __try {
         Counter -= 1;
         RtlRaiseException(&ExceptionRecord);
 
-    } except (Counter) {
+    } __except (Counter) {
         Counter -= 1;
     }
 
@@ -138,11 +138,11 @@ Tkm (
 
     DbgPrint("    test4...");
     Counter = 0;
-    try {
+    __try {
         Counter += 1;
         RtlRaiseStatus(STATUS_INTEGER_OVERFLOW);
 
-    } except (Counter) {
+    } __except (Counter) {
         Counter += 1;
     }
 
@@ -160,18 +160,18 @@ Tkm (
 
     DbgPrint("    test5...");
     Counter = 0;
-    try {
-        try {
+    __try {
+        __try {
             Counter += 1;
             RtlRaiseException(&ExceptionRecord);
 
-        } finally {
+        } __finally {
             if (abnormal_termination() != FALSE) {
                 Counter += 1;
             }
         }
 
-    } except (Counter) {
+    } __except (Counter) {
         if (Counter == 2) {
             Counter += 1;
         }
@@ -190,11 +190,11 @@ Tkm (
 
     DbgPrint("    test6...");
     Counter = 0;
-    try {
+    __try {
         Counter += 1;
         foo(STATUS_ACCESS_VIOLATION);
 
-    } except ((GetExceptionCode() == STATUS_ACCESS_VIOLATION) ?
+    } __except ((GetExceptionCode() == STATUS_ACCESS_VIOLATION) ?
              EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
         Counter += 1;
     }
@@ -214,10 +214,10 @@ Tkm (
 
     DbgPrint("    test7...");
     Counter = 0;
-    try {
+    __try {
         bar(STATUS_ACCESS_VIOLATION, (PULONG)&Counter);
 
-    } except ((GetExceptionCode() == STATUS_ACCESS_VIOLATION) ?
+    } __except ((GetExceptionCode() == STATUS_ACCESS_VIOLATION) ?
              EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
         Counter -= 1;
     }
@@ -235,16 +235,16 @@ Tkm (
 
     DbgPrint("    test8...");
     Counter = 0;
-    try {
+    __try {
         foo(STATUS_ACCESS_VIOLATION);
 
-    } except ((GetExceptionCode() == STATUS_ACCESS_VIOLATION) ?
+    } __except ((GetExceptionCode() == STATUS_ACCESS_VIOLATION) ?
              EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
         Counter += 1;
-        try {
+        __try {
             foo(STATUS_SUCCESS);
 
-        } except ((GetExceptionCode() == STATUS_SUCCESS) ?
+        } __except ((GetExceptionCode() == STATUS_SUCCESS) ?
                  EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
             if (Counter != 1) {
                 DbgPrint("failed...");
@@ -271,17 +271,17 @@ Tkm (
 
     DbgPrint("    test9...");
     Counter = 0;
-    try {
-        try {
+    __try {
+        __try {
             foo(STATUS_ACCESS_VIOLATION);
 
-        } except ((GetExceptionCode() == STATUS_ACCESS_VIOLATION) ?
+        } __except ((GetExceptionCode() == STATUS_ACCESS_VIOLATION) ?
                  EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
             Counter += 1;
             goto t9;
         }
 
-    } finally {
+    } __finally {
         Counter += 1;
     }
 
@@ -300,16 +300,16 @@ t9:;
 
     DbgPrint("    test10...");
     Counter = 0;
-    try {
-        try {
+    __try {
+        __try {
             Counter += 1;
 
-        } finally {
+        } __finally {
             Counter += 1;
 	      goto t10;
         }
 
-    } finally {
+    } __finally {
         Counter += 1;
     }
 
@@ -328,22 +328,22 @@ t10:;
 
     DbgPrint("    test11...");
     Counter = 0;
-    try {
-        try {
-            try {
+    __try {
+        __try {
+            __try {
                 Counter += 1;
                 foo(STATUS_INTEGER_OVERFLOW);
 
-            } except (EXCEPTION_EXECUTE_HANDLER) {
+            } __except (EXCEPTION_EXECUTE_HANDLER) {
                 Counter += 1;
                 goto t11;
             }
 
-        } finally {
+        } __finally {
             Counter += 1;
         }
 t11:;
-    } finally {
+    } __finally {
         Counter += 1;
     }
 
@@ -361,16 +361,16 @@ t11:;
 
     DbgPrint("    test12...");
     Counter = 0;
-    try {
-        try {
+    __try {
+        __try {
             Counter += 1;
 
-        } finally {
+        } __finally {
             Counter += 1;
             goto t12;
         }
 t12:;
-    } finally {
+    } __finally {
         Counter += 1;
     }
 
@@ -387,11 +387,11 @@ t12:;
 
     DbgPrint("    test13...");
     Counter = 0;
-    try {
+    __try {
         Counter += 1;
         eret(STATUS_ACCESS_VIOLATION, (PULONG)&Counter);
 
-    } finally {
+    } __finally {
         Counter += 1;
     }
 
@@ -407,11 +407,11 @@ t12:;
 
     DbgPrint("    test14...");
     Counter = 0;
-    try {
+    __try {
         Counter += 1;
         fret((PULONG)&Counter);
 
-    } finally {
+    } __finally {
         Counter += 1;
     }
 
@@ -436,15 +436,15 @@ fret(
 
 {
 
-    try {
-        try {
+    __try {
+        __try {
             *Counter += 1;
 
-        } finally {
+        } __finally {
             *Counter += 1;
             return;
         }
-    } finally {
+    } __finally {
         *Counter += 1;
     }
 
@@ -459,17 +459,17 @@ eret(
 
 {
 
-    try {
-        try {
+    __try {
+        __try {
             foo(Status);
 
-        } except ((GetExceptionCode() == Status) ?
+        } __except ((GetExceptionCode() == Status) ?
                  EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
             *Counter += 1;
             return;
         }
 
-    } finally {
+    } __finally {
         *Counter += 1;
     }
 
@@ -483,10 +483,10 @@ bar (
     )
 {
 
-    try {
+    __try {
         foo(Status);
 
-    } finally {
+    } __finally {
         if (abnormal_termination() != FALSE) {
             *Counter = 99;
 

@@ -58,9 +58,30 @@ typedef struct _OEM_FONT_FILE_HEADER {
     USHORT Ascent;
     USHORT InternalLeading;
     USHORT ExternalLeading;
+#ifdef Italic
+    #pragma push_macro("Italic")
+    #undef Italic
+#endif
     UCHAR Italic;
+#ifdef Italic
+    #pragma pop_macro("Italic")
+#endif
+#ifdef Underline
+    #pragma push_macro("Underline")
+    #undef Underline
+#endif
     UCHAR Underline;
+#ifdef Underline
+    #pragma pop_macro("Underline")
+#endif
+#ifdef StrikeOut
+    #pragma push_macro("StrikeOut")
+    #undef StrikeOut
+#endif
     UCHAR StrikeOut;
+#ifdef StrikeOut
+    #pragma pop_macro("StrikeOut")
+#endif
     USHORT Weight;
     UCHAR CharacterSet;
     USHORT PixelWidth;

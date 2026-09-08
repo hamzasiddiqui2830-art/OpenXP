@@ -1,79 +1,90 @@
 # NTOSKRNL CMake Build System
 # Converted from legacy Microsoft build system
-# 
+#
 # You may only use this code if you agree to the terms of the Windows Research Kernel Source Code License agreement.
 # If you do not agree to the terms, do not use the code.
 
 cmake_minimum_required(VERSION 3.15)
-project(ntoskrnl C ASM)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    project(ntoskrnl C ASM)
+endif()
+
+# This CMake project lives below the repository root. Keep one canonical root
+# so every module uses stable paths regardless of the build directory.
+get_filename_component(REACTOS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/.." ABSOLUTE)
+set(NTOSKRNL_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Build configuration options
 option(BUILD_CHECKED_KERNEL "Build checked kernel with debug features" OFF)
 option(BUILD_NTOSKRNL_TESTS "Build ntoskrnl test targets" OFF)
 option(NT_UP "Build uniprocessor kernel (0 for MP)" 1)
 
-# Set default build type
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
 endif()
 
-# Architecture detection
-if(CMAKE_SYSTEM_PROCESSOR STREQUAL "AMD64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-    set(ARCH amd64)
-    set(LMACHINE amd64)
-elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "i386" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "i686")
-    set(ARCH i386)
-    set(LMACHINE x86)
-elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "IA64")
-    set(ARCH ia64)
-    set(LMACHINE ia64)
+# Prefer the repository's target architecture selection when present. Fall back
+# to the host compiler only for standalone use of this directory.
+if(DEFINED WRK_ARCH)
+    set(_NTOS_ARCH "${WRK_ARCH}")
+elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(_NTOS_ARCH amd64)
 else()
-    message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+    set(_NTOS_ARCH x86)
 endif()
 
-message(STATUS "Building for architecture: ${ARCH}")
+if(_NTOS_ARCH MATCHES "^(amd64|AMD64|x86_64)$")
+    set(ARCH amd64)
+    set(LMACHINE amd64)
+    add_compile_definitions(_AMD64_ AMD64 _WIN64)
+elseif(_NTOS_ARCH MATCHES "^(x86|X86|i386|i686)$")
+    set(ARCH i386)
+    set(LMACHINE x86)
+    add_compile_definitions(_X86_ i386)
+elseif(_NTOS_ARCH MATCHES "^(ia64|IA64)$")
+    set(ARCH ia64)
+    set(LMACHINE ia64)
+    add_compile_definitions(_IA64_ IA64)
+else()
+    message(FATAL_ERROR "Unsupported NTOSKRNL architecture: ${_NTOS_ARCH}")
+endif()
 
-# Build paths
-set(TOPobj "${CMAKE_BINARY_DIR}/obj${ARCH}")
+message(STATUS "NTOSKRNL source root: ${REACTOS_SOURCE_DIR}")
+message(STATUS "NTOSKRNL architecture: ${ARCH}")
+
+set(TOPobj "${CMAKE_BINARY_DIR}/obj/${ARCH}")
 set(EXE_PATH "${CMAKE_BINARY_DIR}/EXE")
-
-# Create output directories
 file(MAKE_DIRECTORY "${TOPobj}")
 file(MAKE_DIRECTORY "${EXE_PATH}")
 
-# Common compiler definitions
-add_definitions(-D_NTOS_)
-add_definitions(-D_NTIFS_)
-add_definitions(-D_NTDDK_)
-
+add_compile_definitions(_NTOS_ _NTIFS_ _NTDDK_)
 if(NT_UP)
-    add_definitions(-DNT_UP=${NT_UP})
+    add_compile_definitions(NT_UP=${NT_UP})
 endif()
 
 if(BUILD_CHECKED_KERNEL)
-    add_definitions(-DNTDEBUG=ntsd)
+    add_compile_definitions(NTDEBUG=ntsd)
     set(FREEBUILD 0)
 else()
     set(FREEBUILD 1)
 endif()
 
-# Warning level
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /WX")
+if(MSVC)
+    add_compile_options(/W4 /WX)
+else()
+    add_compile_options(-Wall -Wextra -Werror)
+endif()
 
-# Include directories
 set(NTOS_INCLUDE_DIRS
     ${REACTOS_SOURCE_DIR}
-    ${REACTOS_SOURCE_DIR}/inc
-    ${REACTOS_SOURCE_DIR}/ke
-    ${REACTOS_SOURCE_DIR}/kd64
-    ${REACTOS_SOURCE_DIR}/rtl
+    ${NTOSKRNL_SOURCE_DIR}
+    ${NTOSKRNL_SOURCE_DIR}/inc
+    ${NTOSKRNL_SOURCE_DIR}/ke
+    ${NTOSKRNL_SOURCE_DIR}/kd64
+    ${NTOSKRNL_SOURCE_DIR}/rtl
 )
+include_directories(${NTOS_INCLUDE_DIRS})
 
-# ============================================================================
-# Module definitions - converted from sources.inc files
-# ============================================================================
-
-# List of all modules to build
 set(MODULES
     rtl
     config
@@ -104,19 +115,14 @@ set(MODULES
     verifier
 )
 
-# Include all module CMakeLists
 foreach(MODULE ${MODULES})
-    if(EXISTS "${REACTOS_SOURCE_DIR}/${MODULE}/CMakeLists.txt")
-        add_subdirectory(${MODULE} ${TOPobj}/${MODULE})
+    set(MODULE_SOURCE_DIR "${NTOSKRNL_SOURCE_DIR}/${MODULE}")
+    if(EXISTS "${MODULE_SOURCE_DIR}/CMakeLists.txt")
+        add_subdirectory("${MODULE_SOURCE_DIR}" "${TOPobj}/${MODULE}")
+    else()
+        message(STATUS "Skipping missing ntoskrnl module: ${MODULE}")
     endif()
 endforeach()
-
-# ============================================================================
-# Final kernel linking
-# ============================================================================
-
-# The final kernel executable will be created by collecting all module libraries
-# This is handled in the BUILD subdirectory
 
 message(STATUS "NTOSKRNL build configured for ${ARCH}")
 message(STATUS "NTOSKRNL tests: ${BUILD_NTOSKRNL_TESTS}")

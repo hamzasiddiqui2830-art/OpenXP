@@ -1,1 +1,1 @@
-Nothing should be ignored in this case, as the only added file (`ntoskrnl/mm/i386/mi386.h`) is a source header file, which should be tracked by git. There are no build artifacts, dependencies, temporary files, or other items that need to be ignored.
+Nothing should be ignored based on the provided file changes, as they only include source code files (.c) without any build artifacts, dependencies, or temporary files.

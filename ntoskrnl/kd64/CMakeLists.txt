@@ -7,15 +7,24 @@ set(TARGET_NAME ntoskd)
 # Source files from sources.inc
 set(MODULE_SOURCES
     file.c    
-    ..kdinit.c
-    ..kdbreak.c
-    ..kdlock.c
-    ..kdmove.c
-    ..kddbgio.c
-    ..kdapi.c
-    ..kddata.c
-    ..print.c
-    ..query.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/kdinit.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/kdbreak.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/kdlock.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/kdmove.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/kddbgio.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/kdapi.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/kddata.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/print.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/query.c
+
 )
 
 # Create library target
@@ -23,13 +32,10 @@ add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 
 # Set include directories
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../ke
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../mm
-    ${CMAKE_CURRENT_SOURCE_DIR}/../$(TARGET_DIRECTORY)
-    ${CMAKE_CURRENT_SOURCE_DIR}/../inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/kd64
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ke
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/mm
 )
 
 # Compile definitions

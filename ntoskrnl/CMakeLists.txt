@@ -61,11 +61,11 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /WX")
 
 # Include directories
 set(NTOS_INCLUDE_DIRS
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/inc
-    ${CMAKE_SOURCE_DIR}/ke
-    ${CMAKE_SOURCE_DIR}/kd64
-    ${CMAKE_SOURCE_DIR}/rtl
+    ${REACTOS_SOURCE_DIR}
+    ${REACTOS_SOURCE_DIR}/inc
+    ${REACTOS_SOURCE_DIR}/ke
+    ${REACTOS_SOURCE_DIR}/kd64
+    ${REACTOS_SOURCE_DIR}/rtl
 )
 
 # ============================================================================
@@ -105,7 +105,7 @@ set(MODULES
 
 # Include all module CMakeLists
 foreach(MODULE ${MODULES})
-    if(EXISTS "${CMAKE_SOURCE_DIR}/${MODULE}/CMakeLists.txt")
+    if(EXISTS "${REACTOS_SOURCE_DIR}/${MODULE}/CMakeLists.txt")
         add_subdirectory(${MODULE} ${TOPobj}/${MODULE})
     endif()
 endforeach()

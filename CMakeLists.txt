@@ -43,6 +43,9 @@ endif()
 # Project definition
 project(wrk VERSION 5.2 LANGUAGES C ASM)
 
+# Set ReactOS source directory (root of the source tree)
+set(REACTOS_SOURCE_DIR ${CMAKE_SOURCE_DIR})
+
 # Set C standard
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -60,7 +63,7 @@ option(ENABLE_HAL_MPS "Build Multiprocessor System HAL" OFF)
 option(ENABLE_HAL_APIC "Build ACPI APIC HAL" OFF)
 
 # Add CMake modules path
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
+list(APPEND CMAKE_MODULE_PATH ${REACTOS_SOURCE_DIR}/cmake/modules)
 
 # Include WRK-specific modules
 include(WRKCompilerFlags)
@@ -84,8 +87,8 @@ endif()
 message(STATUS "Building for architecture: ${WRK_ARCH_NAME}")
 
 # Directory structure (mirroring ReactOS)
-set(NTOSKRNL_SOURCE_DIR ${CMAKE_SOURCE_DIR}/ntoskrnl)
-set(SDK_SOURCE_DIR ${CMAKE_SOURCE_DIR}/sdk)
+set(NTOSKRNL_SOURCE_DIR ${REACTOS_SOURCE_DIR}/ntoskrnl)
+set(SDK_SOURCE_DIR ${REACTOS_SOURCE_DIR}/sdk)
 
 # Output directories - using compiler-architecture naming convention
 if(MSVC)
@@ -169,7 +172,7 @@ else()
 endif()
 
 # Add DLL subsystem (WOW64 and other DLLs)
-if(EXISTS ${CMAKE_SOURCE_DIR}/dll/CMakeLists.txt)
+if(EXISTS ${REACTOS_SOURCE_DIR}/dll/CMakeLists.txt)
     add_subdirectory(dll)
 endif()
 

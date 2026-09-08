@@ -25,9 +25,9 @@ add_library(halarm STATIC ${HALARM_SOURCES})
 # Set include directories
 target_include_directories(halarm
     PRIVATE
-        ${CMAKE_SOURCE_DIR}/ntoskrnl/inc
-        ${CMAKE_SOURCE_DIR}/sdk/sdk/inc
-        ${CMAKE_SOURCE_DIR}/hal/halarm
+        ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
+        ${REACTOS_SOURCE_DIR}/sdk/sdk/inc
+        ${REACTOS_SOURCE_DIR}/hal/halarm
 )
 
 # Add compiler definitions

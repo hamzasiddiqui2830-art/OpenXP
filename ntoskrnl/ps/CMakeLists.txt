@@ -7,20 +7,34 @@ set(TARGET_NAME ntosps)
 # Source files from sources.inc
 set(MODULE_SOURCES
     psspnd.c   
-    ..pscid.c
-    ..psimpers.c
-    ..psinit.c
-    ..psdelete.c
-    ..psquery.c
-    ..create.c
-    ..kulookup.c
-    ..psquota.c
-    ..psctx.c
-    ..psopen.c
-    ..psjob.c
-    ..security.c
-    ..pshelper.c
-    ..psenum.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/pscid.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/psimpers.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/psinit.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/psdelete.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/psquery.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/create.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/kulookup.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/psquota.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/psctx.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/psopen.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/psjob.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/security.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/pshelper.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/psenum.c
+
 )
 
 # Create library target
@@ -28,11 +42,11 @@ add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 
 # Set include directories
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../ke
-    ${CMAKE_CURRENT_SOURCE_DIR}/../inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ps
+    ${REACTOS_SOURCE_DIR}/ntoskrnl
+    ${REACTOS_SOURCE_DIR}/inc
+    ${REACTOS_SOURCE_DIR}/ke
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
 )
 
 # Compile definitions

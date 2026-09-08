@@ -29,10 +29,10 @@ add_definitions(-D_WINDLL)
 add_definitions(-DNTOS_KERNEL)
 
 # Include directories
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/inc)
-include_directories(${PROJECT_SOURCE_DIR}/../../../sdk/sdk/inc)
-include_directories(${PROJECT_SOURCE_DIR}/../../../sdk/sdk/include/reactos)
-include_directories(${PROJECT_SOURCE_DIR}/../../../ntoskrnl/inc)
+include_directories(${REACTOS_SOURCE_DIR}/dll/wow64/inc)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/sdk/inc)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/sdk/include/reactos)
+include_directories(${REACTOS_SOURCE_DIR}/ntoskrnl/inc)
 
 # Source files organized by subsystem (Windows 7 layout)
 set(WOW64_SOURCES
@@ -74,9 +74,9 @@ if(MSVC)
     )
     
     # Export definitions
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/wow64.def")
+    if(EXISTS "${REACTOS_SOURCE_DIR}/dll/wow64/wow64.def")
         set_target_properties(wow64 PROPERTIES
-            LINK_FLAGS "/DEF:${CMAKE_CURRENT_SOURCE_DIR}/wow64.def"
+            LINK_FLAGS "/DEF:${REACTOS_SOURCE_DIR}/dll/wow64/wow64.def"
         )
     endif()
 else()

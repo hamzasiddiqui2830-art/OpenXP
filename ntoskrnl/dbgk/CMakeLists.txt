@@ -7,8 +7,10 @@ set(TARGET_NAME ntosdbgk)
 # Source files from sources.inc
 set(MODULE_SOURCES
     dbgkport.c 
-    ..dbgkproc.c
-    ..dbgkobj.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/dbgkproc.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/dbgkobj.c
+
 )
 
 # Create library target
@@ -16,10 +18,8 @@ add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 
 # Set include directories
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/dbgk
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
 )
 
 # Compile definitions

@@ -6,11 +6,16 @@ set(TARGET_NAME ntosio)
 
 # Source files from sources.inc
 set(MODULE_SOURCES
-    ..ioguid.c
-    ..iovutil.c
-    ..netboot.c
-    ..sessnirp.c
-    ..trackirp.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ioguid.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/iovutil.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/netboot.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/sessnirp.c
+
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/trackirp.c
+
 )
 
 # Create library target
@@ -18,12 +23,10 @@ add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 
 # Set include directories
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../pnpmgr
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../pnp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/io/pnpmgr
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/pnp
 )
 
 # Compile definitions

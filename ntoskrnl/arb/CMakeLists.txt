@@ -7,7 +7,8 @@ set(TARGET_NAME ntosarb)
 # Source files from sources.inc
 set(MODULE_SOURCES
     arbiter.c 
-    ..debug.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/debug.c
+
     BUFFER_OVERFLOW_CHECKS=0
 )
 
@@ -16,9 +17,8 @@ add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 
 # Set include directories
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/arb
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
 )
 
 # Compile definitions

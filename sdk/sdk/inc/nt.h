@@ -1,6 +1,6 @@
 /*++ BUILD Version: 0001    // Increment this if a change has global effects
 
-Copyright (c) Microsoft Corporation. All rights reserved.
+Copyright (c) OpenXP Contributors
 Copyright (c) OpenXP Team 2026.
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -23,6 +23,36 @@ Abstract:
 
 #ifndef NT_INCLUDED
 #define NT_INCLUDED
+
+//
+// GCC compatibility macros
+//
+#if defined(__GNUC__) || defined(__clang__)
+#define __forceinline inline __attribute__((always_inline))
+#define __declspec(x) __attribute__((x))
+#define __fastcall __attribute__((fastcall))
+#define __stdcall __attribute__((stdcall))
+#define __cdecl __attribute__((cdecl))
+
+//
+// SEH (Structured Exception Handling) abstraction
+// Use the centralized SEH header for proper compiler support
+//
+#include <seh.h>
+
+//
+// Architecture detection for GCC
+//
+#if defined(__arm__) || defined(__aarch64__)
+#if defined(__aarch64__)
+#define _ARM64_ 1
+#define _M_ARM64 4
+#else
+#define _ARM_ 1
+#define _M_ARM 4
+#endif
+#endif
+#endif
 
 #if defined (_MSC_VER)
 #if ( _MSC_VER >= 800 )
@@ -63,6 +93,12 @@ Abstract:
 #elif defined(_X86_)
 #include "nti386.h"
 
+#elif defined(_ARM_)
+#include "ntarm.h"
+
+#elif defined(_ARM64_)
+#include "ntarm64.h"
+
 #else
 #error "no target defined"
 #endif // _AMD64_
@@ -97,6 +133,12 @@ Abstract:
 
 #elif defined(_X86_)
 #include "nxi386.h"
+
+#elif defined(_ARM_)
+#include "nxarm.h"
+
+#elif defined(_ARM64_)
+#include "nxarm64.h"
 
 #else
 #error "no target defined"

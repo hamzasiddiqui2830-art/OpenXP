@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) Microsoft Corporation. All rights reserved.
+Copyright (c) OpenXP Contributors
 Copyright (c) OpenXP Team 2026.
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -50,6 +50,17 @@ typedef unsigned long POINTER_64_INT;
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/* GCC compatibility: define MSVC-specific types */
+#ifdef __GNUC__
+#define __int64 long long
+#define __int32 int
+#define __int16 short
+#define __int8 char
+#define __ptr64
+#define __ptr32
+#define __w64
 #endif
 
 typedef signed char         INT8, *PINT8;

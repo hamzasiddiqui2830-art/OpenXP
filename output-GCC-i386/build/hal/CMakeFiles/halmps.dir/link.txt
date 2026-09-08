@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib/libhalmps.a CMakeFiles/halmps.dir/halmps/halmps.c.o CMakeFiles/halmps.dir/hal_stub.c.o
+/usr/bin/ranlib ../lib/libhalmps.a

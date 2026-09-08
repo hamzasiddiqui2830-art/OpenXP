@@ -2156,6 +2156,9 @@ IsVacbLevelReferenced (
 //      #define try_return(S)  { S; goto try_exit; }
 //
 
+// Include SEH abstraction header for compiler-compatible exception handling
+#include "../inc/seh.h"
+
 #define try_return(S) { S; goto try_exit; }
 
 #define DebugTrace(INDENT,LEVEL,X,Y) {NOTHING;}

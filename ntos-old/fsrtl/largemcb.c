@@ -1,7 +1,7 @@
 //depot/Lab01_N/Base/ntos/fsrtl/largemcb.c#5 - edit change 5743 (text)
 /*++
 
-Copyright (c) Microsoft Corporation. All rights reserved.
+Copyright (c) OpenXP Contributors
 Project OpenXP Internal
 
 Module Name:

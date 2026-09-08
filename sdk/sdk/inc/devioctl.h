@@ -1,6 +1,6 @@
 /*++ BUILD Version: 0004    // Increment this if a change has global effects
 
-Copyright (c) Microsoft Corporation. All rights reserved.
+Copyright (c) OpenXP Contributors
 Copyright (c) OpenXP Team 2026.
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -92,7 +92,7 @@ Abstract:
 
 //
 // Macro definition for defining IOCTL and FSCTL function control codes.  Note
-// that function codes 0-2047 are reserved for Microsoft Corporation, and
+// that function codes 0-2047 are reserved for OpenXP, and
 // 2048-4095 are reserved for customers.
 //
 

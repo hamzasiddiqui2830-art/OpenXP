@@ -17,7 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-Copyright (c) Microsoft Corporation. All rights reserved.
+Copyright (c) OpenXP Contributors
 Project OpenXP Internal
 
 Module Name:

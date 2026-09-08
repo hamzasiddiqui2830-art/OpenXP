@@ -1,0 +1,2 @@
+/usr/bin/ar qc obj/GCC-x86/libntosperf.a CMakeFiles/ntos_perf.dir/ntoskrnl/perf/hooks.c.o CMakeFiles/ntos_perf.dir/ntoskrnl/perf/logging.c.o CMakeFiles/ntos_perf.dir/ntoskrnl/perf/perfdata.c.o CMakeFiles/ntos_perf.dir/ntoskrnl/perf/perfsup.c.o
+/usr/bin/ranlib obj/GCC-x86/libntosperf.a

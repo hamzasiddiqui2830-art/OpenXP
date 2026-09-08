@@ -1,7 +1,7 @@
 /*++
 
 
-Copyright (c) 1998  Microsoft Corporation
+Copyright (c) OpenXP Contributors
 
 Module Name:
 

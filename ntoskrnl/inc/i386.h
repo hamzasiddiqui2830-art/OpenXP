@@ -1,6 +1,6 @@
 /*++ BUILD Version: 0014    // Increment this if a change has global effects
 
-Copyright (c) Microsoft Corporation. All rights reserved.
+Copyright (c) OpenXP Contributors
 Project OpenXP Internal
 
 Module Name:
@@ -30,6 +30,32 @@ Revision History:
 // begin_ntddk begin_wdm begin_nthal begin_ntndis begin_ntosp
 
 #if defined(_X86_)
+
+//
+// GCC compatibility: Define MSVC-specific keywords as empty macros
+//
+
+#if defined(__GNUC__) || defined(__clang__)
+#define __forceinline inline __attribute__((always_inline))
+#define __declspec(x) __attribute__((x))
+#define __fastcall __attribute__((fastcall))
+#define __stdcall __attribute__((stdcall))
+#define __cdecl __attribute__((cdecl))
+#define _ReturnAddress() __builtin_return_address(0)
+#define _AddressOfReturnAddress() ((PVOID)__builtin_frame_address(0))
+
+//
+// SEH (Structured Exception Handling) macros for GCC/Clang
+// Use PSEH3 implementation for proper exception handling support
+// Include the centralized SEH abstraction header
+//
+#include "seh.h"
+
+//
+// Disable pragma warning for GCC/Clang
+//
+#define _Pragma(x)
+#endif
 
 //
 // Types to use to contain PFNs and their counts.

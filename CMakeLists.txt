@@ -52,6 +52,13 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
+# HAL configuration options
+option(ENABLE_HAL_ARM "Build ARM HAL" ON)
+option(ENABLE_HAL_UP "Build Uniprocessor HAL" OFF)
+option(ENABLE_HAL_ACPI "Build ACPI HAL" OFF)
+option(ENABLE_HAL_MPS "Build Multiprocessor System HAL" OFF)
+option(ENABLE_HAL_APIC "Build ACPI APIC HAL" OFF)
+
 # Add CMake modules path
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
@@ -63,6 +70,12 @@ include(WRKModuleBuilder)
 if(WRK_ARCH STREQUAL "amd64")
     set(WRK_ARCH_NAME amd64)
     set(ARCH_DEFINES _WIN64 _AMD64_ AMD64)
+elseif(WRK_ARCH STREQUAL "arm")
+    set(WRK_ARCH_NAME arm)
+    set(ARCH_DEFINES _ARM_ _M_ARM=4 TARGET_ARM)
+elseif(WRK_ARCH STREQUAL "arm64")
+    set(WRK_ARCH_NAME arm64)
+    set(ARCH_DEFINES _ARM64_ _M_ARM64=4 TARGET_ARM64)
 else()
     set(WRK_ARCH_NAME x86)
     set(ARCH_DEFINES _X86_=1 i386=1 STD_CALL FPO=0)
@@ -142,8 +155,23 @@ foreach(MODULE ${NTOS_MODULES})
     list(APPEND NTOS_MODULE_LIBS ntos_${MODULE_TARGET})
 endforeach()
 
-# Add HAL stub to the module libs (provides HAL implementations without DLL dependency)
-list(APPEND NTOS_MODULE_LIBS hal_stub)
+# Add HAL to the module libs based on architecture
+if(WRK_ARCH_NAME MATCHES "arm|arm64")
+    # Use ARM HAL for ARM architectures
+    if(ENABLE_HAL_ARM)
+        list(APPEND NTOS_MODULE_LIBS halarm)
+    else()
+        list(APPEND NTOS_MODULE_LIBS hal_stub)
+    endif()
+else()
+    # Use stub HAL for other architectures (or real HALs when available)
+    list(APPEND NTOS_MODULE_LIBS hal_stub)
+endif()
+
+# Add DLL subsystem (WOW64 and other DLLs)
+if(EXISTS ${CMAKE_SOURCE_DIR}/dll/CMakeLists.txt)
+    add_subdirectory(dll)
+endif()
 
 # Main kernel executable
 # Note: The actual kernel entry point and startup code would need to be properly configured

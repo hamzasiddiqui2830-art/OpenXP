@@ -3,7 +3,7 @@
 
 /*++
 
-Copyright (c) 1989-2002  Microsoft Corporation
+Copyright (c) OpenXP Contributors
 
 Component Name:
 

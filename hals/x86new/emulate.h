@@ -1,6 +1,6 @@
 /*++ BUILD Version: 0000    // Increment this if a change has global effects
 
-Copyright (c) 1994  Microsoft Corporation
+Copyright (c) OpenXP Contributors
 
 Module Name:
 

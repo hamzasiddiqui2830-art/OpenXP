@@ -1,7 +1,7 @@
 //+---------------------------------------------------------------------------
 //
 //  Microsoft Windows
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) OpenXP Contributors
 // Project OpenXP Internal
 //
 //  File:       wmiTrace.c

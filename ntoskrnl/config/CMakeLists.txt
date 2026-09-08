@@ -93,4 +93,7 @@ endif()
 #     COMPILE_PCH_OUTPUT_INIT "cmp.obj"
 # )
 
+# Include test subdirectory for separate test targets
+add_subdirectory(test)
+
 message(STATUS "Configured config module: ${TARGET_NAME} with 54 sources")

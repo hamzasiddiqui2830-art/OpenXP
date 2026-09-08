@@ -70,4 +70,7 @@ endif()
 #     COMPILE_PCH_OUTPUT_INIT "ki.obj"
 # )
 
+# Include tests subdirectory for separate test targets
+add_subdirectory(tests)
+
 message(STATUS "Configured ke module: ${TARGET_NAME} with 31 sources")

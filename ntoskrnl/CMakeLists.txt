@@ -5,7 +5,9 @@
 # If you do not agree to the terms, do not use the code.
 
 cmake_minimum_required(VERSION 3.15)
-project(ntoskrnl C ASM)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    project(ntoskrnl C ASM)
+endif()
 
 # This CMake project lives below the repository root. Keep one canonical root
 # so every module uses stable paths regardless of the build directory.
@@ -17,42 +19,45 @@ option(BUILD_CHECKED_KERNEL "Build checked kernel with debug features" OFF)
 option(BUILD_NTOSKRNL_TESTS "Build ntoskrnl test targets" OFF)
 option(NT_UP "Build uniprocessor kernel (0 for MP)" 1)
 
-# Set default build type
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
 endif()
 
-# Architecture detection
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|amd64|x86_64)$")
+# Prefer the repository's target architecture selection when present. Fall back
+# to the host compiler only for standalone use of this directory.
+if(DEFINED WRK_ARCH)
+    set(_NTOS_ARCH "${WRK_ARCH}")
+elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(_NTOS_ARCH amd64)
+else()
+    set(_NTOS_ARCH x86)
+endif()
+
+if(_NTOS_ARCH MATCHES "^(amd64|AMD64|x86_64)$")
     set(ARCH amd64)
     set(LMACHINE amd64)
-    add_compile_definitions(_AMD64_ AMD64)
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86|X86|i[3-6]86)$")
+    add_compile_definitions(_AMD64_ AMD64 _WIN64)
+elseif(_NTOS_ARCH MATCHES "^(x86|X86|i386|i686)$")
     set(ARCH i386)
     set(LMACHINE x86)
     add_compile_definitions(_X86_ i386)
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(IA64|ia64)$")
+elseif(_NTOS_ARCH MATCHES "^(ia64|IA64)$")
     set(ARCH ia64)
     set(LMACHINE ia64)
     add_compile_definitions(_IA64_ IA64)
 else()
-    message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+    message(FATAL_ERROR "Unsupported NTOSKRNL architecture: ${_NTOS_ARCH}")
 endif()
 
 message(STATUS "NTOSKRNL source root: ${REACTOS_SOURCE_DIR}")
 message(STATUS "NTOSKRNL architecture: ${ARCH}")
 
-# Build paths
-set(TOPobj "${CMAKE_BINARY_DIR}/obj${ARCH}")
+set(TOPobj "${CMAKE_BINARY_DIR}/obj/${ARCH}")
 set(EXE_PATH "${CMAKE_BINARY_DIR}/EXE")
-
-# Create output directories
 file(MAKE_DIRECTORY "${TOPobj}")
 file(MAKE_DIRECTORY "${EXE_PATH}")
 
-# Common compiler definitions
 add_compile_definitions(_NTOS_ _NTIFS_ _NTDDK_)
-
 if(NT_UP)
     add_compile_definitions(NT_UP=${NT_UP})
 endif()
@@ -64,14 +69,12 @@ else()
     set(FREEBUILD 1)
 endif()
 
-# Warning level: /W4 is MSVC-only. GCC/Clang use -Wall/-Wextra.
 if(MSVC)
     add_compile_options(/W4 /WX)
 else()
     add_compile_options(-Wall -Wextra -Werror)
 endif()
 
-# Include directories shared by all ntoskrnl modules.
 set(NTOS_INCLUDE_DIRS
     ${REACTOS_SOURCE_DIR}
     ${NTOSKRNL_SOURCE_DIR}
@@ -80,12 +83,7 @@ set(NTOS_INCLUDE_DIRS
     ${NTOSKRNL_SOURCE_DIR}/kd64
     ${NTOSKRNL_SOURCE_DIR}/rtl
 )
-
 include_directories(${NTOS_INCLUDE_DIRS})
-
-# ============================================================================
-# Module definitions - converted from sources.inc files
-# ============================================================================
 
 set(MODULES
     rtl
@@ -117,14 +115,10 @@ set(MODULES
     verifier
 )
 
-# Include all module CMakeLists. The binary directory mirrors the source
-# module path, avoiding collisions between nested modules.
 foreach(MODULE ${MODULES})
-    if(EXISTS "${REACTOS_SOURCE_DIR}/ntoskrnl/${MODULE}/CMakeLists.txt")
-        add_subdirectory(
-            "${REACTOS_SOURCE_DIR}/ntoskrnl/${MODULE}"
-            "${TOPobj}/${MODULE}"
-        )
+    set(MODULE_SOURCE_DIR "${NTOSKRNL_SOURCE_DIR}/${MODULE}")
+    if(EXISTS "${MODULE_SOURCE_DIR}/CMakeLists.txt")
+        add_subdirectory("${MODULE_SOURCE_DIR}" "${TOPobj}/${MODULE}")
     else()
         message(STATUS "Skipping missing ntoskrnl module: ${MODULE}")
     endif()

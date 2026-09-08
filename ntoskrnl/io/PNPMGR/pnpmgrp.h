@@ -17,6 +17,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifndef _PNPMGRP_
+#define _PNPMGRP_
+
 #pragma warning(disable:4214)   // bit field types other than int
 #pragma warning(disable:4201)   // nameless struct/union
 #pragma warning(disable:4324)   // alignment sensitive to declspec

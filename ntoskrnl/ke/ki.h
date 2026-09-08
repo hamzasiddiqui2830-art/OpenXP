@@ -32,6 +32,15 @@ Abstract:
 #include "stdlib.h"
 #include "wow64t.h"
 #include "zwapi.h"
+#include <ntkeapi.h>
+
+//
+// Define ALIGNED_SPINLOCK type if not already defined
+//
+#ifndef _ALIGNED_SPINLOCK_DEFINED
+typedef KSPIN_LOCK ALIGNED_SPINLOCK;
+#define _ALIGNED_SPINLOCK_DEFINED
+#endif
 
 //
 // Define function prototypes for labels that delineate the bounds of the

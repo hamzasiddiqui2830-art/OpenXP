@@ -58,6 +58,7 @@ target_include_directories(${TARGET_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../pnp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/sdk/inc
 )
 
 # Compile definitions

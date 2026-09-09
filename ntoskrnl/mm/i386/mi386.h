@@ -71,13 +71,11 @@ Revision History:
 //
 // Macro to set owner in PTE
 //
-
 #define MI_SET_OWNER_IN_PTE(PPTE,OWNER)  ((PPTE)->u.Hard.Owner = (OWNER))
 
 //
 // PTE Lookup needed marker
 //
-
 #if !defined (_X86PAE_)
 #define MI_PTE_LOOKUP_NEEDED ((ULONG)0xffffffff)
 #else
@@ -87,14 +85,12 @@ Revision History:
 //
 // Cache types for PTEs
 //
-
 #define MM_PTE_CACHE_ENABLED     0
 #define MM_PTE_CACHE_DISABLED    1
 
 //
 // Software PTE structure for X86
 //
-
 #if !defined (_X86PAE_)
 
 typedef struct _MMPTE_SOFTWARE {
@@ -104,7 +100,6 @@ typedef struct _MMPTE_SOFTWARE {
     ULONG Transition : 1;
     ULONG Reserved0 : 3;
     ULONG UsedPageTableEntries : PTE_PER_PAGE_BITS;
-    ULONG Reserved : 0;
     ULONG PageFileLow : 4;
     ULONG PageFileHigh : 16;
 } MMPTE_SOFTWARE;
@@ -149,7 +144,6 @@ typedef struct _MMPTE_LIST {
 //
 // Hardware PTE structure for X86 (non-PAE)
 //
-
 #define _HARDWARE_PTE_WORKING_SET_BITS  11
 
 typedef struct _MMPTE_HARDWARE {
@@ -275,13 +269,9 @@ typedef struct _MMPTE_LARGEPAGE {
     ULONGLONG PageFrameNumber : 26;
     ULONGLONG reserved1 : 25;
     ULONGLONG SoftwareWsIndex : _HARDWARE_PTE_WORKING_SET_BITS;
-} MMPTE_LARGEPAGE, *PMMPTE_LARGEPAGE;
+} MMPTE_LARGEPAGE, *PMMPMPTE_LARGEPAGE;
 
 #endif
-
-//
-// Main MMPTE union structure
-//
 
 typedef struct _MMPTE {
     union {
@@ -302,31 +292,17 @@ typedef struct _MMPTE {
 
 typedef MMPTE *PMMPTE;
 
-//
-// Interlocked operations on PTEs
-//
-
 #if !defined (_X86PAE_)
-
 #define InterlockedCompareExchangePte(_PointerPte, _NewContents, _OldContents) \
         InterlockedCompareExchange ((PLONG)(_PointerPte), (LONG)(_NewContents), (LONG)(_OldContents))
-
 #define InterlockedExchangePte(_PointerPte, _NewContents) \
         InterlockedExchange ((PLONG)(_PointerPte), (LONG)(_NewContents))
-
 #else
-
 #define InterlockedCompareExchangePte(_PointerPte, _NewContents, _OldContents) \
         InterlockedCompareExchange64 ((PLONGLONG)(_PointerPte), (LONGLONG)(_NewContents), (LONGLONG)(_OldContents))
-
 #define InterlockedExchangePte(_PointerPte, _NewContents) \
         InterlockedExchange64 ((PLONGLONG)(_PointerPte), (LONGLONG)(_NewContents))
-
 #endif
-
-//
-// Inline functions for PTE operations
-//
 
 FORCEINLINE
 BOOLEAN
@@ -342,38 +318,24 @@ MiCompareTbFlushTimeStamp (
     Diff = ((NewStamp - OldStamp) & Mask);
 
 #if defined(NT_UP)
-
     if (Diff != 0) {
         return FALSE;
     }
-
 #else
-
     if (Diff > 2) {
         return FALSE;
     }
-
     if (((OldStamp & 1) == 0) && (Diff >= 2)) {
         return FALSE;
     }
-
 #endif
-
     return TRUE;
 }
-
-//
-// Macros for extracting information from PTEs
-//
 
 #define MI_GET_PAGE_FRAME_FROM_PTE(PTE) ((ULONG)((PTE)->u.Hard.PageFrameNumber))
 #define MI_GET_PAGE_FRAME_FROM_TRANSITION_PTE(PTE) ((ULONG)((PTE)->u.Trans.PageFrameNumber))
 #define MI_GET_PROTECTION_FROM_SOFT_PTE(PTE) ((ULONG)((PTE)->u.Soft.Protection))
 #define MI_GET_PROTECTION_FROM_TRANSITION_PTE(PTE) ((ULONG)((PTE)->u.Trans.Protection))
-
-//
-// External declarations
-//
 
 extern PMMPTE MiFirstReservedZeroingPte;
 extern PMMPTE MiLargePageHyperPte;

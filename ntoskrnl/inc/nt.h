@@ -35,13 +35,7 @@ Abstract:
 /*
  * ntrtl.h is the WRK kernel RTL header and expects the WRK ntdef.h type
  * universe. Do not include winternl.h here: the host SDK's winternl.h
- * redeclares several structures that ntrtl.h intentionally defines itself,
- * including RTL_USER_PROCESS_PARAMETERS, and does not provide every WRK
- * declaration such as RTL_ATOM in the form expected by this tree.
- *
- * NT_INCLUDED tells the Windows SDK that the NT base header has already been
- * established. This keeps later SDK minwindef/winnt include paths from
- * replacing the WRK definitions with a second, incompatible type universe.
+ * redeclares structures that ntrtl.h intentionally defines itself.
  */
 #include <ntdef.h>
 
@@ -49,10 +43,13 @@ Abstract:
 #define NT_INCLUDED
 #endif
 
-/* WRK ntrtl.h consumes these declarations before ntrtl.h is parsed. */
-#ifndef RTL_ATOM
-typedef USHORT RTL_ATOM, *PRTL_ATOM;
-#endif
+/* ntrtl.h also consumes the WRK image-format and SEH definitions. */
+#include <ntimage.h>
+#include <ntxcapi.h>
+
+/* WRK ntrtl.h consumes this declaration before its atom APIs are parsed. */
+typedef USHORT RTL_ATOM;
+typedef RTL_ATOM *PRTL_ATOM;
 
 #ifndef FASTCALL
 #define FASTCALL __fastcall
@@ -66,54 +63,43 @@ typedef LONG CLONG;
 #endif
 
 /*
- * Some host Windows SDK headers expose AVL RTL routines as macros.
- * ntrtl.h provides the WRK declarations for these routines, so prevent
- * host SDK macros from rewriting the function names while ntrtl.h is parsed.
+ * Some host Windows SDK headers expose AVL RTL routines as macros. ntrtl.h
+ * provides the WRK declarations for these routines, so prevent host SDK
+ * macros from rewriting the function names while ntrtl.h is parsed.
  */
 #ifdef RtlInitializeGenericTableAvl
 #undef RtlInitializeGenericTableAvl
 #endif
-
 #ifdef RtlInsertElementGenericTableAvl
 #undef RtlInsertElementGenericTableAvl
 #endif
-
 #ifdef RtlInsertElementGenericTableFullAvl
 #undef RtlInsertElementGenericTableFullAvl
 #endif
-
 #ifdef RtlDeleteElementGenericTableAvl
 #undef RtlDeleteElementGenericTableAvl
 #endif
-
 #ifdef RtlLookupElementGenericTableAvl
 #undef RtlLookupElementGenericTableAvl
 #endif
-
 #ifdef RtlLookupElementGenericTableFullAvl
 #undef RtlLookupElementGenericTableFullAvl
 #endif
-
 #ifdef RtlEnumerateGenericTableAvl
 #undef RtlEnumerateGenericTableAvl
 #endif
-
 #ifdef RtlEnumerateGenericTableWithoutSplayingAvl
 #undef RtlEnumerateGenericTableWithoutSplayingAvl
 #endif
-
 #ifdef RtlEnumerateGenericTableLikeADirectory
 #undef RtlEnumerateGenericTableLikeADirectory
 #endif
-
 #ifdef RtlGetElementGenericTableAvl
 #undef RtlGetElementGenericTableAvl
 #endif
-
 #ifdef RtlNumberGenericTableElementsAvl
 #undef RtlNumberGenericTableElementsAvl
 #endif
-
 #ifdef RtlIsGenericTableEmptyAvl
 #undef RtlIsGenericTableEmptyAvl
 #endif

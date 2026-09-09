@@ -99,12 +99,15 @@ function(add_wrk_module MODULE_NAME)
         add_library(${ARG_TARGET_NAME} STATIC ${ARG_SOURCES})
 
         # Private kernel headers such as exp.h include sibling module headers
-        # such as ke/ki.h. Keep the module source directory and kernel module
-        # directories on the include path rather than relying on incidental
-        # compiler working-directory behavior.
+        # such as ke/ki.h. The executive debugger sources also include kdp.h,
+        # which is shared by the kd64 debugger implementation and contains the
+        # x86-specific breakpoint definitions behind _X86_. Keep all private
+        # kernel directories explicit instead of relying on source-directory
+        # lookup behavior.
         set(MODULE_INCLUDE_DIRS
             ${ARG_SOURCE_DIR}
             ${CMAKE_SOURCE_DIR}/ntoskrnl/ke
+            ${CMAKE_SOURCE_DIR}/ntoskrnl/kd64
             ${CMAKE_SOURCE_DIR}/ntoskrnl/inc
             ${CMAKE_SOURCE_DIR}/ntoskrnl/rtl
             ${CMAKE_SOURCE_DIR}/ntos-old/rtl
@@ -126,8 +129,16 @@ function(add_wrk_module MODULE_NAME)
 
         target_include_directories(${ARG_TARGET_NAME} PRIVATE ${MODULE_INCLUDE_DIRS})
 
-        if(MSVC AND WRK_ARCH_NAME STREQUAL "x86" AND MODULE_NAME STREQUAL "rtl")
-            target_compile_options(${ARG_TARGET_NAME} PRIVATE /Gz /wd4101)
+        # WRK x86 kernel entry points are stdcall. The public ntexapi.h
+        # declarations use NTAPI (__stdcall), while the converted C sources
+        # retain the historical definition spelling without NTAPI. /Gz makes
+        # those definitions use the same calling convention and prevents MSVC
+        # C2373 redefinition errors.
+        if(MSVC AND WRK_ARCH_NAME STREQUAL "x86")
+            target_compile_options(${ARG_TARGET_NAME} PRIVATE /Gz)
+            if(MODULE_NAME STREQUAL "rtl")
+                target_compile_options(${ARG_TARGET_NAME} PRIVATE /wd4101)
+            endif()
         endif()
 
         set_target_properties(${ARG_TARGET_NAME} PROPERTIES

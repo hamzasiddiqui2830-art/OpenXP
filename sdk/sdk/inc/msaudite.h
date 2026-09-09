@@ -9,54 +9,39 @@
 #ifndef _MSAUDITE_
 #define _MSAUDITE_
 
-//
-// Values are 32 bit values laid out as follows:
-//
-//   3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
-//   1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
-//  +---+-+-+-----------------------+-------------------------------+
-//  |Sev|C|R|     Facility          |               Code            |
-//  +---+-+-+-----------------------+-------------------------------+
-//
-// where
-//
-//     Sev - is the severity code
-//
-//         00 - Success
-//         01 - Informational
-//         10 - Warning
-//         11 - Error
-//
-//     C - is the Customer code flag
-//
-//     R - is a reserved bit
-//
-//     Facility - is the facility code
-//
-//     Code - is the facility's status code
-//
-//
-// Define the facility codes
-//
-
-//
-// Define the severity codes
-//
-
-//
-// MessageId: 0x00000000L (No symbolic name defined)
-//
-// MessageText:
-//
-// Unused message ID
-//
-
 #define SE_ADT_MIN_CATEGORY_ID   1
 #define SE_ADT_MAX_CATEGORY_ID   9
-
 #define SE_ADT_MIN_AUDIT_ID      0x200
 #define SE_ADT_MAX_AUDIT_ID      0x5ff
 
+#define SE_CATEGID_SYSTEM                ((ULONG)0x00000001L)
+#define SE_CATEGID_LOGON                 ((ULONG)0x00000002L)
+#define SE_CATEGID_OBJECT_ACCESS         ((ULONG)0x00000003L)
+#define SE_CATEGID_PRIVILEGE_USE         ((ULONG)0x00000004L)
+#define SE_CATEGID_DETAILED_TRACKING     ((ULONG)0x00000005L)
+#define SE_CATEGID_POLICY_CHANGE         ((ULONG)0x00000006L)
+#define SE_CATEGID_ACCOUNT_MANAGEMENT    ((ULONG)0x00000007L)
+#define SE_CATEGID_DS_ACCESS             ((ULONG)0x00000008L)
+#define SE_CATEGID_ACCOUNT_LOGON         ((ULONG)0x00000009L)
+
 #define SE_AUDITID_AUDITS_DISCARDED      ((ULONG)0x00000204L)
+#define SE_AUDITID_LPC_INVALID_USE       ((ULONG)0x00000207L)
+#define SE_AUDITID_SYSTEM_TIME_CHANGE    ((ULONG)0x00000208L)
+
+#define SE_AUDITID_OPEN_HANDLE           ((ULONG)0x00000230L)
+#define SE_AUDITID_CLOSE_HANDLE          ((ULONG)0x00000232L)
+#define SE_AUDITID_OPEN_OBJECT_FOR_DELETE ((ULONG)0x00000233L)
+#define SE_AUDITID_DELETE_OBJECT         ((ULONG)0x00000234L)
+#define SE_AUDITID_OPEN_HANDLE_OBJECT_TYPE ((ULONG)0x00000235L)
+#define SE_AUDITID_OBJECT_ACCESS         ((ULONG)0x00000237L)
+#define SE_AUDITID_HARDLINK_CREATION     ((ULONG)0x00000238L)
+#define SE_AUDITID_PRIVILEGED_SERVICE    ((ULONG)0x00000241L)
+#define SE_AUDITID_PRIVILEGED_OBJECT     ((ULONG)0x00000242L)
+#define SE_AUDITID_PROCESS_CREATED       ((ULONG)0x00000250L)
+#define SE_AUDITID_PROCESS_EXIT          ((ULONG)0x00000251L)
+#define SE_AUDITID_DUPLICATE_HANDLE      ((ULONG)0x00000252L)
+#define SE_AUDITID_INDIRECT_REFERENCE    ((ULONG)0x00000253L)
+#define SE_AUDITID_ASSIGN_TOKEN          ((ULONG)0x00000258L)
+#define SE_AUDITID_GENERIC_AUDIT_EVENT   ((ULONG)0x0000023DL)
 
 #endif /* _MSAUDITE_ */

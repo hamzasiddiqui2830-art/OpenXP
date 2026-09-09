@@ -119,4 +119,20 @@ KeLoopTbFlushTimeStampUnlocked(VOID)
 NTSTATUS MmCheckSystemImage(IN HANDLE ImageFileHandle);
 #endif
 
+/*
+ * The reconstructed kernel headers retain the WRK field layouts but some
+ * active sources use the older member spellings.  On x86 these names refer
+ * to the same byte-sized storage: KTHREAD::Spare4 is the quantum-reset byte,
+ * while DISPATCHER_HEADER::Size is the timer-table hand byte.
+ *
+ * Keep this compatibility at the compiler boundary instead of changing the
+ * host SDK or duplicating the private structures.
+ */
+#ifndef QuantumReset
+#define QuantumReset Spare4
+#endif
+#ifndef Hand
+#define Hand Size
+#endif
+
 #endif /* _WRK_MSVC_COMPAT_H_ */

@@ -5,9 +5,6 @@
 // If you do not agree to the terms, do not use the code.
 //
 
-#define UNICODE
-#define _UNICODE
-
 #include <nt.h>
 #include <ntrtl.h>
 #include <stdio.h>
@@ -18,5 +15,10 @@
 #define RtlIpv4AddressToStringExT RtlIpv4AddressToStringExW
 #define RtlIpv6AddressToStringExT RtlIpv6AddressToStringExW
 
-#include "add2strt.h"
+/* nt.h is force-included, so UNICODE cannot select LPTSTR in ntdef.h. */
+#define LPTSTR PWSTR
+#define TCHAR WCHAR
+#define _T(x) L##x
+#define _stprintf _swprintf
 
+#include "add2strt.h"

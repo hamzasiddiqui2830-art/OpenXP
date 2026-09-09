@@ -94,7 +94,7 @@ function(add_wrk_module MODULE_NAME)
                     get_filename_component(ASM_NAME ${ASM_FILE} NAME_WE)
                     set(CONVERTED_FILE "${ARG_OUTPUT_DIR}/${ASM_NAME}.S")
                     configure_file(${ASM_FILE} ${CONVERTED_FILE} COPYONLY)
-                    list(APPEND MODULE_ASM_SOURCES_CONVERTED ${CONVERTED_FILE})
+                    list(APPEND MODULE_ASM_SOURCES_CONVERTED ${MODULE_ASM_SOURCES})
                 endforeach()
                 set(MODULE_ASM_SOURCES ${MODULE_ASM_SOURCES_CONVERTED})
             endif()
@@ -130,6 +130,12 @@ function(add_wrk_module MODULE_NAME)
         else()
             list(APPEND MODULE_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ntoskrnl/i386)
         endif()
+
+        # The module include list is intentionally assembled above for every
+        # target, including modules that pass an explicit SOURCES list.
+        # Apply it here so private headers such as rtl/ntrtlp.h are visible to
+        # the compiler. Without this call the list is computed but unused.
+        target_include_directories(${ARG_TARGET_NAME} PRIVATE ${MODULE_INCLUDE_DIRS})
 
         if(MSVC AND WRK_ARCH_NAME STREQUAL "x86")
             target_compile_options(${ARG_TARGET_NAME} PRIVATE /Gz)

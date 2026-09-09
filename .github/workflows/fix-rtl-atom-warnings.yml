@@ -20,18 +20,27 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p = Path('ntoskrnl/rtl/atom.c')
           s = p.read_text()
-          old1 = '    PRTL_ATOM_TABLE_ENTRY a, aNext, *pa, *pa1;'
-          new1 = '    PRTL_ATOM_TABLE_ENTRY a, *pa, *pa1;'
-          old2 = '    PRTL_ATOM_TABLE_ENTRY a, *pa;'
-          new2 = '    PRTL_ATOM_TABLE_ENTRY a;'
-          if s.count(old1) != 1:
-              raise SystemExit(f'Expected exactly one RtlEmptyAtomTable declaration, found {s.count(old1)}')
-          if s.count(old2) != 1:
-              raise SystemExit(f'Expected exactly one RtlPinAtomInAtomTable declaration, found {s.count(old2)}')
-          s = s.replace(old1, new1).replace(old2, new2)
-          p.write_text(s)
+
+          empty = re.compile(
+              r'(NTSTATUS\s+RtlEmptyAtomTable\s*\([^)]*\)\s*\{.*?\n'
+              r'\s*PRTL_ATOM_TABLE_ENTRY )a, aNext, \*pa, \*pa1;',
+              re.S,
+          )
+          pin = re.compile(
+              r'(NTSTATUS\s+RtlPinAtomInAtomTable\s*\([^)]*\)\s*\{.*?\n'
+              r'\s*PRTL_ATOM_TABLE_ENTRY )a, \*pa;',
+              re.S,
+          )
+          s2, n1 = empty.subn(r'\1a, *pa, *pa1;', s, count=1)
+          s2, n2 = pin.subn(r'\1a;', s2, count=1)
+          if n1 != 1:
+              raise SystemExit(f'Expected exactly one RtlEmptyAtomTable declaration, found {n1}')
+          if n2 != 1:
+              raise SystemExit(f'Expected exactly one RtlPinAtomInAtomTable declaration, found {n2}')
+          p.write_text(s2)
           PY
       - name: Verify exact diff
         shell: bash
@@ -40,8 +49,8 @@ jobs:
           test "$(git diff --name-only)" = "ntoskrnl/rtl/atom.c"
           test "$(git diff --numstat -- ntoskrnl/rtl/atom.c | awk '{print $1}')" = "2"
           test "$(git diff --numstat -- ntoskrnl/rtl/atom.c | awk '{print $2}')" = "2"
-          ! grep -F 'PRTL_ATOM_TABLE_ENTRY a, aNext, *pa, *pa1;' ntoskrnl/rtl/atom.c
-          ! grep -F 'PRTL_ATOM_TABLE_ENTRY a, *pa;' ntoskrnl/rtl/atom.c
+          grep -A8 -F 'RtlEmptyAtomTable(' ntoskrnl/rtl/atom.c | grep -F 'PRTL_ATOM_TABLE_ENTRY a, *pa, *pa1;'
+          grep -A8 -F 'RtlPinAtomInAtomTable(' ntoskrnl/rtl/atom.c | grep -F 'PRTL_ATOM_TABLE_ENTRY a;'
       - name: Commit patch
         shell: bash
         run: |

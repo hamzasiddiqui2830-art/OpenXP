@@ -38,7 +38,6 @@
 #ifndef finally
 #define finally __finally
 #endif
-/* WRK uses `leave;` to exit a try body while still executing finally. */
 #ifndef leave
 #define leave __leave
 #endif
@@ -62,10 +61,12 @@
 #endif
 
 /*
- * The current configuration-manager header retained CM_KEY_HASH and
- * CM_NAME_HASH but lost the two hash-table entry wrappers used by the
- * executive/configuration-manager sources. Restore the WRK layout locally.
+ * cmdata.h supplies CM_KEY_HASH and CM_NAME_HASH. The reconstructed local
+ * configuration-manager header still consumes the WRK hash-table wrappers,
+ * so define those wrappers here after the base hash types are available.
  */
+#include "cmdata.h"
+
 #ifndef _WRK_CM_HASH_TABLE_ENTRIES_DEFINED
 #define _WRK_CM_HASH_TABLE_ENTRIES_DEFINED
 
@@ -187,12 +188,6 @@ NTSTATUS MmCheckSystemImage(IN HANDLE ImageFileHandle);
 VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
 #endif
 
-/*
- * The reconstructed kernel headers retain the WRK field layouts but some
- * active sources use the older member spellings. On x86 these names refer
- * to the same byte-sized storage: KTHREAD::Spare4 is the quantum-reset byte,
- * while DISPATCHER_HEADER::Size is the timer-table hand byte.
- */
 #ifndef QuantumReset
 #define QuantumReset Spare4
 #endif

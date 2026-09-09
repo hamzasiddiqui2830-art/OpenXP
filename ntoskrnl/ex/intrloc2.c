@@ -27,7 +27,20 @@ Revision History:
 
 #include "exp.h"
 
+/*
+ * On x86 the public two-argument routines are macros which select the
+ * architecture-specific fast entry points.  This source file provides both
+ * forms, so prevent the macro substitution from changing the definitions.
+ */
+#ifdef ExInterlockedIncrementLong
+#undef ExInterlockedIncrementLong
+#endif
+#ifdef ExInterlockedDecrementLong
+#undef ExInterlockedDecrementLong
+#endif
+
 INTERLOCKED_RESULT
+FASTCALL
 Exfi386InterlockedIncrementLong (
     IN PLONG Addend
     )
@@ -44,6 +57,7 @@ Exfi386InterlockedIncrementLong (
 }
 
 INTERLOCKED_RESULT
+FASTCALL
 Exfi386InterlockedDecrementLong (
     IN PLONG Addend
     )
@@ -67,7 +81,7 @@ ExInterlockedIncrementLong (
 {
     LONG OldValue;
 
-    OldValue = (LONG)ExInterlockedAddUlong((PULONG)Addend, 1, Lock);
+    OldValue = (LONG)ExfInterlockedAddUlong((PULONG)Addend, 1, Lock);
 
     if (OldValue < -1)
         return ResultNegative;
@@ -84,7 +98,7 @@ ExInterlockedDecrementLong (
 {
     LONG OldValue;
 
-    OldValue = (LONG)ExInterlockedAddUlong((PULONG)Addend, (ULONG)-1, Lock);
+    OldValue = (LONG)ExfInterlockedAddUlong((PULONG)Addend, (ULONG)-1, Lock);
 
     if (OldValue > 1)
         return ResultPositive;

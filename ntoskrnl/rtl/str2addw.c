@@ -18,6 +18,17 @@
 #include <stdlib.h>
 #include <tchar.h>
 
+// NT headers historically define WCHAR/TCHAR as unsigned-short based types.
+// Modern MSVC keeps native wchar_t distinct unless /Zc:wchar_t- is used,
+// while the W RTL prototypes use native wchar_t.  Keep this translation unit
+// type-correct without changing the ABI-facing NT header definitions.
+#undef TCHAR
+#define TCHAR wchar_t
+#undef LPCTSTR
+#define LPCTSTR const wchar_t *
+#undef LPTSTR
+#define LPTSTR wchar_t *
+
 #define RtlIpv4StringToAddressT RtlIpv4StringToAddressW
 #define RtlIpv6StringToAddressT RtlIpv6StringToAddressW
 #define RtlIpv4StringToAddressExT RtlIpv4StringToAddressExW

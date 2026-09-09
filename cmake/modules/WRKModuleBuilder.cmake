@@ -120,8 +120,6 @@ function(add_wrk_module MODULE_NAME)
             list(APPEND MODULE_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ntoskrnl/i386)
         endif()
 
-        target_include_directories(ntos_${MODULE_NAME} BEFORE PRIVATE ${MODULE_INCLUDE_DIRS})
-
         # WRK x86 uses STD_CALL for the kernel RTL implementation set. The
         # local ntrtl.h declarations are NTAPI (__stdcall), so compiling only
         # a handful of files with /Gz leaves the rest of RTL definitions with
@@ -129,7 +127,7 @@ function(add_wrk_module MODULE_NAME)
         if(MSVC AND WRK_ARCH_NAME STREQUAL "x86" AND MODULE_NAME STREQUAL "rtl")
             set_source_files_properties(
                 ${MODULE_C_SOURCES}
-                PROPERTIES COMPILE_OPTIONS "/Gz"
+                PROPERTIES COMPILE_OPTIONS "/Gz;/wd4101"
             )
         endif()
 

@@ -107,6 +107,48 @@ typedef struct _CM_NAME_HASH_TABLE_ENTRY {
 static VOID ExpWatchExpirationDataWork(IN PVOID Context);
 #endif
 
+/*
+ * uuid.c uses the WRK spelling for the 32-bit aligned ULONG probe helper.
+ * The local ex.h exposes the generic small-structure probe instead.
+ */
+#ifndef ProbeForWriteUlongAligned32
+#define ProbeForWriteUlongAligned32(_Address) \
+    ProbeForWriteSmallStructure((PVOID)(_Address), sizeof(ULONG), sizeof(ULONG))
+#endif
+
+/*
+ * The local ex.h predates the cache-aware rundown additions. Keep the
+ * public WRK structure and declarations available to rundown.c before its
+ * alloc_text pragmas and function definitions are parsed by MSVC.
+ */
+#ifndef _WRK_EX_RUNDOWN_REF_CACHE_AWARE_DEFINED
+#define _WRK_EX_RUNDOWN_REF_CACHE_AWARE_DEFINED
+
+typedef struct _EX_RUNDOWN_REF_CACHE_AWARE {
+    PEX_RUNDOWN_REF RunRefs;
+    PVOID PoolToFree;
+    ULONG RunRefSize;
+    ULONG Number;
+} EX_RUNDOWN_REF_CACHE_AWARE, *PEX_RUNDOWN_REF_CACHE_AWARE;
+
+#endif
+
+#ifndef _WRK_EX_RUNDOWN_CACHE_AWARE_API_DECLARED
+#define _WRK_EX_RUNDOWN_CACHE_AWARE_API_DECLARED
+PEX_RUNDOWN_REF_CACHE_AWARE ExAllocateCacheAwareRundownProtection(
+    IN POOL_TYPE PoolType,
+    IN ULONG PoolTag
+    );
+SIZE_T ExSizeOfRundownProtectionCacheAware(VOID);
+VOID ExInitializeRundownProtectionCacheAware(
+    IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCacheAware,
+    IN SIZE_T Size
+    );
+VOID ExFreeCacheAwareRundownProtection(
+    IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCacheAware
+    );
+#endif
+
 #ifndef MAX_PAGE_FILES
 #define MAX_PAGE_FILES 16
 #endif

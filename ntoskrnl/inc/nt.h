@@ -29,14 +29,6 @@ Abstract:
 #include <sal.h>
 
 /*
- * ntrtl.h is included immediately by ntos.h. Establish the WRK public NT
- * types it consumes before entering the host Windows SDK include chain.
- * ntdef.h supplies CSHORT and PNT_PRODUCT_TYPE, while winternl.h supplies
- * RTL_ATOM/PRTL_ATOM.
- */
-#include <ntdef.h>
-
-/*
  * Load the NTOSKRNL SpecStrings compatibility layer explicitly before
  * winternl.h. This prevents the Windows SDK from selecting a different
  * SpecStrings definition later in the include chain and guarantees that
@@ -57,7 +49,29 @@ Abstract:
 #define __control_entrypoint(category)
 #endif
 
+/*
+ * winternl.h must establish the Windows NT base types before the WRK-only
+ * compatibility types below are declared.  Do not include the WRK ntdef.h
+ * here: ntdef.h duplicates several types/macros from winnt.h, including
+ * MAX_NATURAL_ALIGNMENT, PROBE_ALIGNMENT, NTSYSCALLAPI and _FLOAT128.
+ */
 #include <winternl.h>
+
+/*
+ * These two WRK spellings are consumed by ntrtl.h but are not provided by
+ * the host Windows SDK headers.  Define only the compatibility types needed
+ * by the RTL header rather than pulling in ntdef.h and colliding with winnt.h.
+ */
+#ifndef CSHORT
+typedef SHORT CSHORT;
+#endif
+#ifndef NT_PRODUCT_TYPE
+typedef enum _NT_PRODUCT_TYPE {
+    NtProductWinNt = 1,
+    NtProductLanManNt,
+    NtProductServer
+} NT_PRODUCT_TYPE, *PNT_PRODUCT_TYPE;
+#endif
 
 /*
  * Legacy WRK declarations in ntrtl.h use FASTCALL and CLONG. Modern Windows

@@ -15,6 +15,6 @@ Abstract:
 #ifndef _ZWAPI_COMPAT_
 #define _ZWAPI_COMPAT_
 
-#include <../../sdk/internal/base/inc/zwapi.h>
+#include "../../sdk/internal/base/inc/zwapi.h"
 
 #endif /* _ZWAPI_COMPAT_ */

@@ -5,17 +5,16 @@
 
 include(CMakeParseArguments)
 
-# Function to add a kernel module as a static library
 function(add_wrk_module MODULE_NAME)
     set(options OPTIONAL)
     set(oneValueArgs SOURCE_DIR OUTPUT_DIR)
     set(multiValueArgs SOURCES HEADERS DEPENDS)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    
+
     if(NOT ARG_SOURCE_DIR)
         set(ARG_SOURCE_DIR ${CMAKE_SOURCE_DIR}/ntoskrnl/${MODULE_NAME})
     endif()
-    
+
     if(NOT ARG_OUTPUT_DIR)
         if(MSVC)
             set(COMPILER_PREFIX "VS")
@@ -34,7 +33,7 @@ function(add_wrk_module MODULE_NAME)
         endif()
         set(ARG_OUTPUT_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME})
     endif()
-    
+
     if(NOT ARG_SOURCES)
         file(GLOB_RECURSE MODULE_C_SOURCES CONFIGURE_DEPENDS
             "${ARG_SOURCE_DIR}/*.c"
@@ -51,7 +50,7 @@ function(add_wrk_module MODULE_NAME)
             list(APPEND MODULE_C_SOURCES_FILTERED "${SOURCE_FILE}")
         endforeach()
         set(MODULE_C_SOURCES ${MODULE_C_SOURCES_FILTERED})
-        
+
         if(WRK_ARCH_NAME STREQUAL "x86")
             file(GLOB ARCH_SPECIFIC_SOURCES CONFIGURE_DEPENDS
                 "${ARG_SOURCE_DIR}/i386/*.c"
@@ -63,7 +62,7 @@ function(add_wrk_module MODULE_NAME)
             )
             list(APPEND MODULE_C_SOURCES ${ARCH_SPECIFIC_SOURCES})
         endif()
-        
+
         if(WRK_ARCH_NAME STREQUAL "x86")
             file(GLOB MODULE_ASM_SOURCES CONFIGURE_DEPENDS
                 "${ARG_SOURCE_DIR}/i386/*.asm"
@@ -95,13 +94,13 @@ function(add_wrk_module MODULE_NAME)
         else()
             set(MODULE_ASM_SOURCES "")
         endif()
-        
+
         set(ARG_SOURCES ${MODULE_C_SOURCES} ${MODULE_ASM_SOURCES})
     endif()
-    
+
     if(ARG_SOURCES)
         add_library(ntos_${MODULE_NAME} STATIC ${ARG_SOURCES})
-        
+
         set(MODULE_INCLUDE_DIRS
             ${CMAKE_SOURCE_DIR}/ntoskrnl/inc
             ${CMAKE_SOURCE_DIR}/ntoskrnl/rtl
@@ -114,37 +113,36 @@ function(add_wrk_module MODULE_NAME)
             ${CMAKE_SOURCE_DIR}/sdk/halkit/inc
             ${CMAKE_SOURCE_DIR}/base/inc
         )
-        
+
         if(WRK_ARCH_NAME STREQUAL "amd64")
             list(APPEND MODULE_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ntoskrnl/amd64)
         else()
             list(APPEND MODULE_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ntoskrnl/i386)
         endif()
-        
+
         target_include_directories(ntos_${MODULE_NAME} BEFORE PRIVATE ${MODULE_INCLUDE_DIRS})
 
         # WRK x86 uses STD_CALL for the kernel RTL implementation set. The
         # local ntrtl.h declarations are NTAPI (__stdcall), so compiling only
         # a handful of files with /Gz leaves the rest of RTL definitions with
-        # a conflicting cdecl type. Apply the same ABI to the entire x86 RTL
-        # translation unit set.
+        # a conflicting cdecl type. Apply the same ABI to every RTL C unit.
         if(MSVC AND WRK_ARCH_NAME STREQUAL "x86" AND MODULE_NAME STREQUAL "rtl")
             set_source_files_properties(
-                ${ARG_SOURCES}
+                ${MODULE_C_SOURCES}
                 PROPERTIES COMPILE_OPTIONS "/Gz"
             )
         endif()
-        
+
         set_target_properties(ntos_${MODULE_NAME} PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY ${ARG_OUTPUT_DIR}
             POSITION_INDEPENDENT_CODE OFF
             OUTPUT_NAME ntos${MODULE_NAME}
         )
-        
+
         if(ARG_DEPENDS)
             add_dependencies(ntos_${MODULE_NAME} ${ARG_DEPENDS})
         endif()
-        
+
         message(STATUS "Added module: ${MODULE_NAME}")
     endif()
 endfunction()
@@ -153,12 +151,13 @@ function(parse_wrk_makefile MAKEFILE_PATH OUT_VAR)
     if(NOT EXISTS ${MAKEFILE_PATH})
         return()
     endif()
-    
+
     file(READ ${MAKEFILE_PATH} MAKEFILE_CONTENT)
     string(REGEX MATCHALL "asobjs[ \t]*=[ \t]*([^\n]*)" AS_OBJS_MATCH "${MAKEFILE_CONTENT}")
     string(REGEX MATCHALL "ccobjs[ \t]*=[ \t]*([^\n]*)" CC_OBJS_MATCH "${MAKEFILE_CONTENT}")
     string(REGEX MATCHALL "ccarchobjs[ \t]*=[ \t]*([^\n]*)" CCARCH_OBJS_MATCH "${MAKEFILE_CONTENT}")
     set(OBJECT_FILES "")
+
     foreach(MATCH ${AS_OBJS_MATCH} ${CC_OBJS_MATCH} ${CCARCH_OBJS_MATCH})
         string(REGEX REPLACE "^[a-z]+[ \t]*=[ \t]*" "" OBJ_LIST "${MATCH}")
         string(REPLACE "\\" "/" OBJ_LIST "${OBJ_LIST}")
@@ -172,6 +171,7 @@ function(parse_wrk_makefile MAKEFILE_PATH OUT_VAR)
             endif()
         endforeach()
     endforeach()
+
     set(${OUT_VAR} ${OBJECT_FILES} PARENT_SCOPE)
 endfunction()
 

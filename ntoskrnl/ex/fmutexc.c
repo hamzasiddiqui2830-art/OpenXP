@@ -20,6 +20,7 @@ Abstract:
 
 #undef ExAcquireFastMutex
 
+NTHALAPI
 VOID
 FASTCALL
 ExAcquireFastMutex (
@@ -51,6 +52,7 @@ Return Value:
 
 #undef ExReleaseFastMutex
 
+NTHALAPI
 VOID
 FASTCALL
 ExReleaseFastMutex (
@@ -82,6 +84,7 @@ Return Value:
 
 #undef ExTryToAcquireFastMutex
 
+NTHALAPI
 BOOLEAN
 FASTCALL
 ExTryToAcquireFastMutex (

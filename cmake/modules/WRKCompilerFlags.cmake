@@ -33,6 +33,10 @@ macro(set_wrk_compiler_flags)
     endif()
 
     if(MSVC)
+        # The WRK is built against the static CRT. Set this through CMake's
+        # runtime abstraction so CMake/Ninja does not append /MD after /MT.
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded" CACHE STRING "MSVC runtime library" FORCE)
+
         set(WRK_BASE_C_FLAGS
             /Zl
             /Zp8
@@ -51,9 +55,6 @@ macro(set_wrk_compiler_flags)
             /FI${CMAKE_SOURCE_DIR}/ntoskrnl/inc/wrk_msvc_compat.h
         )
 
-        # WRK 2004 selected several switches that were removed or deprecated
-        # by modern MSVC. Their intended behavior is either the compiler
-        # default or is expressed directly in the source/ABI configuration.
         if(WRK_ARCH_NAME STREQUAL "amd64")
             set(WRK_MACHINE_TYPE AMD64)
         else()

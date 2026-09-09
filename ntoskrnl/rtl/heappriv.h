@@ -46,11 +46,6 @@ extern const UCHAR CheckHeapFillPattern[ CHECK_HEAP_TAIL_SIZE ];
 #define HeapDebugBreak(_x_) {if (KdDebuggerEnabled) DbgBreakPoint();}
 #define RtlpHeapFreeVirtualMemory(P,A,S,F) ZwFreeVirtualMemory(P,A,S,F)
 
-/*
- * These definitions are present in the legacy heap private header only for
- * the user-mode heap. heap.c nevertheless references the common operations
- * in the kernel build, so provide the kernel no-op forms here.
- */
 #define HEAP_OP_COUNT 2
 #define HEAP_OP_ALLOC 0
 #define HEAP_OP_FREE 1
@@ -59,7 +54,7 @@ extern const UCHAR CheckHeapFillPattern[ CHECK_HEAP_TAIL_SIZE ];
 #define HEAP_PERF_STOP_TIMER(H,OP) do { UNREFERENCED_PARAMETER((H)); UNREFERENCED_PARAMETER((OP)); } while (0)
 #define RtlpRegisterOperation(H,S,Op) do { UNREFERENCED_PARAMETER((H)); UNREFERENCED_PARAMETER((S)); UNREFERENCED_PARAMETER((Op)); } while (0)
 
-#define IS_HEAP_TAGGING_ENABLED(H) FALSE
+#define IS_HEAP_TAGGING_ENABLED() FALSE
 #define RtlpSetSmallTagIndex(H,B,I) do { UNREFERENCED_PARAMETER((H)); UNREFERENCED_PARAMETER((B)); UNREFERENCED_PARAMETER((I)); } while (0)
 
 #define RtlFindFirstSetRightMember(Set) \
@@ -71,11 +66,6 @@ extern const UCHAR CheckHeapFillPattern[ CHECK_HEAP_TAIL_SIZE ];
             RtlpBitsClearLow[((Set) >> 16) & 0xFF] + 16 : \
             RtlpBitsClearLow[(Set) >> 24] + 24))
 
-/*
- * The legacy index/LFH implementation is user-mode-only. The kernel heap
- * still uses the common call sites, so retain the legacy call signatures with
- * conservative kernel implementations.
- */
 #define RtlpInsertFreeBlockDirect(H,FB,SIZE) RtlpInsertFreeBlock((H),(FB),(SIZE))
 #define RtlpFastInsertFreeBlockDirect(H,FB,SIZE) RtlpInsertFreeBlockDirect((H),(FB),(SIZE))
 #define RtlpFastInsertDedicatedFreeBlockDirect(H,FB,SIZE) RtlpInsertFreeBlockDirect((H),(FB),(SIZE))
@@ -91,7 +81,6 @@ extern const UCHAR CheckHeapFillPattern[ CHECK_HEAP_TAIL_SIZE ];
 #define RtlpGetAllocationUnits(H,B) ((B)->Size)
 #define RtlpGetUnusedBytes(H,B) ((B)->UnusedBytes)
 #define RtlpSetUnusedBytes(H,B,N) do { (B)->UnusedBytes = (UCHAR)(((N) > 0xFF) ? 0xFF : (N)); } while (0)
-#define RtlpGetExtraStuffPointer(B) ((PHEAP_ENTRY_EXTRA)((PHEAP_ENTRY)(B) + 1))
 #define RtlpHeapReportCorruption(E) do { UNREFERENCED_PARAMETER((E)); } while (0)
 
 #else
@@ -111,7 +100,6 @@ extern const UCHAR CheckHeapFillPattern[ CHECK_HEAP_TAIL_SIZE ];
 #endif
 
 ULONG RtlpHeapExceptionFilter(NTSTATUS ExceptionCode);
-
 BOOLEAN RtlpInitializeHeapSegment(IN PHEAP Heap, IN PHEAP_SEGMENT Segment, IN UCHAR SegmentIndex, IN ULONG Flags, IN PVOID BaseAddress, IN PVOID UnCommittedAddress, IN PVOID CommitLimitAddress);
 PHEAP_FREE_ENTRY RtlpCoalesceFreeBlocks(IN PHEAP Heap, IN PHEAP_FREE_ENTRY FreeBlock, IN OUT PSIZE_T FreeSize, IN BOOLEAN RemoveFromFreeList);
 VOID RtlpDeCommitFreeBlock(IN PHEAP Heap, IN PHEAP_FREE_ENTRY FreeBlock, IN SIZE_T FreeSize);

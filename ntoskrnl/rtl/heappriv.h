@@ -11,11 +11,6 @@ Abstract:
 
     Private include file used by the kernel heap allocator.
 
-    The original WRK header also contains user-mode LFH, lookaside and
-    performance-index declarations.  Those declarations are intentionally
-    excluded from the NTOS kernel build because their types and APIs are
-    user-mode-only.
-
 --*/
 
 #ifndef _RTL_HEAP_PRIVATE_
@@ -55,6 +50,37 @@ extern const UCHAR CheckHeapFillPattern[ CHECK_HEAP_TAIL_SIZE ];
 
 #define RtlpHeapFreeVirtualMemory(P,A,S,F) ZwFreeVirtualMemory(P,A,S,F)
 
+/*
+ * The kernel RTL target contains heap.c, but it does not contain the
+ * user-mode LFH/heap-dll implementation. Keep the private heap helpers
+ * available to heap.c while disabling the user-mode instrumentation paths.
+ */
+#define HEAP_OP_COUNT 2
+#define HEAP_OP_ALLOC 0
+#define HEAP_OP_FREE 1
+#define HEAP_PERF_DECLARE_TIMER() UINT64 _HeapPerfStartTimer, _HeapPerfEndTimer;
+#define HEAP_PERF_START_TIMER(H) do { _HeapPerfStartTimer = 0; } while (0)
+#define HEAP_PERF_STOP_TIMER(H,OP) do { UNREFERENCED_PARAMETER((H)); UNREFERENCED_PARAMETER((OP)); } while (0)
+#define RtlpRegisterOperation(H,S,Op) do { UNREFERENCED_PARAMETER((H)); UNREFERENCED_PARAMETER((S)); UNREFERENCED_PARAMETER((Op)); } while (0)
+
+#define HEAP_LFH_INDEX ((UCHAR)0xFF)
+#define IS_HEAP_TAGGING_ENABLED() FALSE
+#define RtlpIsLowFragHeapEnabled() FALSE
+
+#define RtlpGetAllocationUnits(H,B) ((B)->Size)
+#define RtlpGetUnusedBytes(H,B) ((B)->UnusedBytes)
+#define RtlpSetUnusedBytes(H,B,N) do { (B)->UnusedBytes = (UCHAR)(((N) > 0xFF) ? 0xFF : (N)); } while (0)
+#define RtlpQuickValidateBlock(H,B) TRUE
+
+#define RtlpFindFirstSetRightMember(Set) \
+    (((Set) & 0xFFFF) ? \
+        (((Set) & 0xFF) ? \
+            RtlpBitsClearLow[(Set) & 0xFF] : \
+            RtlpBitsClearLow[((Set) >> 8) & 0xFF] + 8) : \
+        ((((Set) >> 16) & 0xFF) ? \
+            RtlpBitsClearLow[((Set) >> 16) & 0xFF] + 16 : \
+            RtlpBitsClearLow[(Set) >> 24] + 24))
+
 #else
 
 #define RtlInitializeLockRoutine(L) RtlInitializeCriticalSectionAndSpinCount((PRTL_CRITICAL_SECTION)(L),(0x80000000 | 4000))
@@ -69,6 +95,53 @@ extern const UCHAR CheckHeapFillPattern[ CHECK_HEAP_TAIL_SIZE ];
 
 #define RtlpHeapFreeVirtualMemory(P,A,S,F) RtlpSecMemFreeVirtualMemory(P,A,S,F)
 
+#endif
+
+/*
+ * Fast free-list operations are private macros in the original WRK header.
+ * Keep their semantics in the kernel build; unlike the user-mode LFH they
+ * do not require heap-dll.c or heapdbg.c.
+ */
+#ifndef RtlpFastRemoveFreeBlock
+#define RtlpFastRemoveFreeBlock(H,FB) \
+    do { \
+        PLIST_ENTRY _Flink = (FB)->FreeList.Flink; \
+        PLIST_ENTRY _Blink = (FB)->FreeList.Blink; \
+        if ((_Blink->Flink == _Flink->Blink) && (_Blink->Flink == &(FB)->FreeList)) { \
+            _Blink->Flink = _Flink; \
+            _Flink->Blink = _Blink; \
+        } else { \
+            RtlpHeapReportCorruption(&(FB)->FreeList); \
+        } \
+    } while (0)
+#endif
+
+#ifndef RtlpFastRemoveDedicatedFreeBlock
+#define RtlpFastRemoveDedicatedFreeBlock(H,FB) RtlpFastRemoveFreeBlock(H,FB)
+#endif
+
+#ifndef RtlpFastRemoveNonDedicatedFreeBlock
+#define RtlpFastRemoveNonDedicatedFreeBlock(H,FB) RtlpFastRemoveFreeBlock(H,FB)
+#endif
+
+#ifndef RtlpFastInsertFreeBlockDirect
+#define RtlpFastInsertFreeBlockDirect(H,FB,SIZE) RtlpInsertFreeBlockDirect(H,FB,SIZE)
+#endif
+
+#ifndef RtlpFastInsertDedicatedFreeBlockDirect
+#define RtlpFastInsertDedicatedFreeBlockDirect(H,FB,SIZE) RtlpInsertFreeBlockDirect(H,FB,SIZE)
+#endif
+
+#ifndef RtlpFastInsertNonDedicatedFreeBlockDirect
+#define RtlpFastInsertNonDedicatedFreeBlockDirect(H,FB,SIZE) RtlpInsertFreeBlockDirect(H,FB,SIZE)
+#endif
+
+#ifndef RtlpHeapRemoveEntryList
+#define RtlpHeapRemoveEntryList(E) RtlpRemoveEntryList(E)
+#endif
+
+#ifndef RtlpHeapReportCorruption
+#define RtlpHeapReportCorruption(E) UNREFERENCED_PARAMETER((E))
 #endif
 
 ULONG
@@ -136,7 +209,7 @@ RtlpGetSizeOfBigBlock (
     IN PHEAP_ENTRY BusyBlock
     );
 
-PHEAP_ENTRY_EXTRA
+PHEAP_ENTRY
 RtlpGetExtraStuffPointer (
     PHEAP_ENTRY BusyBlock
     );

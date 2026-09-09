@@ -23,18 +23,33 @@ Revision History:
 #ifndef _NTOSDEF_
 #define _NTOSDEF_
 
-#pragma warning(disable:4214)
-#pragma warning(disable:4201)
-#pragma warning(disable:4127)
-#pragma warning(disable:4115)
+//
+// disable these for compiling w4
+//
+#pragma warning(disable:4214)   // bit field types other than int
+#pragma warning(disable:4201)   // nameless struct/union
+#pragma warning(disable:4127)   // condition expression is constant
+#pragma warning(disable:4115)   // named type definition in parentheses
+
+// begin_ntosp
+
+//
+// Define per processor nonpaged lookaside list descriptor structure.
+//
 
 struct _NPAGED_LOOKASIDE_LIST;
+
 typedef struct _PP_LOOKASIDE_LIST {
     struct _GENERAL_LOOKASIDE *P;
     struct _GENERAL_LOOKASIDE *L;
 } PP_LOOKASIDE_LIST, *PPP_LOOKASIDE_LIST;
 
 #define POOL_SMALL_LISTS 32
+#define ALIGN_DOWN(length, type) ((ULONG)(length) & ~(sizeof(type) - 1))
+#define ALIGN_UP(length, type) (ALIGN_DOWN(((ULONG)(length) + sizeof(type) - 1), type))
+#define ALIGN_DOWN_POINTER(address, type) ((PVOID)((ULONG_PTR)(address) & ~((ULONG_PTR)sizeof(type) - 1)))
+#define ALIGN_UP_POINTER(address, type) (ALIGN_DOWN_POINTER(((ULONG_PTR)(address) + sizeof(type) - 1), type))
+#define POOL_TAGGING 1
 
 #ifndef DBG
 #define DBG 0
@@ -86,13 +101,7 @@ typedef struct _KAPC {
 
 struct _KDPC;
 typedef VOID (*PKDEFERRED_ROUTINE)(IN struct _KDPC *Dpc, IN PVOID DeferredContext, IN PVOID SystemArgument1, IN PVOID SystemArgument2);
-
-typedef enum _KDPC_IMPORTANCE {
-    LowImportance,
-    MediumImportance,
-    HighImportance
-} KDPC_IMPORTANCE;
-
+typedef enum _KDPC_IMPORTANCE { LowImportance, MediumImportance, HighImportance } KDPC_IMPORTANCE;
 #define DPC_NORMAL 0
 #define DPC_THREADED 1
 
@@ -168,6 +177,19 @@ typedef struct _MDL {
 #define PAGED_CODE() NOP_FUNCTION;
 #endif
 
+// begin_ntifs begin_ntosp
+
+typedef struct _SECURITY_CLIENT_CONTEXT {
+    SECURITY_QUALITY_OF_SERVICE SecurityQos;
+    PACCESS_TOKEN ClientToken;
+    BOOLEAN DirectlyAccessClientToken;
+    BOOLEAN DirectAccessEffectiveOnly;
+    BOOLEAN ServerIsRemote;
+    TOKEN_CONTROL ClientTokenControl;
+} SECURITY_CLIENT_CONTEXT, *PSECURITY_CLIENT_CONTEXT;
+
+// end_ntifs end_ntosp
+
 #if (defined(_NTDRIVER_) || defined(_NTDDK_) || defined(_NTIFS_) || defined(_NTHAL_) || defined(_NTOSP_)) && !defined(_BLDR_)
 #if defined(_NTSYSTEM_)
 #define NTKERNELAPI
@@ -178,10 +200,10 @@ typedef struct _MDL {
 #define NTKERNELAPI
 #endif
 
-#if defined(_NTSYSTEM_) || defined(_NTHAL_) || defined(_BLDR_)
-#define NTHALAPI
-#else
+#if !defined(_NTHAL_) && !defined(_BLDR_)
 #define NTHALAPI DECLSPEC_IMPORT
+#else
+#define NTHALAPI
 #endif
 
 typedef struct _DISPATCHER_HEADER {

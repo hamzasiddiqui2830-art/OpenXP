@@ -70,20 +70,28 @@ else()
 endif()
 
 if(MSVC)
-    # Use the compatibility SpecStrings shim in ntoskrnl/inc. It delegates
-    # annotation handling to modern MSVC sal.h instead of redefining SAL macros.
     add_compile_options(/W4 /WX)
 else()
     add_compile_options(-Wall -Wextra -Werror)
 endif()
 
+# Kernel headers must remain independent of the host Windows SDK.  Keep the
+# WRK/public headers and the repository's internal SDK ahead of compiler-host
+# include directories; ntoskrnl/inc/specstrings.h provides the local annotation
+# vocabulary and never imports the host Windows SDK sal.h.
 set(NTOS_INCLUDE_DIRS
     ${REACTOS_SOURCE_DIR}
-    ${NTOSKRNL_SOURCE_DIR}
+    ${REACTOS_SOURCE_DIR}/base/inc
+    ${REACTOS_SOURCE_DIR}/sdk/halkit/inc
+    ${REACTOS_SOURCE_DIR}/sdk/sdk/inc/crt
+    ${REACTOS_SOURCE_DIR}/sdk/sdk/inc
+    ${REACTOS_SOURCE_DIR}/sdk/internal/base/inc
+    ${REACTOS_SOURCE_DIR}/sdk/internal/sdktools/inc
+    ${REACTOS_SOURCE_DIR}/sdk/internal/ds/inc
+    ${REACTOS_SOURCE_DIR}/sdk/ddk/inc
     ${NTOSKRNL_SOURCE_DIR}/inc
-    ${NTOSKRNL_SOURCE_DIR}/ke
-    ${NTOSKRNL_SOURCE_DIR}/kd64
     ${NTOSKRNL_SOURCE_DIR}/rtl
+    ${REACTOS_SOURCE_DIR}/ntos-old/rtl
 )
 include_directories(${NTOS_INCLUDE_DIRS})
 

@@ -344,6 +344,7 @@ typedef struct _OBJECT_DIRECTORY {
 typedef struct _OBJECT_DIRECTORY_ENTRY {
     struct _OBJECT_DIRECTORY_ENTRY *ChainLink;
     PVOID Object;
+    ULONG HashValue;
 } OBJECT_DIRECTORY_ENTRY, *POBJECT_DIRECTORY_ENTRY;
 
 
@@ -482,6 +483,44 @@ typedef struct _OBJECT_HEADER_CREATOR_INFO {
     USHORT CreatorBackTraceIndex;
     USHORT Reserved;
 } OBJECT_HEADER_CREATOR_INFO, *POBJECT_HEADER_CREATOR_INFO;
+
+//
+// Object header optional-information accessors used by the WRK Object
+// Manager sources.  The *_EXISTS forms assert that the corresponding
+// optional header is present; the offset is stored in the object header.
+//
+FORCEINLINE
+POBJECT_HEADER_QUOTA_INFO
+OBJECT_HEADER_TO_QUOTA_INFO_EXISTS (
+    IN POBJECT_HEADER ObjectHeader
+    )
+{
+    ASSERT(ObjectHeader->QuotaInfoOffset != 0);
+    return (POBJECT_HEADER_QUOTA_INFO)((PUCHAR)ObjectHeader -
+                                       ObjectHeader->QuotaInfoOffset);
+}
+
+FORCEINLINE
+POBJECT_HEADER_HANDLE_INFO
+OBJECT_HEADER_TO_HANDLE_INFO_EXISTS (
+    IN POBJECT_HEADER ObjectHeader
+    )
+{
+    ASSERT(ObjectHeader->HandleInfoOffset != 0);
+    return (POBJECT_HEADER_HANDLE_INFO)((PUCHAR)ObjectHeader -
+                                        ObjectHeader->HandleInfoOffset);
+}
+
+FORCEINLINE
+POBJECT_HEADER_NAME_INFO
+OBJECT_HEADER_TO_NAME_INFO_EXISTS (
+    IN POBJECT_HEADER ObjectHeader
+    )
+{
+    ASSERT(ObjectHeader->NameInfoOffset != 0);
+    return (POBJECT_HEADER_NAME_INFO)((PUCHAR)ObjectHeader -
+                                      ObjectHeader->NameInfoOffset);
+}
 
 #define OB_FLAG_NEW_OBJECT              0x01
 #define OB_FLAG_KERNEL_OBJECT           0x02

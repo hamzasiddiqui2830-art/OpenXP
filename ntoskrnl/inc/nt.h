@@ -76,6 +76,7 @@ Abstract:
 #include <ntconfig.h>
 #include <ntnls.h>
 #include <ntpnpapi.h>
+#include <mce.h>
 
 /* WRK ntrtl.h consumes this declaration before its atom APIs are parsed. */
 typedef USHORT RTL_ATOM;

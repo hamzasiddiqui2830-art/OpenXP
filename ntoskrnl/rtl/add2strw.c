@@ -14,10 +14,10 @@
 #define RtlIpv4AddressToStringExT RtlIpv4AddressToStringExW
 #define RtlIpv6AddressToStringExT RtlIpv6AddressToStringExW
 
-/* nt.h is force-included, so use explicit wide types rather than LPTSTR. */
 #define LPTSTR PWSTR
 #define TCHAR WCHAR
 #define _T(x) L##x
-#define _stprintf _swprintf
+#define _stprintf(Buffer, Format, ...) \
+    _snwprintf((Buffer), INET6_ADDRSTRLEN, (Format), __VA_ARGS__)
 
 #include "add2strt.h"

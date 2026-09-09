@@ -1,0 +1,41 @@
+name: Fix token sibling declarations
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message != 'Fix token sibling declarations'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Add forward declarations
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('ntoskrnl/se/token.c')
+          s = p.read_text()
+          marker = '#ifdef ALLOC_PRAGMA\n'
+          decls = '''NTSTATUS\nSeIsSiblingToken(\n    __in HANDLE Token,\n    __out PBOOLEAN IsSibling\n    );\n\nNTSTATUS\nSeIsSiblingTokenByPointer(\n    __in PACCESS_TOKEN Token,\n    __out PBOOLEAN IsSibling\n    );\n\n'''
+          if decls not in s:
+              if marker not in s:
+                  raise SystemExit('ALLOC_PRAGMA marker not found')
+              s = s.replace(marker, decls + marker, 1)
+              p.write_text(s)
+          PY
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ntoskrnl/se/token.c
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Fix token sibling declarations'
+          git push

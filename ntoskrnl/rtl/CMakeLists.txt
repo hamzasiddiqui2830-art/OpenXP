@@ -24,19 +24,10 @@ set(MODULE_SOURCES
     error.c
     excptdbg.c
     gen8dot3.c
-    # generr.c is a legacy build-time table generator. It includes the
-    # Windows user-mode SDK (windef/winbase/ws03res) and is not part of the
-    # kernel RTL library. The generated error table is already supplied by
-    # error.h, so never compile this generator as part of the self-contained
-    # kernel target.
     gentable.c
     guid.c
     handle.c
     heap.c
-    heapdbg.c
-    heapdll.c
-    heapleak.c
-    heaplowf.c
     heappage.c
     imagedir.c
     intbits.c
@@ -90,6 +81,10 @@ set(MODULE_SOURCES
     xdecode.c
     xencode.c
 )
+
+# The legacy RTL directory also contains user-mode heap implementation and
+# the generr table generator. Those sources require the user-mode NTDLL/SDK
+# environment and are deliberately not part of the kernel RTL library.
 
 # Create library target for kernel-mode RTL
 add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})

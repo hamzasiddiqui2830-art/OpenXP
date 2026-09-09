@@ -44,6 +44,51 @@
 #endif
 #endif
 
+/* Legacy executive sources use these WRK configuration-manager constants. */
+#ifndef COMPLUS_PACKAGE_KEYPATH
+#define COMPLUS_PACKAGE_KEYPATH L"\\Registry\\Machine\\SOFTWARE\\Microsoft\\.NETFramework"
+#endif
+#ifndef COMPLUS_PACKAGE_ENABLE64BIT
+#define COMPLUS_PACKAGE_ENABLE64BIT L"Enable64Bit"
+#endif
+#ifndef COMPLUS_PACKAGE_INVALID
+#define COMPLUS_PACKAGE_INVALID ((ULONG)-1)
+#endif
+
+/* The active ki.h declaration uses LONG; old executive sources redeclare it
+ * as ULONG. Keep the benign old redeclaration from becoming /WX C4142. */
+#if defined(_MSC_VER) && defined(_X86_)
+#pragma warning(disable: 4142)
+#endif
+
+/*
+ * The current configuration-manager header retained CM_KEY_HASH and
+ * CM_NAME_HASH but lost the two hash-table entry wrappers used by the
+ * executive/configuration-manager sources. Restore the WRK layout locally.
+ */
+#ifndef _WRK_CM_HASH_TABLE_ENTRIES_DEFINED
+#define _WRK_CM_HASH_TABLE_ENTRIES_DEFINED
+
+typedef struct _CM_KEY_HASH_TABLE_ENTRY {
+    EX_PUSH_LOCK Lock;
+    PKTHREAD Owner;
+    PCM_KEY_HASH Entry;
+} CM_KEY_HASH_TABLE_ENTRY, *PCM_KEY_HASH_TABLE_ENTRY;
+
+typedef struct _CM_NAME_HASH_TABLE_ENTRY {
+    EX_PUSH_LOCK Lock;
+    PCM_NAME_HASH Entry;
+} CM_NAME_HASH_TABLE_ENTRY, *PCM_NAME_HASH_TABLE_ENTRY;
+
+#endif
+
+/* systime.c keeps this WRK worker private and references it from an
+ * alloc_text pragma before its conditional definition under WPA_CHECK. */
+#ifndef _WRK_EXP_WATCH_EXPIRATION_DATA_WORK_DECLARED
+#define _WRK_EXP_WATCH_EXPIRATION_DATA_WORK_DECLARED
+static VOID ExpWatchExpirationDataWork(IN PVOID Context);
+#endif
+
 #ifndef MAX_PAGE_FILES
 #define MAX_PAGE_FILES 16
 #endif

@@ -73,7 +73,9 @@ set(MODULE_SOURCES
 
     ${REACTOS_SOURCE_DIR}/ntoskrnl/rundown.c
 
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/pushlock.c
+    # The active pushlock.c uses a newer push-lock layout than ex.h. Use the
+    # matching WRK implementation until the active header is migrated.
+    ${REACTOS_SOURCE_DIR}/ntos-old/ex/pushlock.c
 
     ${REACTOS_SOURCE_DIR}/ntoskrnl/xipdisp.c
 

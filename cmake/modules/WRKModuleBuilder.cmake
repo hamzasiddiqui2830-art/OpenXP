@@ -16,7 +16,8 @@ function(add_wrk_module MODULE_NAME)
     endif()
 
     if(NOT ARG_TARGET_NAME)
-        set(ARG_TARGET_NAME ntos_${MODULE_NAME})
+        set(ARG_TARGET_NAME ntos_${MODULE_NAME}
+)
     endif()
 
     if(NOT ARG_OUTPUT_DIR)
@@ -130,11 +131,9 @@ function(add_wrk_module MODULE_NAME)
             list(APPEND MODULE_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ntoskrnl/i386)
         endif()
 
-        target_include_directories(${ARG_TARGET_NAME} PRIVATE ${MODULE_INCLUDE_DIRS})
-
         if(MSVC AND WRK_ARCH_NAME STREQUAL "x86")
             target_compile_options(${ARG_TARGET_NAME} PRIVATE /Gz)
-            if(MODULE_NAME STREQUAL "rtl")
+            if(MODULE_NAME STREQUAL "rtl" OR MODULE_NAME STREQUAL "se")
                 target_compile_options(${ARG_TARGET_NAME} PRIVATE /wd4101)
             endif()
         endif()

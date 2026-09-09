@@ -54,6 +54,16 @@
 #define COMPLUS_PACKAGE_INVALID ((ULONG)-1)
 #endif
 
+/*
+ * sysinfo.c places these routines in the alloc_text pragma list before
+ * their old-style WRK definitions. MSVC requires a declaration first.
+ */
+#ifndef _WRK_COMPLUS_PACKAGE_ROUTINES_DECLARED
+#define _WRK_COMPLUS_PACKAGE_ROUTINES_DECLARED
+NTSTATUS ExpReadComPlusPackage(VOID);
+NTSTATUS ExpUpdateComPlusPackage(IN ULONG ComPlusPackageStatus);
+#endif
+
 /* The active ki.h declaration uses LONG; old executive sources redeclare it
  * as ULONG. Keep the benign old redeclaration from becoming /WX C4142. */
 #if defined(_MSC_VER) && defined(_X86_)

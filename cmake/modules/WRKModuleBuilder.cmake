@@ -44,6 +44,15 @@ function(add_wrk_module MODULE_NAME)
                SOURCE_FILE_NORMALIZED MATCHES "(^|/)(i386|amd64|ia64|arm|arm64)(/|$)")
                 continue()
             endif()
+
+            # The RTL directory contains several legacy user-mode heap sources
+            # alongside the kernel RTL. They depend on the user-mode heap/NTDLL
+            # environment and must not be pulled into the NTOS kernel library.
+            if(MODULE_NAME STREQUAL "rtl" AND
+               SOURCE_FILE_NORMALIZED MATCHES "(^|/)(generr|heapdbg|heapdll|heapleak|heaplowf)\\.c$")
+                continue()
+            endif()
+
             list(APPEND MODULE_C_SOURCES_FILTERED "${SOURCE_FILE}")
         endforeach()
         set(MODULE_C_SOURCES ${MODULE_C_SOURCES_FILTERED})

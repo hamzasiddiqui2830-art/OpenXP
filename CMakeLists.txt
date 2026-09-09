@@ -106,9 +106,13 @@ set_wrk_compiler_flags()
 set_wrk_include_directories()
 add_compile_definitions(${ARCH_DEFINES})
 
-# ntos-old/rtl/up/sources is the authoritative kernel RTL target definition.
-# Keep this list explicit: the legacy build does not recursively glob the RTL
-# directory, and the directory also contains user-mode heap and generator code.
+# Exact translation of ntos-old/rtl/up/sources:
+#   TARGETNAME=ntosrtl
+#   TARGETTYPE=LIBRARY
+#   C_DEFINES += -DNTOS_KERNEL_RUNTIME=1
+#   INCLUDES = ..; ../../inc; $(DDK_INC_PATH); $(DS_INC_PATH); $(SDKTOOLS_INC_PATH)
+#
+# The legacy SOURCES list is authoritative. Do not glob this directory.
 set(RTL_KERNEL_SOURCES
     ${NTOSKRNL_SOURCE_DIR}/rtl/acledit.c
     ${NTOSKRNL_SOURCE_DIR}/rtl/add2stra.c
@@ -166,12 +170,13 @@ set(RTL_KERNEL_SOURCES
 )
 
 add_wrk_module(rtl
+    TARGET_NAME ntosrtl
     SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/rtl
     SOURCES ${RTL_KERNEL_SOURCES}
 )
 
-# The legacy RTL tree has two additional, separately named loader libraries.
-# They are opt-in because they are not part of the normal ntosrtl target.
+# Legacy boot RTL targets from ntos-old/rtl/boot/sources and boot_dbg/sources.
+# These are separate libraries and are not part of the normal kernel RTL build.
 if(BUILD_RTL_BOOT_TARGETS)
     set(RTL_BOOT_SOURCES
         ${NTOSKRNL_SOURCE_DIR}/rtl/assert.c
@@ -186,28 +191,35 @@ if(BUILD_RTL_BOOT_TARGETS)
         ${NTOSKRNL_SOURCE_DIR}/rtl/lznt1.c
         ${NTOSKRNL_SOURCE_DIR}/rtl/time.c
         ${NTOSKRNL_SOURCE_DIR}/rtl/nlsxlat.c
-        ${NTOSKRNL_SOURCE_DIR}/rtl/xencode.c
+        ${NTOSKRNL_SOURCE_DIR}/rtl/xdecode.c
         ${NTOSKRNL_SOURCE_DIR}/rtl/sertl.c
     )
 
     add_wrk_module(bldrrtl
+        TARGET_NAME bldrrtl
         SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/rtl/boot
         SOURCES ${RTL_BOOT_SOURCES}
         OUTPUT_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}/boot
     )
 
     add_wrk_module(bldrrtl_dbg
+        TARGET_NAME bldrrtl_dbg
         SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/rtl/boot_dbg
         SOURCES ${RTL_BOOT_SOURCES}
         OUTPUT_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}/boot_dbg
     )
 
-    target_compile_definitions(ntos_bldrrtl PRIVATE BLDR_KERNEL_RUNTIME=1)
-    target_compile_definitions(ntos_bldrrtl_dbg PRIVATE BLDR_KERNEL_RUNTIME=1)
+    target_compile_definitions(bldrrtl PRIVATE BLDR_KERNEL_RUNTIME=1)
+    target_compile_definitions(bldrrtl_dbg PRIVATE BLDR_KERNEL_RUNTIME=1)
+
+    set_source_files_properties(${NTOSKRNL_SOURCE_DIR}/rtl/xdecode.c PROPERTIES COMPILE_DEFINITIONS BLDR_KERNEL_RUNTIME=1)
+    set_target_properties(bldrrtl bldrrtl_dbg PROPERTIES
+        POSITION_INDEPENDENT_CODE OFF
+        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}
+        OUTPUT_NAME bldrrtl
+    )
 endif()
 
-# The remaining NTOS components keep their own module targets. Unlike RTL,
-# these components are not reconstructed here from the rtl sources file.
 set(NTOS_MODULES
     config
     ex
@@ -246,7 +258,7 @@ if(BUILD_NTOSKRNL_TESTS)
     endforeach()
 endif()
 
-set(NTOS_MODULE_LIBS ntos_rtl)
+set(NTOS_MODULE_LIBS ntosrtl)
 foreach(MODULE ${NTOS_MODULES})
     list(APPEND NTOS_MODULE_LIBS ntos_${MODULE})
 endforeach()

@@ -1,48 +1,31 @@
-//
-// N.B. The size field contains the number of dwords in the structure.
-//
+/*++ BUILD Version: 0003
 
-typedef struct _DISPATCHER_HEADER {
-    union {
-        struct {
-            UCHAR Type;
-            union {
-                UCHAR Absolute;
-                UCHAR Abandoned;
-            };
-            union {
-                UCHAR Size;
-                UCHAR Hand;
-            };
-            union {
-                UCHAR Inserted;
-                BOOLEAN DebugActive;
-            };
-        };
+Copyright (c) OpenXP Contributors
+Project OpenXP Internal
 
-        volatile LONG Lock;
-    };
+Module Name:
 
-    LONG SignalState;
-    LIST_ENTRY WaitListHead;
-} DISPATCHER_HEADER;
+    ntosdef.h
 
-//
-// Event object
-//
+Abstract:
 
-typedef struct _KEVENT {
-    DISPATCHER_HEADER Header;
-} KEVENT, *PKEVENT, *RESTRICTED_POINTER PRKEVENT;
+    Compatibility wrapper for the complete NTOS private definitions.
 
-//
-// Timer object
-//
+--*/
 
-typedef struct _KTIMER {
-    DISPATCHER_HEADER Header;
-    ULARGE_INTEGER DueTime;
-    LIST_ENTRY TimerListEntry;
-    struct _KDPC *Dpc;
-    LONG Period;
-} KTIMER, *PKTIMER, *RESTRICTED_POINTER PRKTIMER;
+#ifndef _OPENXP_NTOSDEF_WRAPPER_
+#define _OPENXP_NTOSDEF_WRAPPER_
+
+/*
+ * Keep the active kernel include tree backed by the complete local WRK
+ * definitions. The legacy copy is repository-local and is not a host SDK
+ * dependency.
+ *
+ * The WRK dispatcher header stores the timer-table hand in the same byte as
+ * Size. Older WRK private code refers to that byte as Hand, so provide the
+ * compatibility spelling while the header is consumed.
+ */
+#define Hand Size
+#include "../../ntos-old/inc/ntosdef.h"
+
+#endif /* _OPENXP_NTOSDEF_WRAPPER_ */

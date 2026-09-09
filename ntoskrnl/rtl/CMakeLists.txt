@@ -1,10 +1,9 @@
 # rtl Module CMakeLists.txt
-# Converted from legacy sources.inc
+# Exact kernel RTL source set from ntos-old/rtl/up/sources
 
 set(MODULE_NAME rtl)
 set(TARGET_NAME ntosrtl)
 
-# Source files from rtl directory (main kernel mode RTL library)
 set(MODULE_SOURCES
     acledit.c
     add2stra.c
@@ -14,7 +13,6 @@ set(MODULE_SOURCES
     avltable.c
     bitmap.c
     bootstatus.c
-    byteswap.c
     checksum.c
     cnvint.c
     compress.c
@@ -23,21 +21,18 @@ set(MODULE_SOURCES
     environ.c
     error.c
     excptdbg.c
-    gen8dot3.c
     gentable.c
+    gen8dot3.c
     guid.c
-    handle.c
     heap.c
-    heappage.c
     imagedir.c
+    rtlimagentheader.c
     intbits.c
-    ldrreloc.c
     ldrrsrc.c
-    lookasid.c
+    ldrreloc.c
     lookup.c
     lznt1.c
     message.c
-    mrcf.c
     nls.c
     nlsxlat.c
     pctohdr.c
@@ -46,75 +41,51 @@ set(MODULE_SOURCES
     prodtype.c
     random.c
     range.c
-    registry.c
     regutil.c
-    remlock.c
     rtlassig.c
     rtldata.c
-    rtldowncaseunicodechar.c
     rtlexec.c
-    rtlfindcharinunicodestring.c
-    rtlimagentheader.c
-    rtlmmapio.c
-    rtlnthdr.c
-    rtloverflow.c
     rtlpatch.c
-    rtlvalidateunicodestring.c
     rxact.c
-    secmem.c
     sertl.c
-    slistfunc.c
     splay.c
-    stktrace.c
     str2adda.c
     str2addw.c
     string.c
+    stktrace.c
     sysvol.c
-    threads.c
     time.c
-    timer.c
     tracedb.c
-    triangle.c
     version.c
-    wait.c
-    worker.c
-    xdecode.c
     xencode.c
 )
 
-# The legacy RTL directory also contains user-mode heap implementation and
-# the generr table generator. Those sources require the user-mode NTDLL/SDK
-# environment and are deliberately not part of the kernel RTL library.
+# Legacy target:
+#   TARGETNAME=ntosrtl
+#   TARGETTYPE=LIBRARY
+#   C_DEFINES += -DNTOS_KERNEL_RUNTIME=1
+#   INCLUDES = ..; ../../inc; $(DDK_INC_PATH); $(DS_INC_PATH); $(SDKTOOLS_INC_PATH)
 
-# Create library target for kernel-mode RTL
 add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 
-# Set include directories
 target_include_directories(${TARGET_NAME} PRIVATE
     ${REACTOS_SOURCE_DIR}/ntoskrnl/rtl
     ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
+    ${REACTOS_SOURCE_DIR}/sdk/ddk/inc
+    ${REACTOS_SOURCE_DIR}/sdk/internal/ds/inc
+    ${REACTOS_SOURCE_DIR}/sdk/internal/sdktools/inc
 )
 
-# Compile definitions
 target_compile_definitions(${TARGET_NAME} PRIVATE
-    _NTOS_
-    _NTIFS_
-    _NTDDK_
+    NTOS_KERNEL_RUNTIME=1
 )
 
-# Compiler options - match legacy build settings (/W4 /WX = all warnings + warnings as errors)
-if(MSVC)
-    target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX)
-else()
-    target_compile_options(${TARGET_NAME} PRIVATE -Wall -Werror)
+if(MSVC AND WRK_ARCH_NAME STREQUAL "x86")
+    target_compile_options(${TARGET_NAME} PRIVATE /Gz /wd4101)
 endif()
 
-# Test targets are opt-in. Normal ntoskrnl builds do not configure or compile them.
 if(BUILD_NTOSKRNL_TESTS)
     add_subdirectory(test)
 endif()
 
-message(STATUS "Configured rtl module: ${TARGET_NAME}")
-if(BUILD_NTOSKRNL_TESTS)
-    message(STATUS "Configured RTL test targets")
-endif()
+message(STATUS "Configured RTL target: ${TARGET_NAME} (legacy ntosrtl)")

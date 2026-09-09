@@ -235,49 +235,52 @@ foreach(EX_SOURCE IN LISTS EX_LEGACY_SOURCES)
     )
 endforeach()
 
+# Sources from ntoskrnl/ex are all kept under the executive directory.  The
+# three incompatible local implementations above are the only staged copies.
+set(EX_SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/ex)
 set(EX_KERNEL_SOURCES
-    ${NTOSKRNL_SOURCE_DIR}/ex/callback.c
-    ${NTOSKRNL_SOURCE_DIR}/callperf.c
-    ${NTOSKRNL_SOURCE_DIR}/dbgctrl.c
-    ${NTOSKRNL_SOURCE_DIR}/delay.c
-    ${NTOSKRNL_SOURCE_DIR}/event.c
-    ${NTOSKRNL_SOURCE_DIR}/eventpr.c
-    ${NTOSKRNL_SOURCE_DIR}/exatom.c
-    ${NTOSKRNL_SOURCE_DIR}/exdata.c
-    ${NTOSKRNL_SOURCE_DIR}/exinfo.c
-    ${NTOSKRNL_SOURCE_DIR}/exinit.c
-    ${NTOSKRNL_SOURCE_DIR}/exhotp.c
-    ${NTOSKRNL_SOURCE_DIR}/fmutexc.c
-    ${NTOSKRNL_SOURCE_DIR}/handle.c
-    ${NTOSKRNL_SOURCE_DIR}/harderr.c
-    ${NTOSKRNL_SOURCE_DIR}/hdlsterm.c
-    ${NTOSKRNL_SOURCE_DIR}/lookasid.c
-    ${NTOSKRNL_SOURCE_DIR}/luid.c
+    ${EX_SOURCE_DIR}/callback.c
+    ${EX_SOURCE_DIR}/callperf.c
+    ${EX_SOURCE_DIR}/dbgctrl.c
+    ${EX_SOURCE_DIR}/delay.c
+    ${EX_SOURCE_DIR}/event.c
+    ${EX_SOURCE_DIR}/eventpr.c
+    ${EX_SOURCE_DIR}/exatom.c
+    ${EX_SOURCE_DIR}/exdata.c
+    ${EX_SOURCE_DIR}/exinfo.c
+    ${EX_SOURCE_DIR}/exinit.c
+    ${EX_SOURCE_DIR}/exhotp.c
+    ${EX_SOURCE_DIR}/fmutexc.c
+    ${EX_SOURCE_DIR}/handle.c
+    ${EX_SOURCE_DIR}/harderr.c
+    ${EX_SOURCE_DIR}/hdlsterm.c
+    ${EX_SOURCE_DIR}/lookasid.c
+    ${EX_SOURCE_DIR}/luid.c
     ${EX_LOCAL_SOURCE_DIR}/mutant.c
     ${EX_LOCAL_SOURCE_DIR}/pool.c
     ${EX_LOCAL_SOURCE_DIR}/pushlock.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/nbqueue.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/probe.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/profile.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/raise.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/resource.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/semphore.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/sysenv.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/sysinfo.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/systime.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/timer.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/worker.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/zone.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/uuid.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/win32.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/rundown.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/xipdisp.c
-    ${NTOSKRNL_SOURCE_DIR}/ex/keyedevent.c
+    ${EX_SOURCE_DIR}/nbqueue.c
+    ${EX_SOURCE_DIR}/probe.c
+    ${EX_SOURCE_DIR}/profile.c
+    ${EX_SOURCE_DIR}/raise.c
+    ${EX_SOURCE_DIR}/resource.c
+    ${EX_SOURCE_DIR}/semphore.c
+    ${EX_SOURCE_DIR}/sysenv.c
+    ${EX_SOURCE_DIR}/sysinfo.c
+    ${EX_SOURCE_DIR}/systime.c
+    ${EX_SOURCE_DIR}/timer.c
+    ${EX_SOURCE_DIR}/worker.c
+    ${EX_SOURCE_DIR}/zone.c
+    ${EX_SOURCE_DIR}/uuid.c
+    ${EX_SOURCE_DIR}/win32.c
+    ${EX_SOURCE_DIR}/rundown.c
+    ${EX_SOURCE_DIR}/xipdisp.c
+    ${EX_SOURCE_DIR}/keyedevent.c
 )
 
 add_wrk_module(ex
     TARGET_NAME ntos_ex
-    SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/ex
+    SOURCE_DIR ${EX_SOURCE_DIR}
     SOURCES ${EX_KERNEL_SOURCES}
 )
 

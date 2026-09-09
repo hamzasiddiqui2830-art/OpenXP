@@ -8,6 +8,7 @@
 #include <nt.h>
 #include <ntrtl.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 #define RtlIpv6AddressToStringT RtlIpv6AddressToStringA
 #define RtlIpv4AddressToStringT RtlIpv4AddressToStringA
@@ -17,6 +18,23 @@
 #define LPTSTR PSTR
 #define TCHAR CHAR
 #define _T(x) x
-#define _stprintf _snprintf
+
+static int
+OpenXpStprintfA(
+    PSTR Buffer,
+    PCSTR Format,
+    ...
+    )
+{
+    va_list Args;
+    int Result;
+
+    va_start(Args, Format);
+    Result = _vsnprintf(Buffer, INET6_ADDRSTRLEN, Format, Args);
+    va_end(Args);
+    return Result;
+}
+
+#define _stprintf OpenXpStprintfA
 
 #include "add2strt.h"

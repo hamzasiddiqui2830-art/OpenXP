@@ -6,9 +6,9 @@ Module Name:
 
 Abstract:
 
-    Shared implementation for the WRK IPv4 and IPv6 address-to-string RTL
-    routines. This file deliberately supplies its own address structures so
-    kernel builds do not depend on Winsock or Windows SDK headers.
+    Shared implementation for the WRK IPv4 and IPv6 address-to-string
+    RTL routines. This file supplies its own address structures so kernel
+    builds do not depend on Winsock or Windows SDK headers.
 
 --*/
 
@@ -26,12 +26,8 @@ struct in6_addr {
 
 struct in_addr {
     union {
-        struct {
-            UCHAR s_b1, s_b2, s_b3, s_b4;
-        } S_un_b;
-        struct {
-            USHORT s_w1, s_w2;
-        } S_un_w;
+        struct { UCHAR s_b1, s_b2, s_b3, s_b4; } S_un_b;
+        struct { USHORT s_w1, s_w2; } S_un_w;
         ULONG S_addr;
     } S_un;
 };
@@ -41,14 +37,6 @@ struct in_addr {
 #define AF_INET6 23
 #define INET_ADDRSTRLEN 22
 #define INET6_ADDRSTRLEN 65
-
-/*
- * The original WRK code used _stprintf, whose historical CRT signature
- * differs from modern MSVC's swprintf signature. Use the bounded variants
- * through the per-translation-unit mapping supplied by add2stra.c and
- * add2strw.c. The destination buffers used by these routines are at most
- * INET6_ADDRSTRLEN characters.
- */
 
 LPTSTR
 NTAPI
@@ -66,7 +54,7 @@ RtlIpv6AddressToStringT(
         (Addr->s6_words[2] == 0) && (Addr->s6_words[3] == 0) &&
         (Addr->s6_words[6] != 0)) {
         if ((Addr->s6_words[4] == 0) &&
-             ((Addr->s6_words[5] == 0) || (Addr->s6_words[5] == 0xffff))) {
+            ((Addr->s6_words[5] == 0) || (Addr->s6_words[5] == 0xffff))) {
             S += _stprintf(S, _T("::%hs%u.%u.%u.%u"),
                            Addr->s6_words[5] == 0 ? "" : "ffff:",
                            Addr->s6_bytes[12], Addr->s6_bytes[13],
@@ -107,13 +95,13 @@ RtlIpv6AddressToStringT(
 
     for (i = 0; i < endHex; i++) {
         if ((maxFirst <= i) && (i < maxLast)) {
-            S += _stprintf(S, _T("::"), 0);
+            S += _stprintf(S, _T("::"));
             i = maxLast - 1;
             continue;
         }
 
         if ((i != 0) && (i != maxLast))
-            S += _stprintf(S, _T(":"), 0);
+            S += _stprintf(S, _T(":"));
 
         S += _stprintf(S, _T("%x"), RtlUshortByteSwap(Addr->s6_words[i]));
     }
@@ -148,7 +136,7 @@ RtlIpv6AddressToStringExT(
 
     S = String;
     if (Port)
-        S += _stprintf(S, _T("["), 0);
+        S += _stprintf(S, _T("["));
 
     S = RtlIpv6AddressToStringT(Address, S);
 
@@ -204,6 +192,7 @@ RtlIpv4AddressToStringExT(
 
     S = String;
     S = RtlIpv4AddressToStringT(Address, S);
+
     if (Port != 0)
         S += _stprintf(S, _T(":%u"), RtlUshortByteSwap(Port));
 

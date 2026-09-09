@@ -3,6 +3,25 @@
 
 #include "ntos.h"
 
+/*
+ * The WRK headers are shared between consumers and the kernel itself.
+ * During a kernel build these APIs are being defined, not imported from
+ * another DLL. Clear the legacy import annotations before private headers
+ * such as ex.h are parsed by the source files.
+ */
+#ifdef NTHALAPI
+#undef NTHALAPI
+#endif
+#define NTHALAPI
+#ifdef NTKERNELAPI
+#undef NTKERNELAPI
+#endif
+#define NTKERNELAPI
+#ifdef NTSYSAPI
+#undef NTSYSAPI
+#endif
+#define NTSYSAPI
+
 #if defined(_MSC_VER) && defined(_X86_)
 #define MiCompareTbFlushTimeStamp MiCompareTbFlushTimeStamp_X86
 #include "../mm/i386/mi386.h"
@@ -118,15 +137,16 @@ KeLoopTbFlushTimeStampUnlocked(VOID)
 #define WRK_MM_CHECK_SYSTEM_IMAGE_DECLARED
 NTSTATUS MmCheckSystemImage(IN HANDLE ImageFileHandle);
 #endif
+#ifndef WRK_MM_LOCK_PAGEABLE_SECTION_BY_HANDLE_DECLARED
+#define WRK_MM_LOCK_PAGEABLE_SECTION_BY_HANDLE_DECLARED
+VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
+#endif
 
 /*
  * The reconstructed kernel headers retain the WRK field layouts but some
- * active sources use the older member spellings.  On x86 these names refer
+ * active sources use the older member spellings. On x86 these names refer
  * to the same byte-sized storage: KTHREAD::Spare4 is the quantum-reset byte,
  * while DISPATCHER_HEADER::Size is the timer-table hand byte.
- *
- * Keep this compatibility at the compiler boundary instead of changing the
- * host SDK or duplicating the private structures.
  */
 #ifndef QuantumReset
 #define QuantumReset Spare4

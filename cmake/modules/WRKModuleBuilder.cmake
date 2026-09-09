@@ -48,6 +48,15 @@ function(add_wrk_module MODULE_NAME)
                SOURCE_FILE_NORMALIZED MATCHES "(^|/)(i386|amd64|ia64|arm|arm64)(/|$)")
                 continue()
             endif()
+            # uob.c and tob.c are the original WRK Object Manager user/test
+            # programs. They are not kernel implementation units and contain
+            # user-mode entry points and intentionally obsolete test APIs.
+            # Building them as part of ntos_ob produces hundreds of misleading
+            # type/calling-convention diagnostics under modern MSVC /WX.
+            if(MODULE_NAME STREQUAL "ob" AND
+               SOURCE_FILE_NORMALIZED MATCHES "(^|/)(uob|tob)\\.c$")
+                continue()
+            endif()
             if(MODULE_NAME STREQUAL "rtl" AND
                SOURCE_FILE_NORMALIZED MATCHES "(^|/)(generr|heapdbg|heapdll|heapleak|heaplowf)\\.c$")
                 continue()
@@ -98,12 +107,6 @@ function(add_wrk_module MODULE_NAME)
     if(ARG_SOURCES)
         add_library(${ARG_TARGET_NAME} STATIC ${ARG_SOURCES})
 
-        # Private kernel headers such as exp.h include sibling module headers
-        # such as ke/ki.h. The executive debugger sources also include kdp.h,
-        # which is shared by the kd64 debugger implementation and contains the
-        # x86-specific breakpoint definitions behind _X86_. Keep all private
-        # kernel directories explicit instead of relying on source-directory
-        # lookup behavior.
         set(MODULE_INCLUDE_DIRS
             ${ARG_SOURCE_DIR}
             ${CMAKE_SOURCE_DIR}/ntoskrnl/ke
@@ -129,11 +132,6 @@ function(add_wrk_module MODULE_NAME)
 
         target_include_directories(${ARG_TARGET_NAME} PRIVATE ${MODULE_INCLUDE_DIRS})
 
-        # WRK x86 kernel entry points are stdcall. The public ntexapi.h
-        # declarations use NTAPI (__stdcall), while the converted C sources
-        # retain the historical definition spelling without NTAPI. /Gz makes
-        # those definitions use the same calling convention and prevents MSVC
-        # C2373 redefinition errors.
         if(MSVC AND WRK_ARCH_NAME STREQUAL "x86")
             target_compile_options(${ARG_TARGET_NAME} PRIVATE /Gz)
             if(MODULE_NAME STREQUAL "rtl")

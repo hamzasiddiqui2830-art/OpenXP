@@ -37,19 +37,18 @@ Abstract:
  * universe. Do not include winternl.h here: the host SDK's winternl.h
  * redeclares structures that ntrtl.h intentionally defines itself.
  */
-#include <ntdef.h>
 #include <excpt.h>
 #include <stdarg.h>
+#include <ntdef.h>
 
 #ifndef NT_INCLUDED
 #define NT_INCLUDED
 #endif
 
-/*
- * Match the dependency order of the original WRK nt.h. The architecture
- * header must precede the kernel API headers because it supplies CONTEXT,
- * PCONTEXT, and other machine-specific definitions consumed by ntxcapi.h.
- */
+/* Keep the same public-header dependency order as the WRK nt.h. */
+#include <ntstatus.h>
+#include <ntkeapi.h>
+
 #if defined(_AMD64_)
 #include <ntamd64.h>
 #elif defined(_X86_)
@@ -60,17 +59,23 @@ Abstract:
 #include <ntarm64.h>
 #endif
 
-/* Kernel-exported scheduling and spin-lock types. */
-#include <ntkeapi.h>
-
-/* Security and process/thread API types consumed by ntrtl.h. */
 #include <ntseapi.h>
-#include <ntpsapi.h>
-
-/* Image, memory and exception definitions consumed by ntrtl.h. */
+#include <ntobapi.h>
 #include <ntimage.h>
-#include <ntmmapi.h>
+#include <ntldr.h>
+#include <ntpsapi.h>
 #include <ntxcapi.h>
+#include <ntlpcapi.h>
+#include <ntioapi.h>
+#include <ntiolog.h>
+#include <ntpoapi.h>
+#include <ntexapi.h>
+#include <ntmmapi.h>
+#include <ntregapi.h>
+#include <ntelfapi.h>
+#include <ntconfig.h>
+#include <ntnls.h>
+#include <ntpnpapi.h>
 
 /* WRK ntrtl.h consumes this declaration before its atom APIs are parsed. */
 typedef USHORT RTL_ATOM;

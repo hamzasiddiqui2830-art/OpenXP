@@ -37,8 +37,10 @@ endif()
 
 option(BUILD_NTOSKRNL_TESTS "Build ntoskrnl test targets" OFF)
 option(BUILD_RTL_BOOT_TARGETS "Build the legacy RTL boot libraries" OFF)
+option(BUILD_CHKREG "Build the legacy chkreg user-mode utility" OFF)
 message(STATUS "NTOSKRNL tests: ${BUILD_NTOSKRNL_TESTS}")
 message(STATUS "RTL boot targets: ${BUILD_RTL_BOOT_TARGETS}")
+message(STATUS "chkreg utility: ${BUILD_CHKREG}")
 
 project(wrk VERSION 5.2 LANGUAGES C ASM)
 
@@ -53,7 +55,7 @@ endif()
 option(ENABLE_HAL_ARM "Build ARM HAL" ON)
 option(ENABLE_HAL_UP "Build Uniprocessor HAL" OFF)
 option(ENABLE_HAL_ACPI "Build ACPI HAL" OFF)
-option(ENABLE_HAL_MPS "Build Multiprocessor System HAL" OFF)
+option(ENABLE_HAL_MPS "Build Multiprocessor HAL" OFF)
 option(ENABLE_HAL_APIC "Build ACPI APIC HAL" OFF)
 
 list(APPEND CMAKE_MODULE_PATH ${REACTOS_SOURCE_DIR}/cmake/modules)
@@ -106,13 +108,8 @@ set_wrk_compiler_flags()
 set_wrk_include_directories()
 add_compile_definitions(${ARCH_DEFINES})
 
-# Exact translation of ntos-old/rtl/up/sources:
-#   TARGETNAME=ntosrtl
-#   TARGETTYPE=LIBRARY
-#   C_DEFINES += -DNTOS_KERNEL_RUNTIME=1
-#   INCLUDES = ..; ../../inc; $(DDK_INC_PATH); $(DS_INC_PATH); $(SDKTOOLS_INC_PATH)
-#
-# The legacy SOURCES list is authoritative. Do not glob this directory.
+# Exact translation of ntos-old/rtl/up/sources. The legacy source list is
+# authoritative and is intentionally explicit; do not recursively glob RTL.
 set(RTL_KERNEL_SOURCES
     ${NTOSKRNL_SOURCE_DIR}/rtl/acledit.c
     ${NTOSKRNL_SOURCE_DIR}/rtl/add2stra.c
@@ -175,8 +172,7 @@ add_wrk_module(rtl
     SOURCES ${RTL_KERNEL_SOURCES}
 )
 
-# Legacy boot RTL targets from ntos-old/rtl/boot/sources and boot_dbg/sources.
-# These are separate libraries and are not part of the normal kernel RTL build.
+# Legacy boot RTL targets remain opt-in and separate from kernel RTL.
 if(BUILD_RTL_BOOT_TARGETS)
     set(RTL_BOOT_SOURCES
         ${NTOSKRNL_SOURCE_DIR}/rtl/assert.c
@@ -211,8 +207,6 @@ if(BUILD_RTL_BOOT_TARGETS)
 
     target_compile_definitions(bldrrtl PRIVATE BLDR_KERNEL_RUNTIME=1)
     target_compile_definitions(bldrrtl_dbg PRIVATE BLDR_KERNEL_RUNTIME=1)
-
-    set_source_files_properties(${NTOSKRNL_SOURCE_DIR}/rtl/xdecode.c PROPERTIES COMPILE_DEFINITIONS BLDR_KERNEL_RUNTIME=1)
     set_target_properties(bldrrtl bldrrtl_dbg PROPERTIES
         POSITION_INDEPENDENT_CODE OFF
         ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}
@@ -240,9 +234,16 @@ set(NTOS_MODULES
     init
 )
 
-foreach(MODULE ${NTOS_MODULES})
+foreach(MODULE IN LISTS NTOS_MODULES)
     add_wrk_module(${MODULE} SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/${MODULE})
 endforeach()
+
+# chkreg is the legacy sdktools user-mode PROGRAM from ntos-old/config/chkreg.
+# It is deliberately not included in NTOS_MODULE_LIBS and is not configured by
+# default, so Windows SDK user-mode headers cannot contaminate kernel targets.
+if(BUILD_CHKREG)
+    add_subdirectory(${NTOSKRNL_SOURCE_DIR}/config/chkreg)
+endif()
 
 if(BUILD_NTOSKRNL_TESTS)
     set(NTOSKRNL_TEST_DIRECTORIES
@@ -259,7 +260,7 @@ if(BUILD_NTOSKRNL_TESTS)
 endif()
 
 set(NTOS_MODULE_LIBS ntosrtl)
-foreach(MODULE ${NTOS_MODULES})
+foreach(MODULE IN LISTS NTOS_MODULES)
     list(APPEND NTOS_MODULE_LIBS ntos_${MODULE})
 endforeach()
 

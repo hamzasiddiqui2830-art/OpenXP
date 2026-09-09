@@ -16,6 +16,12 @@ Abstract:
 #ifndef _NTRTL386_
 #define _NTRTL386_
 
+/*
+ * The x86 public NT headers do not define the dispatcher-context structure;
+ * the exception-handler RTL routines only require its pointer type here.
+ */
+typedef struct _DISPATCHER_CONTEXT *PDISPATCHER_CONTEXT;
+
 EXCEPTION_DISPOSITION
 RtlpExecuteHandlerForException(
     IN PEXCEPTION_RECORD ExceptionRecord,

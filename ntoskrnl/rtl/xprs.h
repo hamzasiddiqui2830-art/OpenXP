@@ -7,19 +7,18 @@
 /*                                                                      */
 /* -------------------------------------------------------------------- */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-
+/*
+ * This is kernel RTL code. Do not pull the host C runtime headers into the
+ * kernel translation unit: several MSVC CRT headers import the Windows SDK
+ * SAL header. The encoder uses only the declarations supplied by the WRK
+ * sources and xpress.h.
+ */
 #include "xpress.h"
 
 #ifdef _MSC_VER
 #pragma code_seg ("PAGELK")
 #pragma optimize ("tgaw", on)
 #endif
-
-
 
 /* ------------------------ Configuration ----------------------------- */
 /*                          -------------                               */
@@ -84,38 +83,35 @@
 #define DECODE_BITS     10
 #endif
 
-
 /* ---------------------- Useful types ------------------------ */
 /*                        ------------                          */
 
-#define uchar unsigned char     /* useful types */
+#define uchar unsigned char
 #define schar signed char
 
 #ifndef __alpha
 #define __unaligned
 #endif
 
-#define int4 int                /* any long enough integral type            */
-#define int2 short              /* assert (2*sizeof(int2) == sizeof (int4)) */
-#define xint int                /* any int type >= 32 bits && >= sizeof (bitmask4) */
-#define int32 int               /* 32 bit type */
-#define int16 short             /* 16 bit type */
-
+#define int4 int
+#define int2 short
+#define xint int
+#define int32 int
+#define int16 short
 
 #if defined (_M_IX86) && !defined (i386)
-#define i386 1          // ifdef i386 asm code will be used for some encodings
+#define i386 1
 #endif
 
 #define tag_t    int32
 
 #ifdef i386
-#define bitmask4 int32  // must be 32 bit for i386
+#define bitmask4 int32
 #define bitmask2 int16
 #else
-#define bitmask4 int4   // not important otherwise; shall not exceed xint
+#define bitmask4 int4
 #define bitmask2 int2
 #endif
-
 
 #define uint4 unsigned int4
 #define uint2 unsigned int2
@@ -132,11 +128,11 @@
 #else
 #define INLINE __inline
 #endif
-#pragma warning(disable:4127)   /* conditional expression is constant */
-#pragma warning(disable:4711)   /* function XXX selected for automatic inline expansion */
-#pragma warning(disable:4710)   /* function XXX not expanded */
-#pragma warning(disable:4100)   /* unreferenced formal paramter */
-#pragma warning(disable:4068)   /* bogus "unknown pragma" */
+#pragma warning(disable:4127)
+#pragma warning(disable:4711)
+#pragma warning(disable:4710)
+#pragma warning(disable:4100)
+#pragma warning(disable:4068)
 #endif
 
 #ifndef DEBUG
@@ -169,7 +165,6 @@
 
 #define MIN_SIZE        (MIN_SIZE0 + CRC_STAMP_SIZE)
 
-
 #define CRC32_FIRST     0
 #if SUPPORT_CRC
 #define CRC_STAMP_SIZE  sizeof (uint32)
@@ -180,6 +175,5 @@
 #if DEBUG
 extern long xxx[];
 #endif
-
 
 #endif /* _XPRS_H_ */

@@ -35,10 +35,7 @@ function(add_wrk_module MODULE_NAME)
     endif()
 
     if(NOT ARG_SOURCES)
-        file(GLOB_RECURSE MODULE_C_SOURCES CONFIGURE_DEPENDS
-            "${ARG_SOURCE_DIR}/*.c"
-        )
-
+        file(GLOB_RECURSE MODULE_C_SOURCES CONFIGURE_DEPENDS "${ARG_SOURCE_DIR}/*.c")
         set(MODULE_C_SOURCES_FILTERED "")
         foreach(SOURCE_FILE IN LISTS MODULE_C_SOURCES)
             file(TO_CMAKE_PATH "${SOURCE_FILE}" SOURCE_FILE_NORMALIZED)
@@ -52,21 +49,15 @@ function(add_wrk_module MODULE_NAME)
         set(MODULE_C_SOURCES ${MODULE_C_SOURCES_FILTERED})
 
         if(WRK_ARCH_NAME STREQUAL "x86")
-            file(GLOB ARCH_SPECIFIC_SOURCES CONFIGURE_DEPENDS
-                "${ARG_SOURCE_DIR}/i386/*.c"
-            )
+            file(GLOB ARCH_SPECIFIC_SOURCES CONFIGURE_DEPENDS "${ARG_SOURCE_DIR}/i386/*.c")
             list(APPEND MODULE_C_SOURCES ${ARCH_SPECIFIC_SOURCES})
         elseif(WRK_ARCH_NAME STREQUAL "amd64")
-            file(GLOB ARCH_SPECIFIC_SOURCES CONFIGURE_DEPENDS
-                "${ARG_SOURCE_DIR}/amd64/*.c"
-            )
+            file(GLOB ARCH_SPECIFIC_SOURCES CONFIGURE_DEPENDS "${ARG_SOURCE_DIR}/amd64/*.c")
             list(APPEND MODULE_C_SOURCES ${ARCH_SPECIFIC_SOURCES})
         endif()
 
         if(WRK_ARCH_NAME STREQUAL "x86")
-            file(GLOB MODULE_ASM_SOURCES CONFIGURE_DEPENDS
-                "${ARG_SOURCE_DIR}/i386/*.asm"
-            )
+            file(GLOB MODULE_ASM_SOURCES CONFIGURE_DEPENDS "${ARG_SOURCE_DIR}/i386/*.asm")
             if(NOT MSVC)
                 set(MODULE_ASM_SOURCES_CONVERTED "")
                 foreach(ASM_FILE ${MODULE_ASM_SOURCES})
@@ -78,17 +69,16 @@ function(add_wrk_module MODULE_NAME)
                 set(MODULE_ASM_SOURCES ${MODULE_ASM_SOURCES_CONVERTED})
             endif()
         elseif(WRK_ARCH_NAME STREQUAL "amd64")
-            file(GLOB MODULE_ASM_SOURCES CONFIGURE_DEPENDS
-                "${ARG_SOURCE_DIR}/amd64/*.asm"
-            )
+            file(GLOB MODULE_ASM_SOURCES CONFIGURE_DEPENDS "${ARG_SOURCE_DIR}/amd64/*.asm")
             if(NOT MSVC)
                 set(MODULE_ASM_SOURCES_CONVERTED "")
                 foreach(ASM_FILE ${MODULE_ASM_SOURCES})
                     get_filename_component(ASM_NAME ${ASM_FILE} NAME_WE)
                     set(CONVERTED_FILE "${ARG_OUTPUT_DIR}/${ASM_NAME}.S")
                     configure_file(${ASM_FILE} ${CONVERTED_FILE} COPYONLY)
-                    list(APPEND MODULE_ASM_SOURCES ${CONVERTED_FILE})
+                    list(APPEND MODULE_ASM_SOURCES_CONVERTED ${CONVERTED_FILE})
                 endforeach()
+                set(MODULE_ASM_SOURCES ${MODULE_ASM_SOURCES_CONVERTED})
             endif()
         else()
             set(MODULE_ASM_SOURCES "")
@@ -103,7 +93,7 @@ function(add_wrk_module MODULE_NAME)
         set(MODULE_INCLUDE_DIRS
             ${CMAKE_SOURCE_DIR}/ntoskrnl/inc
             ${CMAKE_SOURCE_DIR}/ntoskrnl/rtl
-            ${CMAKE_SOURCE_DIR}/ntoskrnl/rtl/include
+            ${CMAKE_SOURCE_DIR}/ntos-old/rtl
             ${CMAKE_SOURCE_DIR}/sdk/ddk/inc
             ${CMAKE_SOURCE_DIR}/sdk/internal/ds/inc
             ${CMAKE_SOURCE_DIR}/sdk/internal/sdktools/inc
@@ -123,10 +113,7 @@ function(add_wrk_module MODULE_NAME)
         target_include_directories(ntos_${MODULE_NAME} PRIVATE ${MODULE_INCLUDE_DIRS})
 
         if(MSVC AND WRK_ARCH_NAME STREQUAL "x86" AND MODULE_NAME STREQUAL "rtl")
-            set_source_files_properties(
-                ${MODULE_C_SOURCES}
-                PROPERTIES COMPILE_OPTIONS "/Gz;/wd4101"
-            )
+            set_source_files_properties(${MODULE_C_SOURCES} PROPERTIES COMPILE_OPTIONS "/Gz;/wd4101")
         endif()
 
         set_target_properties(ntos_${MODULE_NAME} PROPERTIES
@@ -147,13 +134,11 @@ function(parse_wrk_makefile MAKEFILE_PATH OUT_VAR)
     if(NOT EXISTS ${MAKEFILE_PATH})
         return()
     endif()
-
     file(READ ${MAKEFILE_PATH} MAKEFILE_CONTENT)
     string(REGEX MATCHALL "asobjs[ \t]*=[ \t]*([^\n]*)" AS_OBJS_MATCH "${MAKEFILE_CONTENT}")
     string(REGEX MATCHALL "ccobjs[ \t]*=[ \t]*([^\n]*)" CC_OBJS_MATCH "${MAKEFILE_CONTENT}")
     string(REGEX MATCHALL "ccarchobjs[ \t]*=[ \t]*([^\n]*)" CCARCH_OBJS_MATCH "${MAKEFILE_CONTENT}")
     set(OBJECT_FILES "")
-
     foreach(MATCH ${AS_OBJS_MATCH} ${CC_OBJS_MATCH} ${CCARCH_OBJS_MATCH})
         string(REGEX REPLACE "^[a-z]+[ \t]*=[ \t]*" "" OBJ_LIST "${MATCH}")
         string(REPLACE "\\" "/" OBJ_LIST "${OBJ_LIST}")
@@ -167,7 +152,6 @@ function(parse_wrk_makefile MAKEFILE_PATH OUT_VAR)
             endif()
         endforeach()
     endforeach()
-
     set(${OUT_VAR} ${OBJECT_FILES} PARENT_SCOPE)
 endfunction()
 

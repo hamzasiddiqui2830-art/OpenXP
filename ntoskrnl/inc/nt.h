@@ -31,11 +31,10 @@ Abstract:
 /*
  * ntrtl.h is included immediately by ntos.h. Establish the WRK public NT
  * types it consumes before entering the host Windows SDK include chain.
- * In particular, ntrtl.h uses RTL_ATOM/PRTL_ATOM, CSHORT and
- * PNT_PRODUCT_TYPE, which are supplied by these SDK headers.
+ * ntdef.h supplies CSHORT and PNT_PRODUCT_TYPE, while winternl.h supplies
+ * RTL_ATOM/PRTL_ATOM.
  */
 #include <ntdef.h>
-#include <ntexapi.h>
 
 /*
  * Load the NTOSKRNL SpecStrings compatibility layer explicitly before

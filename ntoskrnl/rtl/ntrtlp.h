@@ -63,6 +63,7 @@ extern CONST CCHAR RtlpBitsClearTotal[256];
 #define RtlpBitsSetTotal(Byte) RtlpBitsClearTotal[(~(Byte) & 0xFF)]
 
 extern PUSHORT Nls844UnicodeUpcaseTable;
+extern PUSHORT Nls844UnicodeLowercaseTable;
 #define LOBYTE(w) ((UCHAR)((w)))
 #define HIBYTE(w) ((UCHAR)(((USHORT)(w) >> 8) & 0xFF))
 #define GET8(w) ((ULONG)(((w) >> 8) & 0xff))
@@ -88,16 +89,3 @@ typedef NTSTATUS (*PRTL_RESERVE_CHUNK)(IN OUT PUCHAR *, IN PUCHAR, OUT PUCHAR *,
 NTSTATUS RtlCompressWorkSpaceSizeLZNT1(IN USHORT, OUT PULONG, OUT PULONG);
 NTSTATUS RtlCompressBufferLZNT1(IN USHORT, IN PUCHAR, IN ULONG, OUT PUCHAR, IN ULONG, IN ULONG, OUT PULONG, IN PVOID);
 NTSTATUS RtlDecompressBufferLZNT1(OUT PUCHAR, IN ULONG, IN PUCHAR, IN ULONG, OUT PULONG);
-NTSTATUS RtlDecompressFragmentLZNT1(OUT PUCHAR, IN ULONG, IN PUCHAR, IN ULONG, IN ULONG, OUT PULONG, IN PVOID);
-NTSTATUS RtlDescribeChunkLZNT1(IN OUT PUCHAR *, IN PUCHAR, OUT PUCHAR *, OUT PULONG);
-NTSTATUS RtlReserveChunkLZNT1(IN OUT PUCHAR *, IN PUCHAR, OUT PUCHAR *, IN ULONG);
-
-// Architecture-specific debugger service entry points used by debug.c.
-NTSTATUS DebugPrint(IN PSTRING Output, IN ULONG ComponentId, IN ULONG Level);
-ULONG DebugPrompt(IN PSTRING Output, IN PSTRING Input);
-
-#ifndef NUMBER_OF
-#define NUMBER_OF(x) (sizeof(x) / sizeof((x)[0]))
-#endif
-
-#endif /* _NTRTLP_ */

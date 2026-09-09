@@ -8,14 +8,13 @@
 #include <nt.h>
 #include <ntrtl.h>
 #include <stdio.h>
-#include <tchar.h>
 
 #define RtlIpv4AddressToStringT RtlIpv4AddressToStringW
 #define RtlIpv6AddressToStringT RtlIpv6AddressToStringW
 #define RtlIpv4AddressToStringExT RtlIpv4AddressToStringExW
 #define RtlIpv6AddressToStringExT RtlIpv6AddressToStringExW
 
-/* nt.h is force-included, so UNICODE cannot select LPTSTR in ntdef.h. */
+/* nt.h is force-included, so use explicit wide types rather than LPTSTR. */
 #define LPTSTR PWSTR
 #define TCHAR WCHAR
 #define _T(x) L##x

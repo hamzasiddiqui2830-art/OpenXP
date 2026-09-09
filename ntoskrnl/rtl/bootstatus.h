@@ -7,8 +7,8 @@ Module Name:
 Abstract:
 
     Private boot status data definitions used by the WRK RTL boot-status
-    implementation.  Kept local so the build does not depend on a Windows SDK
-    bootstatus header.
+    implementation.  The public RTL_BSD_ITEM_TYPE definition is provided by
+    the local WRK ntrtl.h header.
 
 --*/
 
@@ -20,16 +20,6 @@ extern "C" {
 #endif
 
 #define BSD_FILE_NAME L"\\bootstat.dat"
-
-typedef enum _RTL_BSD_ITEM_TYPE {
-    RtlBsdItemVersionNumber = 0,
-    RtlBsdItemProductType,
-    RtlBsdItemAabEnabled,
-    RtlBsdItemAabTimeout,
-    RtlBsdItemLastBootSucceeded,
-    RtlBsdItemLastBootShutdown,
-    RtlBsdItemMax
-} RTL_BSD_ITEM_TYPE;
 
 typedef struct _BSD_BOOT_STATUS_DATA {
     ULONG Version;

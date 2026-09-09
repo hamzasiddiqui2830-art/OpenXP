@@ -146,6 +146,20 @@ function(add_wrk_module MODULE_NAME)
         
         # Ensure module uses ReactOS SDK includes with priority
         target_include_directories(ntos_${MODULE_NAME} BEFORE PRIVATE ${MODULE_INCLUDE_DIRS})
+
+        # The WRK x86 RTL sources define exported RTL routines without an
+        # explicit NTAPI token, while ntrtl.h declares those routines stdcall.
+        # Apply the x86 stdcall default only to these implementation units so
+        # their ABI matches the WRK declarations without changing the calling
+        # convention of unrelated kernel code.
+        if(MSVC AND WRK_ARCH_NAME STREQUAL "x86" AND MODULE_NAME STREQUAL "rtl")
+            set_source_files_properties(
+                ${CMAKE_SOURCE_DIR}/ntoskrnl/rtl/add2stra.c
+                ${CMAKE_SOURCE_DIR}/ntoskrnl/rtl/add2strw.c
+                ${CMAKE_SOURCE_DIR}/ntoskrnl/rtl/avltable.c
+                PROPERTIES COMPILE_OPTIONS "/Gz"
+            )
+        endif()
         
         set_target_properties(ntos_${MODULE_NAME} PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY ${ARG_OUTPUT_DIR}

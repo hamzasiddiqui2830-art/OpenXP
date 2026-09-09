@@ -1,20 +1,14 @@
 #ifndef _WRK_MSVC_COMPAT_H_
 #define _WRK_MSVC_COMPAT_H_
 
-/* The force-included header is processed before each source file. Pull in
- * the kernel base types before declaring WRK compatibility helpers. */
 #include "ntos.h"
 
-/* The x86 architecture header and mi.h both contain the WRK TB timestamp
- * helper. Pre-include the architecture copy under a private name so mi.h's
- * generic copy remains the public helper. */
 #if defined(_MSC_VER) && defined(_X86_)
 #define MiCompareTbFlushTimeStamp MiCompareTbFlushTimeStamp_X86
 #include "../mm/i386/mi386.h"
 #undef MiCompareTbFlushTimeStamp
 #endif
 
-/* WRK uses compiler-neutral exception keywords that MSVC C does not expose. */
 #if defined(_MSC_VER) && !defined(__cplusplus)
 #ifndef try
 #define try __try
@@ -25,65 +19,48 @@
 #ifndef finally
 #define finally __finally
 #endif
+/* WRK uses `leave;` to exit a try body while still executing finally. */
+#ifndef leave
+#define leave __leave
+#endif
 #endif
 
-/* Architecture-independent WRK memory-manager constants missing from the
- * reduced OpenXP architecture headers. */
 #ifndef MAX_PAGE_FILES
 #define MAX_PAGE_FILES 16
 #endif
-
 #ifndef MM_MINIMUM_VA_FOR_LARGE_PAGE
 #define MM_MINIMUM_VA_FOR_LARGE_PAGE 0x400000UL
 #endif
-
 #ifndef MM_PTE_EXECUTE
 #define MM_PTE_EXECUTE 0x0UL
 #endif
-
 #ifndef MM_PTE_EXECUTE_READ
 #define MM_PTE_EXECUTE_READ 0x0UL
 #endif
-
 #ifndef MM_PTE_EXECUTE_READWRITE
 #define MM_PTE_EXECUTE_READWRITE 0x800UL
 #endif
-
 #ifndef MM_PTE_EXECUTE_WRITECOPY
 #define MM_PTE_EXECUTE_WRITECOPY 0x200UL
 #endif
-
 #ifndef GET_PAGING_FILE_NUMBER
 #define GET_PAGING_FILE_NUMBER(_PteContents) ((_PteContents).u.Soft.PageFileLow)
 #endif
-
 #ifndef GET_PAGING_FILE_OFFSET
 #define GET_PAGING_FILE_OFFSET(_PteContents) ((_PteContents).u.Soft.PageFileHigh)
 #endif
-
-/* Reduced WRK memory-manager headers do not provide the PTE write helpers.
- * These preserve the WRK operation at the source level while avoiding the
- * missing architecture-specific inline wrappers. */
 #ifndef MI_WRITE_ZERO_PTE
-#define MI_WRITE_ZERO_PTE(_PointerPte) \
-    RtlZeroMemory((_PointerPte), sizeof(MMPTE))
+#define MI_WRITE_ZERO_PTE(_PointerPte) RtlZeroMemory((_PointerPte), sizeof(MMPTE))
 #endif
-
 #ifndef MI_WRITE_VALID_PTE
-#define MI_WRITE_VALID_PTE(_PointerPte, _TempPte) \
-    (*(_PointerPte) = (_TempPte))
+#define MI_WRITE_VALID_PTE(_PointerPte, _TempPte) (*(_PointerPte) = (_TempPte))
 #endif
-
 #ifndef MI_WRITE_INVALID_PTE
-#define MI_WRITE_INVALID_PTE(_PointerPte, _TempPte) \
-    (*(_PointerPte) = (_TempPte))
+#define MI_WRITE_INVALID_PTE(_PointerPte, _TempPte) (*(_PointerPte) = (_TempPte))
 #endif
-
 #ifndef MI_SET_PFN_DELETED
-#define MI_SET_PFN_DELETED(_Pfn) \
-    ((_Pfn)->PteAddress = (PMMPTE)((ULONG_PTR)(_Pfn)->PteAddress | 1))
+#define MI_SET_PFN_DELETED(_Pfn) ((_Pfn)->PteAddress = (PMMPTE)((ULONG_PTR)(_Pfn)->PteAddress | 1))
 #endif
-
 #ifndef MI_MAKE_VALID_PTE_TRANSITION
 #define MI_MAKE_VALID_PTE_TRANSITION(_Pte, _Protect) do { \
     (_Pte).u.Soft.Transition = 1; \
@@ -92,18 +69,13 @@
     (_Pte).u.Soft.Protection = (_Protect); \
 } while (0)
 #endif
-
 #ifndef MI_CAPTURE_DIRTY_BIT_TO_PFN
 #define MI_CAPTURE_DIRTY_BIT_TO_PFN(_PointerPte, _Pfn) ((void)0)
 #endif
-
 #ifndef MI_IS_PHYSICAL_ADDRESS
 #define MI_IS_PHYSICAL_ADDRESS(_Address) (FALSE)
 #endif
 
-/* The reduced PRCB does not carry the newer color bookkeeping fields. Keep
- * the existing PageColor as the backing value so the WRK inline remains
- * compilable on this x86 layout. */
 #if defined(_X86_)
 #ifndef SecondaryColorMask
 #define SecondaryColorMask PageColor
@@ -113,8 +85,6 @@
 #endif
 #endif
 
-/* The reduced thread object has no separate working-set ownership bits.
- * Reuse the passive thread flags as storage for these legacy WRK markers. */
 #ifndef OwnsSystemWorkingSetExclusive
 #define OwnsSystemWorkingSetExclusive MemoryMaker
 #endif
@@ -134,7 +104,6 @@
 #define OwnsProcessWorkingSetShared KeyedEventInUse
 #endif
 
-/* WRK waits for a TB timestamp update while the timestamp is locked. */
 #ifndef KeLoopTbFlushTimeStampUnlocked
 static __inline VOID
 KeLoopTbFlushTimeStampUnlocked(VOID)
@@ -145,13 +114,9 @@ KeLoopTbFlushTimeStampUnlocked(VOID)
 }
 #endif
 
-/* sysload.c uses the WRK routine before its implementation was ported. */
 #ifndef WRK_MM_CHECK_SYSTEM_IMAGE_DECLARED
 #define WRK_MM_CHECK_SYSTEM_IMAGE_DECLARED
-NTSTATUS
-MmCheckSystemImage(
-    IN HANDLE ImageFileHandle
-    );
+NTSTATUS MmCheckSystemImage(IN HANDLE ImageFileHandle);
 #endif
 
 #endif /* _WRK_MSVC_COMPAT_H_ */

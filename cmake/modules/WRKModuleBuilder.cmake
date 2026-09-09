@@ -84,21 +84,12 @@ function(add_wrk_module MODULE_NAME)
                     get_filename_component(ASM_NAME ${ASM_FILE} NAME_WE)
                     set(CONVERTED_FILE "${ARG_OUTPUT_DIR}/${ASM_NAME}.S")
                     configure_file(${ASM_FILE} ${CONVERTED_FILE} COPYONLY)
-                    list(APPEND MODULE_ASM_SOURCES_CONVERTED ${MODULE_ASM_SOURCES_CONVERTED})
+                    list(APPEND MODULE_ASM_SOURCES_CONVERTED ${CONVERTED_FILE})
                 endforeach()
                 set(MODULE_ASM_SOURCES ${MODULE_ASM_SOURCES_CONVERTED})
             endif()
         else()
             set(MODULE_ASM_SOURCES "")
-        endif()
-
-        if(WRK_ARCH_NAME STREQUAL "x86")
-            file(GLOB MODULE_ASM_SOURCES CONFIGURE_DEPENDS "${ARG_SOURCE_DIR}/i386/*.asm")
-            if(MSVC)
-                # MSVC assembles the original MASM source directly.
-            endif()
-        elseif(WRK_ARCH_NAME STREQUAL "amd64")
-            file(GLOB MODULE_ASM_SOURCES CONFIGURE_DEPENDS "${ARG_SOURCE_DIR}/amd64/*.asm")
         endif()
 
         set(ARG_SOURCES ${MODULE_C_SOURCES} ${MODULE_ASM_SOURCES})
@@ -107,6 +98,10 @@ function(add_wrk_module MODULE_NAME)
     if(ARG_SOURCES)
         add_library(${ARG_TARGET_NAME} STATIC ${ARG_SOURCES})
 
+        # Private kernel headers such as exp.h include sibling module headers
+        # such as ke/ki.h. Keep the module source directory and kernel module
+        # directories on the include path rather than relying on incidental
+        # compiler working-directory behavior.
         set(MODULE_INCLUDE_DIRS
             ${ARG_SOURCE_DIR}
             ${CMAKE_SOURCE_DIR}/ntoskrnl/ke

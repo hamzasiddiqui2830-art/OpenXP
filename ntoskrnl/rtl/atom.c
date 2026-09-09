@@ -400,7 +400,7 @@ RtlEmptyAtomTable(
 {
     NTSTATUS Status;
     PRTL_ATOM_TABLE p = (PRTL_ATOM_TABLE)AtomTableHandle;
-    PRTL_ATOM_TABLE_ENTRY a, aNext, *pa, *pa1;
+    PRTL_ATOM_TABLE_ENTRY a, *pa, *pa1;
     ULONG i;
 
     RTL_PAGED_CODE();
@@ -796,7 +796,7 @@ RtlPinAtomInAtomTable(
 {
     NTSTATUS Status;
     PRTL_ATOM_TABLE p = (PRTL_ATOM_TABLE)AtomTableHandle;
-    PRTL_ATOM_TABLE_ENTRY a, *pa;
+    PRTL_ATOM_TABLE_ENTRY a;
 
     RTL_PAGED_CODE();
     if (!RtlpLockAtomTable( p )) {

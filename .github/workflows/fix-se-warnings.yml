@@ -1,6 +1,7 @@
 name: fix-se-build
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
 jobs:
   patch:
     runs-on: ubuntu-latest
@@ -12,20 +13,17 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
           p = Path('ntoskrnl/se/accessck.c')
           s = p.read_text()
           s = s.replace('    ULONG i,j;\n    PVOID Ace;\n    ULONG AceCount;\n    ULONG Index;\n    ULONG ResultListIndex;\n', '    ULONG j;\n')
           s = s.replace('    PVOID Ace;\n    ULONG AceCount;\n\n    ULONG i;\n    ULONG j;\n    ULONG Index;\n', '')
           p.write_text(s)
-
           p = Path('sdk/sdk/inc/msaudite.h')
           s = p.read_text()
           marker = '#define SE_ADT_MAX_AUDIT_ID      0x5ff\n'
           if 'SE_AUDITID_AUDITS_DISCARDED' not in s:
               s = s.replace(marker, marker + '\n#define SE_AUDITID_AUDITS_DISCARDED      ((ULONG)0x00000204L)\n')
           p.write_text(s)
-
           p = Path('ntoskrnl/se/adtlog.c')
           s = p.read_text()
           if 'SE_AUDITID_AUDITS_DISCARDED' not in s:

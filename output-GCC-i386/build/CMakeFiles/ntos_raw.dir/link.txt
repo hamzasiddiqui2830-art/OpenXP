@@ -1,2 +1,0 @@
-/usr/bin/ar qc obj/GCC-x86/libntosraw.a CMakeFiles/ntos_raw.dir/ntoskrnl/raw/cleanup.c.o CMakeFiles/ntos_raw.dir/ntoskrnl/raw/close.c.o CMakeFiles/ntos_raw.dir/ntoskrnl/raw/create.c.o CMakeFiles/ntos_raw.dir/ntoskrnl/raw/fileinfo.c.o CMakeFiles/ntos_raw.dir/ntoskrnl/raw/fsctrl.c.o CMakeFiles/ntos_raw.dir/ntoskrnl/raw/rawdisp.c.o CMakeFiles/ntos_raw.dir/ntoskrnl/raw/rawinit.c.o CMakeFiles/ntos_raw.dir/ntoskrnl/raw/readwrit.c.o CMakeFiles/ntos_raw.dir/ntoskrnl/raw/strucsup.c.o CMakeFiles/ntos_raw.dir/ntoskrnl/raw/volinfo.c.o
-/usr/bin/ranlib obj/GCC-x86/libntosraw.a

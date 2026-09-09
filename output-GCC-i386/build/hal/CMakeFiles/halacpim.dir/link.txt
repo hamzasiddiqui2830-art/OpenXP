@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../lib/libhalacpim.a CMakeFiles/halacpim.dir/halacpim/halacpim.c.o CMakeFiles/halacpim.dir/hal_stub.c.o
-/usr/bin/ranlib ../lib/libhalacpim.a

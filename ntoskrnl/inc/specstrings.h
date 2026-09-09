@@ -6,32 +6,31 @@ Module Name:
 
 Abstract:
 
-    NTOSKRNL compatibility shim for the legacy WRK SpecStrings header.
-    Modern MSVC provides the legacy __in/__out/__ecount family through
-    sal.h. The WRK copy redeclares those macros with older SAL primitives,
-    which conflicts with current MSVC and turns into C4005 under /WX.
+    NTOSKRNL compatibility implementation of the WRK SpecStrings header.
 
-    Keep the WRK implementation for non-MSVC builds. On MSVC, use the
-    compiler's SAL definitions and provide only WRK-specific compatibility
-    aliases that are not supplied by sal.h.
+    This header is deliberately self-contained.  Do not include the host
+    compiler/Windows SDK sal.h here: the WRK build supplies its own SDK and
+    annotation vocabulary and must remain independent of the host SDK.
+
+    The annotations are compile-time metadata only.  For the kernel build,
+    they are represented by no-op compatibility macros unless a local
+    definition is already available.
 
 --*/
 
 #ifndef NTOSKRNL_SPECSTRINGS_H
 #define NTOSKRNL_SPECSTRINGS_H
 
-#if defined(_MSC_VER)
-
-#include <sal.h>
-
+/*
+ * Base SpecStrings marker.
+ */
 #ifndef __specstrings
 #define __specstrings
 #endif
 
 /*
- * Windows native headers still use these legacy SpecStrings entry-point
- * annotations. Modern sal.h does not provide the old __kernel_entry family,
- * so keep them as no-op compatibility annotations for the WRK build.
+ * Legacy WRK annotations.  Keep these local rather than importing the
+ * compiler's sal.h, whose definitions conflict with the WRK SDK macros.
  */
 #ifndef __control_entrypoint
 #define __control_entrypoint(category)
@@ -44,14 +43,6 @@ Abstract:
 #endif
 #ifndef __gdi_entry
 #define __gdi_entry
-#endif
-
-/* WRK-specific aliases which are not part of the modern SAL surface. */
-#ifndef __out_awcount
-#define __out_awcount(expr,size) __out_bcount(size)
-#endif
-#ifndef __in_awcount
-#define __in_awcount(expr,size) __in_bcount(size)
 #endif
 #ifndef __data_entrypoint
 #define __data_entrypoint(category)
@@ -186,10 +177,106 @@ Abstract:
 #define __struct_xcount(size)
 #endif
 
-#else
-
-#include "../../sdk/sdk/inc/specstrings.h"
-
+/*
+ * Core legacy parameter annotations.  These are intentionally no-ops in
+ * this self-contained SDK.  They preserve source compatibility without
+ * importing host SAL definitions.
+ */
+#ifndef __in
+#define __in
+#endif
+#ifndef __out
+#define __out
+#endif
+#ifndef __inout
+#define __inout
+#endif
+#ifndef __in_opt
+#define __in_opt
+#endif
+#ifndef __out_opt
+#define __out_opt
+#endif
+#ifndef __inout_opt
+#define __inout_opt
+#endif
+#ifndef __in_ecount
+#define __in_ecount(size)
+#endif
+#ifndef __in_bcount
+#define __in_bcount(size)
+#endif
+#ifndef __out_ecount
+#define __out_ecount(size)
+#endif
+#ifndef __out_bcount
+#define __out_bcount(size)
+#endif
+#ifndef __inout_ecount
+#define __inout_ecount(size)
+#endif
+#ifndef __inout_bcount
+#define __inout_bcount(size)
+#endif
+#ifndef __in_ecount_opt
+#define __in_ecount_opt(size)
+#endif
+#ifndef __in_bcount_opt
+#define __in_bcount_opt(size)
+#endif
+#ifndef __out_ecount_opt
+#define __out_ecount_opt(size)
+#endif
+#ifndef __out_bcount_opt
+#define __out_bcount_opt(size)
+#endif
+#ifndef __inout_ecount_opt
+#define __inout_ecount_opt(size)
+#endif
+#ifndef __inout_bcount_opt
+#define __inout_bcount_opt(size)
+#endif
+#ifndef __in_ecount_part
+#define __in_ecount_part(size,init)
+#endif
+#ifndef __in_bcount_part
+#define __in_bcount_part(size,init)
+#endif
+#ifndef __out_ecount_part
+#define __out_ecount_part(size,init)
+#endif
+#ifndef __out_bcount_part
+#define __out_bcount_part(size,init)
+#endif
+#ifndef __inout_ecount_part
+#define __inout_ecount_part(size,init)
+#endif
+#ifndef __inout_bcount_part
+#define __inout_bcount_part(size,init)
+#endif
+#ifndef __in_ecount_full
+#define __in_ecount_full(size)
+#endif
+#ifndef __in_bcount_full
+#define __in_bcount_full(size)
+#endif
+#ifndef __out_ecount_full
+#define __out_ecount_full(size)
+#endif
+#ifndef __out_bcount_full
+#define __out_bcount_full(size)
+#endif
+#ifndef __inout_ecount_full
+#define __inout_ecount_full(size)
+#endif
+#ifndef __inout_bcount_full
+#define __inout_bcount_full(size)
+#endif
+#ifndef __in_awcount
+#define __in_awcount(expr,size)
+#endif
+#ifndef __out_awcount
+#define __out_awcount(expr,size)
 #endif
 
 #endif /* NTOSKRNL_SPECSTRINGS_H */

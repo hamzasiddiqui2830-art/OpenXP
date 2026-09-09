@@ -1,11 +1,11 @@
-# ReactOS-WRK - Multi-Compiler Build System
+# OpenXP Multi-Compiler Build System
 
-This document describes the enhanced build system for the ReactOS-WRK that supports multiple compilers and architectures.
+This document describes the OpenXP build system and its supported compilers and architectures.
 
 ## Features
 
 ### Compiler Support
-- **Visual Studio 2022** (MSVC) - Native Windows development
+- **Visual Studio** (MSVC) - Native Windows development
 - **MinGW-w64** - Cross-compilation from Linux/Windows
 - **GCC** - Native or cross-compilation
 - **Clang** - Alternative compiler with MSVC compatibility
@@ -18,196 +18,167 @@ This document describes the enhanced build system for the ReactOS-WRK that suppo
 ### Output Directory Structure
 Build outputs are organized by compiler and architecture:
 ```
-output-VS-i386/      # Visual Studio 32-bit build
-output-VS-amd64/     # Visual Studio 64-bit build
-output-MinGW-i386/   # MinGW 32-bit build
-output-MinGW-amd64/  # MinGW 64-bit build
-output-GCC-i386/     # GCC 32-bit build
-output-GCC-amd64/    # GCC 64-bit build
-output-LLVM-i386/    # LLVM 32-bit build
-output-LLVM-amd64/   # LLVM 64-bit build
+output-vs-i386/
+output-vs-amd64/
+output-mingw-i386/
+output-mingw-amd64/
+output-gcc-i386/
+output-gcc-amd64/
+output-llvm-i386/
+output-llvm-amd64/
 ```
 
 ## HAL Stub Implementation
 
-A stub Hardware Abstraction Layer (`hal_stub.c`) has been created in the root directory to eliminate dependency on precompiled HAL DLLs. This provides:
-
-- `HalPrivateDispatchTable` - Main HAL dispatch table
-- Stub implementations of common HAL functions
-- All functions return safe defaults or STATUS_NOT_IMPLEMENTED
+A stub Hardware Abstraction Layer (`hal_stub.c`) is provided to eliminate dependency on precompiled HAL DLLs. It provides safe defaults or `STATUS_NOT_IMPLEMENTED` for common HAL entry points.
 
 ## Assembly File Handling
 
 The build system automatically handles assembly files:
 - **MSVC**: Uses MASM-style `.asm` files directly
-- **MinGW/GCC/Clang/LLVM**: Converts `.asm` files to `.S` format for GAS assembler
+- **MinGW/GCC/Clang/LLVM**: Copies `.asm` files to `.S` files for the GAS toolchain
 
-Note: The conversion is a simple copy. For production use, you may need to convert MASM syntax to GAS syntax manually.
+Note: the conversion is currently a file-format copy. MASM and GAS syntax are not identical, so non-MSVC builds may require additional assembly conversion work.
 
 ## Building
 
-### Using the Build Script (Recommended)
+### Using the configure script (recommended)
+
+The build entry point now lives in the project root.
 
 ```bash
-cd /workspace/build_scripts
+# Auto-detect compiler and architecture
+./configure.sh
 
-# Build with MinGW for x86
-./build-wrk.sh mingw i386
-
-# Build with MinGW for amd64
-./build-wrk.sh mingw amd64
-
-# Build with GCC for x86
-./build-wrk.sh gcc i386
-
-# Build with Clang for amd64
-./build-wrk.sh clang amd64
-
-# Build with LLVM for x86
-./build-wrk.sh llvm i386
-
-# For Visual Studio (run on Windows)
-./build-wrk.sh vs i386
-./build-wrk.sh vs amd64
+# Explicit compiler and architecture
+./configure.sh mingw i386
+./configure.sh mingw amd64
+./configure.sh gcc i386
+./configure.sh clang amd64
+./configure.sh llvm i386
 ```
 
-### Using CMake Directly
+On Windows, use the command script from a normal Command Prompt or a Visual Studio Developer Command Prompt:
 
-#### MinGW (Windows or Linux)
+```cmd
+configure.cmd
+configure.cmd vs i386
+configure.cmd vs amd64
+configure.cmd clang amd64
+configure.cmd mingw i386
+```
+
+The Windows script is designed to work with the MSVC environment supplied by the Visual Studio Developer Command Prompt. In CI, the workflow initializes the matching MSVC environment before invoking `configure.cmd`.
+
+### Using CMake directly
+
+The configure scripts are the preferred entry point, but CMake can still be invoked directly when needed.
+
+#### MinGW
 ```bash
-# For x86
-mkdir build-mingw-x86 && cd build-mingw-x86
-cmake -G "MinGW Makefiles" \
+cmake -G Ninja \
       -DWRK_ARCH=x86 \
       -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc \
-      ..
-make -j$(nproc)
-
-# For amd64
-mkdir build-mingw-x64 && cd build-mingw-x64
-cmake -G "MinGW Makefiles" \
-      -DWRK_ARCH=amd64 \
-      -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
-      ..
-make -j$(nproc)
+      -DCMAKE_CXX_COMPILER=i686-w64-mingw32-g++ \
+      -B output-mingw-i386/build \
+      -S .
+cmake --build output-mingw-i386/build --parallel
 ```
 
-#### GCC (Linux)
+#### GCC
 ```bash
-# For x86
-mkdir build-gcc-x86 && cd build-gcc-x86
-cmake -G "Unix Makefiles" \
+cmake -G Ninja \
       -DWRK_ARCH=x86 \
-      -DCMAKE_C_FLAGS="-m32" \
-      ..
-make -j$(nproc)
+      -DCMAKE_C_COMPILER=gcc \
+      -DCMAKE_CXX_COMPILER=g++ \
+      -DCMAKE_C_FLAGS=-m32 \
+      -B output-gcc-i386/build \
+      -S .
+cmake --build output-gcc-i386/build --parallel
 ```
 
-#### Visual Studio (Windows)
-```powershell
-# For x86
-cmake -G "Visual Studio 17 2022" -A Win32 -DWRK_ARCH=x86 ..
-cmake --build . --config Release
-
-# For amd64
-cmake -G "Visual Studio 17 2022" -A x64 -DWRK_ARCH=amd64 ..
-cmake --build . --config Release
+#### Visual Studio / MSVC
+```cmd
+configure.cmd vs i386
+configure.cmd vs amd64
 ```
+
+The CI build uses the same root configure entry point for both MSVC architectures.
 
 #### LLVM/Clang with LLD
 ```bash
-# For x86
-mkdir build-llvm-x86 && cd build-llvm-x86
-cmake -G "Ninja" \
+cmake -G Ninja \
       -DWRK_ARCH=x86 \
       -DCMAKE_C_COMPILER=clang \
       -DCMAKE_LINKER=lld-link \
-      -DCMAKE_C_FLAGS="-m32" \
-      ..
-ninja
+      -DCMAKE_C_FLAGS=-m32 \
+      -B output-llvm-i386/build \
+      -S .
+cmake --build output-llvm-i386/build --parallel
 ```
 
-## Files Modified/Created
+## Build Entry Points
 
-### Created Files
-1. `/workspace/hal_stub.c` - HAL stub implementation
-2. `/workspace/build_scripts/build-wrk.sh` - Unified build script
-3. `/workspace/BUILDING.md` - This documentation
+- `/configure.sh` - Unix-like environments
+- `/configure.cmd` - Windows environments
+- `/.github/workflows/visual-studio-build.yml` - CI validation for MSVC x86 and amd64
 
-### Modified Files
-1. `/workspace/CMakeLists.txt`
-   - Added ASM language support
-   - Compiler detection (MSVC, MinGW, GCC, Clang, LLVM)
-   - Output directory naming with compiler prefix
-   - HAL stub library integration
-   - Compiler-specific entry point handling
+The old `build_scripts/build-wrk.sh` entry point has been removed; use the root configure scripts instead.
 
-2. `/workspace/cmake/modules/WRKCompilerFlags.cmake`
-   - Enhanced compiler flag support for all compilers
-   - Architecture-specific flags
-   - Linker flags for each compiler type
+## Build-System Files
 
-3. `/workspace/cmake/modules/WRKModuleBuilder.cmake`
-   - Assembly file collection and conversion
-   - Compiler-architecture output directory naming
-   - Support for .asm to .S conversion
+- `/CMakeLists.txt` - OpenXP top-level CMake configuration
+- `/cmake/modules/WRKCompilerFlags.cmake` - compiler and architecture flags
+- `/cmake/modules/WRKModuleBuilder.cmake` - kernel module source and assembly handling
+
+The two `WRK*.cmake` module names are retained for now because they are implementation filenames used by the existing CMake configuration; their contents are part of the OpenXP build system.
 
 ## Requirements
 
-### For MinGW Cross-Compilation
+### MinGW Cross-Compilation
 ```bash
 # Ubuntu/Debian
 sudo apt-get install mingw-w64
-
-# Fedora/RHEL
-sudo dnf install mingw-w64
 ```
 
-### For GCC
+### GCC
 ```bash
 # Ubuntu/Debian (32-bit support)
 sudo apt-get install gcc-multilib g++-multilib
-
-# Fedora/RHEL
-sudo dnf install gcc glibc-devel.i686
 ```
 
-### For Clang/LLVM
+### Clang/LLVM
 ```bash
 # Ubuntu/Debian
 sudo apt-get install clang lld
-
-# Fedora/RHEL
-sudo dnf install clang lld
 ```
 
-### For Visual Studio
-- Visual Studio 2022 with C++ desktop development workload
+### Visual Studio
+- Visual Studio with C++ desktop development workload
 - Windows SDK
+- Ninja
+- CMake
 
 ## Troubleshooting
 
-### Assembly Syntax Errors
-The current build copies `.asm` files as `.S` files without syntax conversion. MASM and GAS have different syntax. You may need to:
-1. Manually convert assembly files from MASM to GAS syntax
-2. Or use only MSVC for building until conversion is complete
+### Visual Studio compiler not detected
+Run `configure.cmd` from a Visual Studio Developer Command Prompt, or pass `vs` explicitly after initializing the MSVC environment.
 
-### Missing Headers
-Ensure all required SDK headers are present in:
-- `/workspace/sdk/ddk/inc/`
-- `/workspace/sdk/internal/ds/inc/`
-- `/workspace/sdk/sdk/inc/`
-- `/workspace/ntoskrnl/inc/`
+### Assembly syntax errors
+The current non-MSVC path copies `.asm` files to `.S` without syntax conversion. Use MSVC for the most complete assembly compatibility until the GAS conversion is finished.
 
-### Linker Errors
-If you encounter undefined references to HAL functions, ensure `hal_stub.c` is being compiled and linked.
+### Missing headers
+Ensure the required SDK and kernel headers are present under `sdk/` and `ntoskrnl/inc/`.
+
+### Linker errors
+If HAL functions are unresolved, ensure the `hal_stub` target is enabled and included by the top-level CMake configuration.
 
 ## Notes
 
-1. This is a research kernel and may not boot on real hardware
-2. Assembly file conversion requires manual intervention for full compatibility
-3. Some HAL stubs return minimal implementations - functionality may be limited
-4. The build system is designed for research and educational purposes
+1. OpenXP is a research kernel and may not boot on real hardware.
+2. Assembly conversion requires additional work for full non-MSVC compatibility.
+3. Some HAL stubs intentionally provide minimal implementations.
+4. The build system is intended for research and educational use.
 
 ## License
 

@@ -1,0 +1,52 @@
+name: Fix RTL atom warnings
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message != 'Fix RTL atom warnings'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Remove genuinely unused atom locals
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('ntoskrnl/rtl/atom.c')
+          s = p.read_text()
+          old1 = '    PRTL_ATOM_TABLE_ENTRY a, aNext, *pa, *pa1;'
+          new1 = '    PRTL_ATOM_TABLE_ENTRY a, *pa, *pa1;'
+          old2 = '    PRTL_ATOM_TABLE_ENTRY a, *pa;'
+          new2 = '    PRTL_ATOM_TABLE_ENTRY a;'
+          if s.count(old1) != 1:
+              raise SystemExit(f'Expected exactly one RtlEmptyAtomTable declaration, found {s.count(old1)}')
+          if s.count(old2) != 1:
+              raise SystemExit(f'Expected exactly one RtlPinAtomInAtomTable declaration, found {s.count(old2)}')
+          s = s.replace(old1, new1).replace(old2, new2)
+          p.write_text(s)
+          PY
+      - name: Verify exact diff
+        shell: bash
+        run: |
+          git diff --check
+          test "$(git diff --name-only)" = "ntoskrnl/rtl/atom.c"
+          test "$(git diff --numstat -- ntoskrnl/rtl/atom.c | awk '{print $1}')" = "2"
+          test "$(git diff --numstat -- ntoskrnl/rtl/atom.c | awk '{print $2}')" = "2"
+          ! grep -F 'PRTL_ATOM_TABLE_ENTRY a, aNext, *pa, *pa1;' ntoskrnl/rtl/atom.c
+          ! grep -F 'PRTL_ATOM_TABLE_ENTRY a, *pa;' ntoskrnl/rtl/atom.c
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ntoskrnl/rtl/atom.c
+          git commit -m 'Fix RTL atom warnings'
+          git push

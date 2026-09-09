@@ -17,7 +17,6 @@
 #define LPTSTR PWSTR
 #define TCHAR WCHAR
 #define _T(x) L##x
-#define _stprintf(Buffer, Format, ...) \
-    _snwprintf((Buffer), INET6_ADDRSTRLEN, (Format), __VA_ARGS__)
+#define _stprintf _snwprintf
 
 #include "add2strt.h"

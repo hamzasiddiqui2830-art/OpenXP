@@ -1,4 +1,4 @@
-name: CMake Build
+name: OpenXP Visual Studio Build
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout OpenXP
       uses: actions/checkout@v4
 
     - name: Setup MSVC x86 environment
@@ -19,37 +19,32 @@ jobs:
       with:
         arch: x86
 
-    - name: Configure CMake (x86)
-      run: |
-        cmake -G Ninja `
-          -DCMAKE_BUILD_TYPE=Release `
-          -DWRK_ARCH=i386 `
-          -DBUILD_NTOSKRNL_TESTS=OFF `
-          -B "${{ github.workspace }}/output-VS-i386/build" `
-          -S "${{ github.workspace }}"
+    - name: Configure OpenXP (x86)
+      shell: cmd
+      run: configure.cmd vs i386
       working-directory: ${{ github.workspace }}
 
-    - name: Build with CMake (x86)
-      run: |
-        cmake --build "${{ github.workspace }}/output-VS-i386/build" --parallel
+    - name: Build OpenXP (x86)
+      shell: cmd
+      run: cmake --build "${{ github.workspace }}\output-vs-i386\build" --config Release --parallel
       working-directory: ${{ github.workspace }}
 
-    - name: Upload x86 build artifacts
+    - name: Upload OpenXP x86 build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: wrk-build-vs-x86
+        name: openxp-build-vs-x86
         path: |
-          ${{ github.workspace }}/output-VS-i386/**/*.exe
-          ${{ github.workspace }}/output-VS-i386/**/*.dll
-          ${{ github.workspace }}/output-VS-i386/**/*.sys
-          ${{ github.workspace }}/output-VS-i386/**/*.lib
+          ${{ github.workspace }}/output-vs-i386/**/*.exe
+          ${{ github.workspace }}/output-vs-i386/**/*.dll
+          ${{ github.workspace }}/output-vs-i386/**/*.sys
+          ${{ github.workspace }}/output-vs-i386/**/*.lib
         if-no-files-found: warn
 
   build-vs-x64:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout OpenXP
       uses: actions/checkout@v4
 
     - name: Setup MSVC x64 environment
@@ -57,28 +52,23 @@ jobs:
       with:
         arch: x64
 
-    - name: Configure CMake (x64)
-      run: |
-        cmake -G Ninja `
-          -DCMAKE_BUILD_TYPE=Release `
-          -DWRK_ARCH=amd64 `
-          -DBUILD_NTOSKRNL_TESTS=OFF `
-          -B "${{ github.workspace }}/output-VS-amd64/build" `
-          -S "${{ github.workspace }}"
+    - name: Configure OpenXP (x64)
+      shell: cmd
+      run: configure.cmd vs amd64
       working-directory: ${{ github.workspace }}
 
-    - name: Build with CMake (x64)
-      run: |
-        cmake --build "${{ github.workspace }}/output-VS-amd64/build" --parallel
+    - name: Build OpenXP (x64)
+      shell: cmd
+      run: cmake --build "${{ github.workspace }}\output-vs-amd64\build" --config Release --parallel
       working-directory: ${{ github.workspace }}
 
-    - name: Upload x64 build artifacts
+    - name: Upload OpenXP x64 build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: wrk-build-vs-x64
+        name: openxp-build-vs-x64
         path: |
-          ${{ github.workspace }}/output-VS-amd64/**/*.exe
-          ${{ github.workspace }}/output-VS-amd64/**/*.dll
-          ${{ github.workspace }}/output-VS-amd64/**/*.sys
-          ${{ github.workspace }}/output-VS-amd64/**/*.lib
+          ${{ github.workspace }}/output-vs-amd64/**/*.exe
+          ${{ github.workspace }}/output-vs-amd64/**/*.dll
+          ${{ github.workspace }}/output-vs-amd64/**/*.sys
+          ${{ github.workspace }}/output-vs-amd64/**/*.lib
         if-no-files-found: warn

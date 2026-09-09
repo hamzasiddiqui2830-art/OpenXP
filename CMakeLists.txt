@@ -214,8 +214,11 @@ if(BUILD_RTL_BOOT_TARGETS)
     )
 endif()
 
+# config has its own explicit CMake target because its legacy sources.inc is a
+# kernel LIBRARY target. Do not run the generic recursive module builder here.
+add_subdirectory(${NTOSKRNL_SOURCE_DIR}/config)
+
 set(NTOS_MODULES
-    config
     ex
     ob
     se
@@ -239,8 +242,7 @@ foreach(MODULE IN LISTS NTOS_MODULES)
 endforeach()
 
 # chkreg is the legacy sdktools user-mode PROGRAM from ntos-old/config/chkreg.
-# It is deliberately not included in NTOS_MODULE_LIBS and is not configured by
-# default, so Windows SDK user-mode headers cannot contaminate kernel targets.
+# It is deliberately not part of NTOS_MODULE_LIBS and is disabled by default.
 if(BUILD_CHKREG)
     add_subdirectory(${NTOSKRNL_SOURCE_DIR}/config/chkreg)
 endif()
@@ -259,7 +261,7 @@ if(BUILD_NTOSKRNL_TESTS)
     endforeach()
 endif()
 
-set(NTOS_MODULE_LIBS ntosrtl)
+set(NTOS_MODULE_LIBS ntosrtl ntosconfig)
 foreach(MODULE IN LISTS NTOS_MODULES)
     list(APPEND NTOS_MODULE_LIBS ntos_${MODULE})
 endforeach()

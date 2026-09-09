@@ -1,16 +1,13 @@
 #
-# CMake build system for ReactOS 
-#
+# CMake build system for OpenXP / WRK
 #
 
 cmake_minimum_required(VERSION 3.15)
 
-# Prevent in-source builds
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     message(FATAL_ERROR "In-source builds are not allowed. Please create a separate build directory.")
 endif()
 
-# Compiler detection - supports MSVC, MinGW, GCC, Clang, LLVM
 set(DETECTED_COMPILER "")
 if(MSVC)
     set(DETECTED_COMPILER "MSVC")
@@ -28,8 +25,6 @@ endif()
 
 message(STATUS "Detected compiler: ${DETECTED_COMPILER}")
 
-# Architecture configuration via command line or environment
-# Usage: cmake -DWRK_ARCH=x86 .. or cmake -DWRK_ARCH=amd64 ..
 if(NOT DEFINED WRK_ARCH)
     if(DEFINED ENV{WRK_ARCH})
         set(WRK_ARCH $ENV{WRK_ARCH})
@@ -40,41 +35,31 @@ if(NOT DEFINED WRK_ARCH)
     endif()
 endif()
 
-# Tests are separate targets and are never included in normal module source
-# discovery. They are configured only when explicitly requested.
 option(BUILD_NTOSKRNL_TESTS "Build ntoskrnl test targets" OFF)
+option(BUILD_RTL_BOOT_TARGETS "Build the legacy RTL boot libraries" OFF)
 message(STATUS "NTOSKRNL tests: ${BUILD_NTOSKRNL_TESTS}")
+message(STATUS "RTL boot targets: ${BUILD_RTL_BOOT_TARGETS}")
 
-# Project definition
 project(wrk VERSION 5.2 LANGUAGES C ASM)
 
-# Set ReactOS source directory (root of the source tree)
 set(REACTOS_SOURCE_DIR ${CMAKE_SOURCE_DIR})
-
-# Set C standard
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Build type
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
-# HAL configuration options
 option(ENABLE_HAL_ARM "Build ARM HAL" ON)
 option(ENABLE_HAL_UP "Build Uniprocessor HAL" OFF)
 option(ENABLE_HAL_ACPI "Build ACPI HAL" OFF)
 option(ENABLE_HAL_MPS "Build Multiprocessor System HAL" OFF)
 option(ENABLE_HAL_APIC "Build ACPI APIC HAL" OFF)
 
-# Add CMake modules path
 list(APPEND CMAKE_MODULE_PATH ${REACTOS_SOURCE_DIR}/cmake/modules)
-
-# Include WRK-specific modules
 include(WRKCompilerFlags)
 include(WRKModuleBuilder)
 
-# Determine architecture based on WRK_ARCH variable
 if(WRK_ARCH STREQUAL "amd64")
     set(WRK_ARCH_NAME amd64)
     set(ARCH_DEFINES _WIN64 _AMD64_ AMD64)
@@ -91,11 +76,9 @@ endif()
 
 message(STATUS "Building for architecture: ${WRK_ARCH_NAME}")
 
-# Directory structure (mirroring ReactOS)
 set(NTOSKRNL_SOURCE_DIR ${REACTOS_SOURCE_DIR}/ntoskrnl)
 set(SDK_SOURCE_DIR ${REACTOS_SOURCE_DIR}/sdk)
 
-# Output directories - using compiler-architecture naming convention
 if(MSVC)
     set(COMPILER_PREFIX "VS")
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
@@ -116,20 +99,116 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-# Create output directories with architecture-specific naming
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME})
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/EXE)
 
-# Set WRK compiler flags and include directories
 set_wrk_compiler_flags()
 set_wrk_include_directories()
-
-# Add architecture-specific defines
 add_compile_definitions(${ARCH_DEFINES})
 
-# Module list (from WRK makefile)
+# ntos-old/rtl/up/sources is the authoritative kernel RTL target definition.
+# Keep this list explicit: the legacy build does not recursively glob the RTL
+# directory, and the directory also contains user-mode heap and generator code.
+set(RTL_KERNEL_SOURCES
+    ${NTOSKRNL_SOURCE_DIR}/rtl/acledit.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/add2stra.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/add2strw.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/assert.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/atom.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/avltable.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/bitmap.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/bootstatus.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/checksum.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/cnvint.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/compress.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/debug.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/eballoc.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/environ.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/error.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/excptdbg.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/gentable.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/gen8dot3.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/guid.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/heap.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/imagedir.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/rtlimagentheader.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/intbits.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/ldrrsrc.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/ldrreloc.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/lookup.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/lznt1.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/message.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/nls.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/nlsxlat.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/pctohdr.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/peb.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/prefix.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/prodtype.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/random.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/range.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/regutil.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/rtlassig.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/rtldata.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/rtlexec.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/rtlpatch.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/rxact.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/sertl.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/splay.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/str2adda.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/str2addw.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/string.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/stktrace.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/sysvol.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/time.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/tracedb.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/version.c
+    ${NTOSKRNL_SOURCE_DIR}/rtl/xencode.c
+)
+
+add_wrk_module(rtl
+    SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/rtl
+    SOURCES ${RTL_KERNEL_SOURCES}
+)
+
+# The legacy RTL tree has two additional, separately named loader libraries.
+# They are opt-in because they are not part of the normal ntosrtl target.
+if(BUILD_RTL_BOOT_TARGETS)
+    set(RTL_BOOT_SOURCES
+        ${NTOSKRNL_SOURCE_DIR}/rtl/assert.c
+        ${NTOSKRNL_SOURCE_DIR}/rtl/bitmap.c
+        ${NTOSKRNL_SOURCE_DIR}/rtl/cnvint.c
+        ${NTOSKRNL_SOURCE_DIR}/rtl/debug.c
+        ${NTOSKRNL_SOURCE_DIR}/rtl/imagedir.c
+        ${NTOSKRNL_SOURCE_DIR}/rtl/rtlimagentheader.c
+        ${NTOSKRNL_SOURCE_DIR}/rtl/checksum.c
+        ${NTOSKRNL_SOURCE_DIR}/rtl/compress.c
+        ${NTOSKRNL_SOURCE_DIR}/rtl/ldrreloc.c
+        ${NTOSKRNL_SOURCE_DIR}/rtl/lznt1.c
+        ${NTOSKRNL_SOURCE_DIR}/rtl/time.c
+        ${NTOSKRNL_SOURCE_DIR}/rtl/nlsxlat.c
+        ${NTOSKRNL_SOURCE_DIR}/rtl/xencode.c
+        ${NTOSKRNL_SOURCE_DIR}/rtl/sertl.c
+    )
+
+    add_wrk_module(bldrrtl
+        SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/rtl/boot
+        SOURCES ${RTL_BOOT_SOURCES}
+        OUTPUT_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}/boot
+    )
+
+    add_wrk_module(bldrrtl_dbg
+        SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/rtl/boot_dbg
+        SOURCES ${RTL_BOOT_SOURCES}
+        OUTPUT_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}/boot_dbg
+    )
+
+    target_compile_definitions(ntos_bldrrtl PRIVATE BLDR_KERNEL_RUNTIME=1)
+    target_compile_definitions(ntos_bldrrtl_dbg PRIVATE BLDR_KERNEL_RUNTIME=1)
+endif()
+
+# The remaining NTOS components keep their own module targets. Unlike RTL,
+# these components are not reconstructed here from the rtl sources file.
 set(NTOS_MODULES
-    rtl
     config
     ex
     ob
@@ -149,16 +228,10 @@ set(NTOS_MODULES
     init
 )
 
-# Add all NTOS modules as static libraries. The module builder deliberately
-# excludes test directories, so BUILD_NTOSKRNL_TESTS cannot leak test sources
-# into the normal kernel libraries.
 foreach(MODULE ${NTOS_MODULES})
-    string(REPLACE "/" "_" MODULE_TARGET "${MODULE}")
-    add_wrk_module(${MODULE_TARGET} SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/${MODULE})
+    add_wrk_module(${MODULE} SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/${MODULE})
 endforeach()
 
-# Test programs are opt-in. Keep them outside the normal module targets so a
-# default configure/build cannot compile a single test source accidentally.
 if(BUILD_NTOSKRNL_TESTS)
     set(NTOSKRNL_TEST_DIRECTORIES
         ${NTOSKRNL_SOURCE_DIR}/rtl/test
@@ -173,30 +246,24 @@ if(BUILD_NTOSKRNL_TESTS)
     endforeach()
 endif()
 
-# Collect all module libraries for linking
-set(NTOS_MODULE_LIBS "")
+set(NTOS_MODULE_LIBS ntos_rtl)
 foreach(MODULE ${NTOS_MODULES})
-    string(REPLACE "/" "_" MODULE_TARGET "${MODULE}")
-    list(APPEND NTOS_MODULE_LIBS ntos_${MODULE_TARGET})
+    list(APPEND NTOS_MODULE_LIBS ntos_${MODULE})
 endforeach()
 
-# Add HAL to the module libs based on architecture
 if(WRK_ARCH_NAME MATCHES "arm|arm64")
-    # Use ARM HAL for ARM architectures
     if(ENABLE_HAL_ARM)
         list(APPEND NTOS_MODULE_LIBS halarm)
     else()
         list(APPEND NTOS_MODULE_LIBS hal_stub)
     endif()
 else()
-    # Use stub HAL for other architectures (or real HALs when available)
     list(APPEND NTOS_MODULE_LIBS hal_stub)
 endif()
 
-# Add DLL subsystem (WOW64 and other DLLs)
 if(EXISTS ${REACTOS_SOURCE_DIR}/dll/CMakeLists.txt)
     add_subdirectory(dll)
 endif()
 
-# Main kernel executable
-# Note: The actual kernel entry point and startup code would need to be properly configured
+# Main kernel executable is intentionally not synthesized until the WRK kernel
+# image/startup target has been mapped from its legacy build definition.

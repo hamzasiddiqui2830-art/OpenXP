@@ -108,8 +108,6 @@ set_wrk_compiler_flags()
 set_wrk_include_directories()
 add_compile_definitions(${ARCH_DEFINES})
 
-# Exact translation of ntos-old/rtl/up/sources. The legacy source list is
-# authoritative and is intentionally explicit; do not recursively glob RTL.
 set(RTL_KERNEL_SOURCES
     ${NTOSKRNL_SOURCE_DIR}/rtl/acledit.c
     ${NTOSKRNL_SOURCE_DIR}/rtl/add2stra.c
@@ -166,11 +164,7 @@ set(RTL_KERNEL_SOURCES
     ${NTOSKRNL_SOURCE_DIR}/rtl/xencode.c
 )
 
-add_wrk_module(rtl
-    TARGET_NAME ntosrtl
-    SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/rtl
-    SOURCES ${RTL_KERNEL_SOURCES}
-)
+add_wrk_module(rtl TARGET_NAME ntosrtl SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/rtl SOURCES ${RTL_KERNEL_SOURCES})
 
 if(BUILD_RTL_BOOT_TARGETS)
     set(RTL_BOOT_SOURCES
@@ -189,54 +183,24 @@ if(BUILD_RTL_BOOT_TARGETS)
         ${NTOSKRNL_SOURCE_DIR}/rtl/xdecode.c
         ${NTOSKRNL_SOURCE_DIR}/rtl/sertl.c
     )
-
-    add_wrk_module(bldrrtl
-        TARGET_NAME bldrrtl
-        SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/rtl/boot
-        SOURCES ${RTL_BOOT_SOURCES}
-        OUTPUT_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}/boot
-    )
-
-    add_wrk_module(bldrrtl_dbg
-        TARGET_NAME bldrrtl_dbg
-        SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/rtl/boot_dbg
-        SOURCES ${RTL_BOOT_SOURCES}
-        OUTPUT_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}/boot_dbg
-    )
-
+    add_wrk_module(bldrrtl TARGET_NAME bldrrtl SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/rtl/boot SOURCES ${RTL_BOOT_SOURCES} OUTPUT_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}/boot)
+    add_wrk_module(bldrrtl_dbg TARGET_NAME bldrrtl_dbg SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/rtl/boot_dbg SOURCES ${RTL_BOOT_SOURCES} OUTPUT_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}/boot_dbg)
     target_compile_definitions(bldrrtl PRIVATE BLDR_KERNEL_RUNTIME=1)
     target_compile_definitions(bldrrtl_dbg PRIVATE BLDR_KERNEL_RUNTIME=1)
-    set_target_properties(bldrrtl bldrrtl_dbg PROPERTIES
-        POSITION_INDEPENDENT_CODE OFF
-        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}
-        OUTPUT_NAME bldrrtl
-    )
+    set_target_properties(bldrrtl bldrrtl_dbg PROPERTIES POSITION_INDEPENDENT_CODE OFF ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME} OUTPUT_NAME bldrrtl)
 endif()
 
 add_subdirectory(${NTOSKRNL_SOURCE_DIR}/config)
 
-# The executive uses the older WRK private-header layout. The source files
-# needed for that layout are staged into the build tree as local copies. The
-# compiler therefore never compiles a source whose path is under ntos-old.
-# ntos-old remains the unused source backup/reference only.
+# Stage the older executive implementations into the build tree. They are
+# compiled from the generated local directory, never directly from ntos-old.
 set(EX_LOCAL_SOURCE_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}/ex-local)
 file(MAKE_DIRECTORY ${EX_LOCAL_SOURCE_DIR})
-
-set(EX_LEGACY_SOURCES
-    mutant.c
-    pool.c
-    pushlock.c
-)
+set(EX_LEGACY_SOURCES mutant.c pool.c pushlock.c sysinfo.c systime.c)
 foreach(EX_SOURCE IN LISTS EX_LEGACY_SOURCES)
-    configure_file(
-        ${REACTOS_SOURCE_DIR}/ntos-old/ex/${EX_SOURCE}
-        ${EX_LOCAL_SOURCE_DIR}/${EX_SOURCE}
-        COPYONLY
-    )
+    configure_file(${REACTOS_SOURCE_DIR}/ntos-old/ex/${EX_SOURCE} ${EX_LOCAL_SOURCE_DIR}/${EX_SOURCE} COPYONLY)
 endforeach()
 
-# Sources from ntoskrnl/ex are all kept under the executive directory.  The
-# three incompatible local implementations above are the only staged copies.
 set(EX_SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/ex)
 set(EX_KERNEL_SOURCES
     ${EX_SOURCE_DIR}/callback.c
@@ -264,10 +228,10 @@ set(EX_KERNEL_SOURCES
     ${EX_SOURCE_DIR}/profile.c
     ${EX_SOURCE_DIR}/raise.c
     ${EX_SOURCE_DIR}/resource.c
+    ${EX_LOCAL_SOURCE_DIR}/sysinfo.c
     ${EX_SOURCE_DIR}/semphore.c
     ${EX_SOURCE_DIR}/sysenv.c
-    ${EX_SOURCE_DIR}/sysinfo.c
-    ${EX_SOURCE_DIR}/systime.c
+    ${EX_LOCAL_SOURCE_DIR}/systime.c
     ${EX_SOURCE_DIR}/timer.c
     ${EX_SOURCE_DIR}/worker.c
     ${EX_SOURCE_DIR}/zone.c
@@ -278,30 +242,9 @@ set(EX_KERNEL_SOURCES
     ${EX_SOURCE_DIR}/keyedevent.c
 )
 
-add_wrk_module(ex
-    TARGET_NAME ntos_ex
-    SOURCE_DIR ${EX_SOURCE_DIR}
-    SOURCES ${EX_KERNEL_SOURCES}
-)
+add_wrk_module(ex TARGET_NAME ntos_ex SOURCE_DIR ${EX_SOURCE_DIR} SOURCES ${EX_KERNEL_SOURCES})
 
-set(NTOS_MODULES
-    ob
-    se
-    mm
-    ke
-    ps
-    io
-    cache
-    lpc
-    dbgk
-    raw
-    fstub
-    fsrtl
-    wmi
-    perf
-    init
-)
-
+set(NTOS_MODULES ob se mm ke ps io cache lpc dbgk raw fstub fsrtl wmi perf init)
 foreach(MODULE IN LISTS NTOS_MODULES)
     add_wrk_module(${MODULE} SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/${MODULE})
 endforeach()
@@ -311,12 +254,7 @@ if(BUILD_CHKREG)
 endif()
 
 if(BUILD_NTOSKRNL_TESTS)
-    set(NTOSKRNL_TEST_DIRECTORIES
-        ${NTOSKRNL_SOURCE_DIR}/rtl/test
-        ${NTOSKRNL_SOURCE_DIR}/config/test
-        ${NTOSKRNL_SOURCE_DIR}/ke/tests
-        ${NTOSKRNL_SOURCE_DIR}/po/test
-    )
+    set(NTOSKRNL_TEST_DIRECTORIES ${NTOSKRNL_SOURCE_DIR}/rtl/test ${NTOSKRNL_SOURCE_DIR}/config/test ${NTOSKRNL_SOURCE_DIR}/ke/tests ${NTOSKRNL_SOURCE_DIR}/po/test)
     foreach(TEST_DIRECTORY IN LISTS NTOSKRNL_TEST_DIRECTORIES)
         if(EXISTS "${TEST_DIRECTORY}/CMakeLists.txt")
             add_subdirectory("${TEST_DIRECTORY}")
@@ -328,7 +266,6 @@ set(NTOS_MODULE_LIBS ntosrtl ntosconfig ntos_ex)
 foreach(MODULE IN LISTS NTOS_MODULES)
     list(APPEND NTOS_MODULE_LIBS ntos_${MODULE})
 endforeach()
-
 if(WRK_ARCH_NAME MATCHES "arm|arm64")
     if(ENABLE_HAL_ARM)
         list(APPEND NTOS_MODULE_LIBS halarm)
@@ -338,7 +275,6 @@ if(WRK_ARCH_NAME MATCHES "arm|arm64")
 else()
     list(APPEND NTOS_MODULE_LIBS hal_stub)
 endif()
-
 if(EXISTS ${REACTOS_SOURCE_DIR}/dll/CMakeLists.txt)
     add_subdirectory(dll)
 endif()

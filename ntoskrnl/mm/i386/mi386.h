@@ -26,82 +26,44 @@ Revision History:
 #ifndef _MI386_
 #define _MI386_
 
-//
-// Virtual Memory Layout on X86
-//
-
-// MM_HIGHEST_USER_ADDRESS and MM_USER_PROBE_ADDRESS are defined by inc/i386.h.
-
-//
-// PTE base addresses
-//
-
 #if !defined (_X86PAE_)
-
-#define PTE_KBASE 0xC0000000              // Kernel address space PTE base
-#define PTE_UTOP  0xBFFFFFFF              // User address space PTE top
-
-#else
-
 #define PTE_KBASE 0xC0000000
 #define PTE_UTOP  0xBFFFFFFF
-
+#else
+#define PTE_KBASE 0xC0000000
+#define PTE_UTOP  0xBFFFFFFF
 #endif
 
 #define MI_PTE_BASE_FOR_LOWEST_KERNEL_ADDRESS ((PMMPTE)PTE_KBASE)
-#define MI_PTE_BASE_FOR_LOWEST_SESSION_ADDRESS ((PMMPTE)0x0)  // Session space not used in this config
-
-//
-// Page table entry constants
-//
+#define MI_PTE_BASE_FOR_LOWEST_SESSION_ADDRESS ((PMMPTE)0x0)
 
 #define PAGE_SHIFT 12L
 #define PAGE_SIZE 0x1000
 #define PAGE_MASK 0xFFF
-
-#define PTE_PER_PAGE_BITS 10    // 1024 entries per page table (2^10 = 1024)
-
-//
-// PTE Owner values
-//
+#define PTE_PER_PAGE_BITS 10
 
 #define MI_PTE_OWNER_USER       1
 #define MI_PTE_OWNER_KERNEL     0
-
-//
-// Macro to set owner in PTE
-//
 #define MI_SET_OWNER_IN_PTE(PPTE,OWNER)  ((PPTE)->u.Hard.Owner = (OWNER))
 
-//
-// PTE Lookup needed marker
-//
 #if !defined (_X86PAE_)
 #define MI_PTE_LOOKUP_NEEDED ((ULONG)0xffffffff)
 #else
 #define MI_PTE_LOOKUP_NEEDED ((ULONG64)0xffffffff)
 #endif
 
-//
-// Cache types for PTEs
-//
 #define MM_PTE_CACHE_ENABLED     0
 #define MM_PTE_CACHE_DISABLED    1
 
-//
-// Software PTE structure for X86
-//
 #if !defined (_X86PAE_)
 
 typedef struct _MMPTE_SOFTWARE {
     ULONG Valid : 1;
-    ULONG Prototype : 1;
-    ULONG Protection : 5;
-    ULONG Transition : 1;
-    ULONG Reserved0 : 3;
-    ULONG UsedPageTableEntries : PTE_PER_PAGE_BITS;
     ULONG PageFileLow : 4;
-    ULONG PageFileHigh : 16;
+    ULONG Protection : 5;
+    ULONG Prototype : 1;
+    ULONG Transition : 1;
+    ULONG PageFileHigh : 20;
 } MMPTE_SOFTWARE;
 
 typedef struct _MMPTE_TRANSITION {
@@ -141,9 +103,6 @@ typedef struct _MMPTE_LIST {
     ULONG NextEntry : 20;
 } MMPTE_LIST;
 
-//
-// Hardware PTE structure for X86 (non-PAE)
-//
 #define _HARDWARE_PTE_WORKING_SET_BITS  11
 
 typedef struct _MMPTE_HARDWARE {
@@ -179,10 +138,6 @@ typedef struct _MMPTE_LARGEPAGE {
 } MMPTE_LARGEPAGE, *PMMPTE_LARGEPAGE;
 
 #else
-
-//
-// PAE versions - 64-bit PTEs
-//
 
 typedef struct _MMPTE_SOFTWARE {
     ULONGLONG Valid : 1;
@@ -253,29 +208,9 @@ typedef struct _MMPTE_HARDWARE {
     ULONGLONG SoftwareWsIndex : _HARDWARE_PTE_WORKING_SET_BITS;
 } MMPTE_HARDWARE, *PMMPTE_HARDWARE;
 
-typedef struct _MMPTE_LARGEPAGE {
-    ULONGLONG Valid : 1;
-    ULONGLONG Write : 1;
-    ULONGLONG Owner : 1;
-    ULONGLONG WriteThrough : 1;
-    ULONGLONG CacheDisable : 1;
-    ULONGLONG Accessed : 1;
-    ULONGLONG Dirty : 1;
-    ULONGLONG LargePage : 1;
-    ULONGLONG Global : 1;
-    ULONGLONG CopyOnWrite : 1;
-    ULONGLONG Prototype : 1;
-    ULONGLONG reserved0 : 1;
-    ULONGLONG PageFrameNumber : 26;
-    ULONGLONG reserved1 : 25;
-    ULONGLONG SoftwareWsIndex : _HARDWARE_PTE_WORKING_SET_BITS;
-} MMPTE_LARGEPAGE, *PMMPTE_LARGEPAGE;
+typedef MMPTE_HARDWARE MMPTE_LARGEPAGE;
 
 #endif
-
-//
-// Main MMPTE union structure
-//
 
 typedef struct _MMPTE {
     union {
@@ -296,9 +231,6 @@ typedef struct _MMPTE {
 
 typedef MMPTE *PMMPTE;
 
-//
-// Interlocked operations on PTEs
-//
 #if !defined (_X86PAE_)
 #define InterlockedCompareExchangePte(_PointerPte, _NewContents, _OldContents) \
         InterlockedCompareExchange ((PLONG)(_PointerPte), (LONG)(_NewContents), (LONG)(_OldContents))
@@ -323,6 +255,7 @@ MiCompareTbFlushTimeStamp (
 
     NewStamp = KeReadTbFlushTimeStamp ();
     Diff = ((NewStamp - OldStamp) & Mask);
+
 #if defined(NT_UP)
     if (Diff != 0) {
         return FALSE;

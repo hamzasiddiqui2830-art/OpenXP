@@ -43,7 +43,27 @@ Abstract:
 #define NT_INCLUDED
 #endif
 
-/* ntrtl.h also consumes the WRK image-format and SEH definitions. */
+/*
+ * Match the dependency order of the original WRK nt.h.  The architecture
+ * header supplies CONTEXT/PCONTEXT and the machine-specific exception types
+ * consumed by ntxcapi.h and ntrtl.h.
+ */
+#if defined(_AMD64_)
+#include <ntamd64.h>
+#elif defined(_X86_)
+#include <nti386.h>
+#elif defined(_ARM_)
+#include <ntarm.h>
+#elif defined(_ARM64_)
+#include <ntarm64.h>
+#endif
+
+/* These public NT headers provide security-descriptor and process/thread
+ * types used by ntrtl.h (including PSECURITY_DESCRIPTOR and CLIENT_ID). */
+#include <ntseapi.h>
+#include <ntpsapi.h>
+
+/* WRK image-format and exception definitions are prerequisites for ntrtl.h. */
 #include <ntimage.h>
 #include <ntxcapi.h>
 
@@ -54,9 +74,7 @@ typedef RTL_ATOM *PRTL_ATOM;
 #ifndef FASTCALL
 #define FASTCALL __fastcall
 #endif
-#ifndef CLONG
-typedef LONG CLONG;
-#endif
+
 #else
 #include <stdint.h>
 #include <stddef.h>

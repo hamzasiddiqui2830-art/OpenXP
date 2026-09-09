@@ -57,4 +57,6 @@
 #define SE_ADT_MIN_AUDIT_ID      0x200
 #define SE_ADT_MAX_AUDIT_ID      0x5ff
 
+#define SE_AUDITID_AUDITS_DISCARDED      ((ULONG)0x00000204L)
+
 #endif /* _MSAUDITE_ */

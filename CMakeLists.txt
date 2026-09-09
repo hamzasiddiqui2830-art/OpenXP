@@ -172,7 +172,6 @@ add_wrk_module(rtl
     SOURCES ${RTL_KERNEL_SOURCES}
 )
 
-# Legacy boot RTL targets remain opt-in and separate from kernel RTL.
 if(BUILD_RTL_BOOT_TARGETS)
     set(RTL_BOOT_SOURCES
         ${NTOSKRNL_SOURCE_DIR}/rtl/assert.c
@@ -214,12 +213,58 @@ if(BUILD_RTL_BOOT_TARGETS)
     )
 endif()
 
-# config has its own explicit CMake target because its legacy sources.inc is a
-# kernel LIBRARY target. Do not run the generic recursive module builder here.
 add_subdirectory(${NTOSKRNL_SOURCE_DIR}/config)
 
+# The executive currently uses the older WRK private-header layout. Keep its
+# source list explicit so CMake never silently substitutes newer converted
+# sources from the same directory.
+set(EX_KERNEL_SOURCES
+    ${NTOSKRNL_SOURCE_DIR}/ex/callback.c
+    ${NTOSKRNL_SOURCE_DIR}/callperf.c
+    ${NTOSKRNL_SOURCE_DIR}/dbgctrl.c
+    ${NTOSKRNL_SOURCE_DIR}/delay.c
+    ${NTOSKRNL_SOURCE_DIR}/event.c
+    ${NTOSKRNL_SOURCE_DIR}/eventpr.c
+    ${NTOSKRNL_SOURCE_DIR}/exatom.c
+    ${NTOSKRNL_SOURCE_DIR}/exdata.c
+    ${NTOSKRNL_SOURCE_DIR}/exinfo.c
+    ${NTOSKRNL_SOURCE_DIR}/exinit.c
+    ${NTOSKRNL_SOURCE_DIR}/exhotp.c
+    ${NTOSKRNL_SOURCE_DIR}/fmutexc.c
+    ${NTOSKRNL_SOURCE_DIR}/handle.c
+    ${NTOSKRNL_SOURCE_DIR}/harderr.c
+    ${NTOSKRNL_SOURCE_DIR}/hdlsterm.c
+    ${NTOSKRNL_SOURCE_DIR}/lookasid.c
+    ${NTOSKRNL_SOURCE_DIR}/luid.c
+    ${REACTOS_SOURCE_DIR}/ntos-old/ex/mutant.c
+    ${REACTOS_SOURCE_DIR}/ntos-old/ex/pool.c
+    ${REACTOS_SOURCE_DIR}/ntos-old/ex/pushlock.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/nbqueue.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/probe.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/profile.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/raise.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/resource.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/semphore.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/sysenv.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/sysinfo.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/systime.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/timer.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/worker.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/zone.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/uuid.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/win32.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/rundown.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/xipdisp.c
+    ${NTOSKRNL_SOURCE_DIR}/ex/keyedevent.c
+)
+
+add_wrk_module(ex
+    TARGET_NAME ntos_ex
+    SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/ex
+    SOURCES ${EX_KERNEL_SOURCES}
+)
+
 set(NTOS_MODULES
-    ex
     ob
     se
     mm
@@ -241,8 +286,6 @@ foreach(MODULE IN LISTS NTOS_MODULES)
     add_wrk_module(${MODULE} SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/${MODULE})
 endforeach()
 
-# chkreg is the legacy sdktools user-mode PROGRAM from ntos-old/config/chkreg.
-# It is deliberately not part of NTOS_MODULE_LIBS and is disabled by default.
 if(BUILD_CHKREG)
     add_subdirectory(${NTOSKRNL_SOURCE_DIR}/config/chkreg)
 endif()
@@ -261,7 +304,7 @@ if(BUILD_NTOSKRNL_TESTS)
     endforeach()
 endif()
 
-set(NTOS_MODULE_LIBS ntosrtl ntosconfig)
+set(NTOS_MODULE_LIBS ntosrtl ntosconfig ntos_ex)
 foreach(MODULE IN LISTS NTOS_MODULES)
     list(APPEND NTOS_MODULE_LIBS ntos_${MODULE})
 endforeach()

@@ -37,6 +37,18 @@ SepCompareSidAndAttributeArrays(
     IN ULONG Count2
     );
 
+NTSTATUS
+SeIsSiblingToken(
+    __in HANDLE Token,
+    __out PBOOLEAN IsSibling
+    );
+
+NTSTATUS
+SeIsSiblingTokenByPointer(
+    __in PACCESS_TOKEN Token,
+    __out PBOOLEAN IsSibling
+    );
+
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text(PAGE,SeTokenType)
 #pragma alloc_text(PAGE,SeTokenIsAdmin)

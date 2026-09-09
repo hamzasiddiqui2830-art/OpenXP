@@ -68,6 +68,14 @@ function(add_wrk_module MODULE_NAME)
                SOURCE_FILE_NORMALIZED MATCHES "(^|/)dumpuser\\.c$")
                 continue()
             endif()
+            # t*.c files in the WRK security directory are legacy security
+            # test programs/support sources. They are not kernel Security
+            # implementation units and depend on obsolete test-only headers,
+            # user-mode entry points, and test-only APIs.
+            if(MODULE_NAME STREQUAL "se" AND
+               SOURCE_FILE_NORMALIZED MATCHES "(^|/)t[^/]*\\.c$")
+                continue()
+            endif()
             if(MODULE_NAME STREQUAL "rtl" AND
                SOURCE_FILE_NORMALIZED MATCHES "(^|/)(generr|heapdbg|heapdll|heapleak|heaplowf)\\.c$")
                 continue()

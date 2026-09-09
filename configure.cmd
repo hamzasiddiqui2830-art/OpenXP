@@ -1,7 +1,6 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 rem OpenXP configure/build entry point for Windows.
-rem Detects Visual Studio Developer Command Prompt automatically.
 rem Usage: configure.cmd [compiler] [architecture]
 rem   compiler: auto, vs, clang, mingw
 rem   architecture: auto, i386, amd64
@@ -14,9 +13,7 @@ if not defined ARCH set "ARCH=auto"
 
 if /I "%COMPILER%"=="auto" (
     where cl.exe >nul 2>&1
-    if not errorlevel 1 (
-        set "COMPILER=vs"
-    ) else (
+    if not errorlevel 1 (set "COMPILER=vs") else (
         where clang-cl.exe >nul 2>&1
         if not errorlevel 1 (set "COMPILER=clang") else (
             where gcc.exe >nul 2>&1
@@ -31,11 +28,7 @@ if /I "%COMPILER%"=="auto" (
 )
 
 if /I "%ARCH%"=="auto" (
-    if defined PROCESSOR_ARCHITEW6432 (
-        set "HOST_ARCH=%PROCESSOR_ARCHITEW6432%"
-    ) else (
-        set "HOST_ARCH=%PROCESSOR_ARCHITECTURE%"
-    )
+    if defined PROCESSOR_ARCHITEW6432 (set "HOST_ARCH=%PROCESSOR_ARCHITEW6432%") else (set "HOST_ARCH=%PROCESSOR_ARCHITECTURE%")
     if /I "!HOST_ARCH!"=="AMD64" (set "ARCH=amd64") else if /I "!HOST_ARCH!"=="ARM64" (set "ARCH=amd64") else (set "ARCH=i386")
 )
 
@@ -68,6 +61,11 @@ echo Output:       %OUTPUT%
 echo ==============================================
 
 if /I "%COMPILER%"=="vs" (
+    if not defined VSCMD_VER if not defined VSINSTALLDIR (
+        echo Error: Visual Studio environment is not initialized.
+        echo Run from a Visual Studio Developer Command Prompt or use the CI setup step.
+        exit /b 1
+    )
     cmake -S "%ROOT%" -B "%BUILD%" -G Ninja -DWRK_ARCH=%ARCH% -DCMAKE_BUILD_TYPE=Release
 ) else if /I "%COMPILER%"=="clang" (
     set "CC=clang-cl"

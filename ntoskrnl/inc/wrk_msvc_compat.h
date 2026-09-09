@@ -254,4 +254,39 @@ VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
 #define Hand Size
 #endif
 
+/*
+ * WRK 1.2 Object Manager sources use private object-attribute bits that
+ * are not present in the reconstructed public nt.h/ob.h headers yet.
+ * These values are part of the WRK Object Manager contract, not compiler
+ * workarounds, so keep them here only until the corresponding private
+ * definitions are restored to ob.h.
+ */
+#ifndef OBJ_VALID_PRIVATE_ATTRIBUTES
+#define OBJ_VALID_PRIVATE_ATTRIBUTES 0x00010000L
+#endif
+#ifndef OBJ_ALL_VALID_ATTRIBUTES
+#define OBJ_ALL_VALID_ATTRIBUTES (OBJ_VALID_PRIVATE_ATTRIBUTES | OBJ_VALID_ATTRIBUTES)
+#endif
+#ifndef OBJ_KERNEL_EXCLUSIVE
+#define OBJ_KERNEL_EXCLUSIVE 0x00010000L
+#endif
+
+/*
+ * WRK object creation code expects the safe Unicode-string probe helper.
+ * The reconstructed ex.h has the same primitive operations but is missing
+ * this WRK inline, so provide the canonical wrapper here.
+ */
+#ifndef ProbeAndReadUnicodeStringEx
+FORCEINLINE
+VOID
+ProbeAndReadUnicodeStringEx(
+    OUT PUNICODE_STRING Destination,
+    IN PUNICODE_STRING Source
+    )
+{
+    ProbeForRead(Source, sizeof(UNICODE_STRING), sizeof(ULONG));
+    *Destination = *Source;
+}
+#endif
+
 #endif /* _WRK_MSVC_COMPAT_H_ */

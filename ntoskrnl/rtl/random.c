@@ -69,7 +69,6 @@ Return Value:
     *Seed = (((Multiplier * (*Seed)) + Increment) % Modulus) \
     )
 
-
 extern ULONG RtlpRandomConstantVector[];
 
 ULONG
@@ -165,4 +164,3 @@ Return Value:
     return RtlpRandomExConstantVector[j];
 
 }
-

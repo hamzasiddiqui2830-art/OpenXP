@@ -16,7 +16,6 @@ Abstract:
 #define NTOSKRNL_NT_H_INCLUDED
 
 #if defined(_MSC_VER)
-#include <sal.h>
 #include "specstrings.h"
 
 #ifndef __kernel_entry

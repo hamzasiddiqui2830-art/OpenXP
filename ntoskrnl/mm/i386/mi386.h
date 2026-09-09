@@ -269,9 +269,13 @@ typedef struct _MMPTE_LARGEPAGE {
     ULONGLONG PageFrameNumber : 26;
     ULONGLONG reserved1 : 25;
     ULONGLONG SoftwareWsIndex : _HARDWARE_PTE_WORKING_SET_BITS;
-} MMPTE_LARGEPAGE, *PMMPMPTE_LARGEPAGE;
+} MMPTE_LARGEPAGE, *PMMPTE_LARGEPAGE;
 
 #endif
+
+//
+// Main MMPTE union structure
+//
 
 typedef struct _MMPTE {
     union {
@@ -292,6 +296,9 @@ typedef struct _MMPTE {
 
 typedef MMPTE *PMMPTE;
 
+//
+// Interlocked operations on PTEs
+//
 #if !defined (_X86PAE_)
 #define InterlockedCompareExchangePte(_PointerPte, _NewContents, _OldContents) \
         InterlockedCompareExchange ((PLONG)(_PointerPte), (LONG)(_NewContents), (LONG)(_OldContents))
@@ -316,7 +323,6 @@ MiCompareTbFlushTimeStamp (
 
     NewStamp = KeReadTbFlushTimeStamp ();
     Diff = ((NewStamp - OldStamp) & Mask);
-
 #if defined(NT_UP)
     if (Diff != 0) {
         return FALSE;

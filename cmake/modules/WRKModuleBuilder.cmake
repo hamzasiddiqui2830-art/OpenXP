@@ -87,9 +87,8 @@ function(add_wrk_module MODULE_NAME)
                     get_filename_component(ASM_NAME ${ASM_FILE} NAME_WE)
                     set(CONVERTED_FILE "${ARG_OUTPUT_DIR}/${ASM_NAME}.S")
                     configure_file(${ASM_FILE} ${CONVERTED_FILE} COPYONLY)
-                    list(APPEND MODULE_ASM_SOURCES_CONVERTED ${CONVERTED_FILE})
+                    list(APPEND MODULE_ASM_SOURCES ${CONVERTED_FILE})
                 endforeach()
-                set(MODULE_ASM_SOURCES ${MODULE_ASM_SOURCES_CONVERTED})
             endif()
         else()
             set(MODULE_ASM_SOURCES "")
@@ -104,6 +103,7 @@ function(add_wrk_module MODULE_NAME)
         set(MODULE_INCLUDE_DIRS
             ${CMAKE_SOURCE_DIR}/ntoskrnl/inc
             ${CMAKE_SOURCE_DIR}/ntoskrnl/rtl
+            ${CMAKE_SOURCE_DIR}/ntoskrnl/rtl/include
             ${CMAKE_SOURCE_DIR}/sdk/ddk/inc
             ${CMAKE_SOURCE_DIR}/sdk/internal/ds/inc
             ${CMAKE_SOURCE_DIR}/sdk/internal/sdktools/inc
@@ -120,10 +120,8 @@ function(add_wrk_module MODULE_NAME)
             list(APPEND MODULE_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ntoskrnl/i386)
         endif()
 
-        # WRK x86 uses STD_CALL for the kernel RTL implementation set. The
-        # local ntrtl.h declarations are NTAPI (__stdcall), so compiling only
-        # a handful of files with /Gz leaves the rest of RTL definitions with
-        # a conflicting cdecl type. Apply the same ABI to every RTL C unit.
+        target_include_directories(ntos_${MODULE_NAME} PRIVATE ${MODULE_INCLUDE_DIRS})
+
         if(MSVC AND WRK_ARCH_NAME STREQUAL "x86" AND MODULE_NAME STREQUAL "rtl")
             set_source_files_properties(
                 ${MODULE_C_SOURCES}

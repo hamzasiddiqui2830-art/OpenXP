@@ -6,6 +6,7 @@ rem   compiler: auto, vs, clang, mingw
 rem   architecture: auto, i386, amd64
 
 set "ROOT=%~dp0"
+if "%ROOT:~-1%"=="\" set "ROOT=%ROOT:~0,-1%"
 set "COMPILER=%~1"
 set "ARCH=%~2"
 if not defined COMPILER set "COMPILER=auto"
@@ -46,7 +47,7 @@ if errorlevel 1 (echo Error: cmake.exe was not found in PATH.& exit /b 1)
 where ninja.exe >nul 2>&1
 if errorlevel 1 (echo Error: ninja.exe was not found in PATH.& exit /b 1)
 
-set "OUTPUT=%ROOT%output-%COMPILER%-%ARCH%"
+set "OUTPUT=%ROOT%\output-%COMPILER%-%ARCH%"
 set "BUILD=%OUTPUT%\build"
 if exist "%OUTPUT%" rmdir /s /q "%OUTPUT%"
 mkdir "%BUILD%"

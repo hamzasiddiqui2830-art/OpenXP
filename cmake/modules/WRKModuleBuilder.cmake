@@ -7,12 +7,16 @@ include(CMakeParseArguments)
 
 function(add_wrk_module MODULE_NAME)
     set(options OPTIONAL)
-    set(oneValueArgs SOURCE_DIR OUTPUT_DIR)
+    set(oneValueArgs SOURCE_DIR OUTPUT_DIR TARGET_NAME)
     set(multiValueArgs SOURCES HEADERS DEPENDS)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if(NOT ARG_SOURCE_DIR)
         set(ARG_SOURCE_DIR ${CMAKE_SOURCE_DIR}/ntoskrnl/${MODULE_NAME})
+    endif()
+
+    if(NOT ARG_TARGET_NAME)
+        set(ARG_TARGET_NAME ntos_${MODULE_NAME})
     endif()
 
     if(NOT ARG_OUTPUT_DIR)
@@ -44,15 +48,10 @@ function(add_wrk_module MODULE_NAME)
                SOURCE_FILE_NORMALIZED MATCHES "(^|/)(i386|amd64|ia64|arm|arm64)(/|$)")
                 continue()
             endif()
-
-            # The RTL directory contains several legacy user-mode heap sources
-            # alongside the kernel RTL. They depend on the user-mode heap/NTDLL
-            # environment and must not be pulled into the NTOS kernel library.
             if(MODULE_NAME STREQUAL "rtl" AND
                SOURCE_FILE_NORMALIZED MATCHES "(^|/)(generr|heapdbg|heapdll|heapleak|heaplowf)\\.c$")
                 continue()
             endif()
-
             list(APPEND MODULE_C_SOURCES_FILTERED "${SOURCE_FILE}")
         endforeach()
         set(MODULE_C_SOURCES ${MODULE_C_SOURCES_FILTERED})
@@ -97,7 +96,7 @@ function(add_wrk_module MODULE_NAME)
     endif()
 
     if(ARG_SOURCES)
-        add_library(ntos_${MODULE_NAME} STATIC ${ARG_SOURCES})
+        add_library(${ARG_TARGET_NAME} STATIC ${ARG_SOURCES})
 
         set(MODULE_INCLUDE_DIRS
             ${CMAKE_SOURCE_DIR}/ntoskrnl/inc
@@ -119,23 +118,23 @@ function(add_wrk_module MODULE_NAME)
             list(APPEND MODULE_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ntoskrnl/i386)
         endif()
 
-        target_include_directories(ntos_${MODULE_NAME} PRIVATE ${MODULE_INCLUDE_DIRS})
+        target_include_directories(${ARG_TARGET_NAME} PRIVATE ${MODULE_INCLUDE_DIRS})
 
         if(MSVC AND WRK_ARCH_NAME STREQUAL "x86" AND MODULE_NAME STREQUAL "rtl")
-            set_source_files_properties(${MODULE_C_SOURCES} PROPERTIES COMPILE_OPTIONS "/Gz;/wd4101")
+            target_compile_options(${ARG_TARGET_NAME} PRIVATE /Gz /wd4101)
         endif()
 
-        set_target_properties(ntos_${MODULE_NAME} PROPERTIES
+        set_target_properties(${ARG_TARGET_NAME} PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY ${ARG_OUTPUT_DIR}
             POSITION_INDEPENDENT_CODE OFF
-            OUTPUT_NAME ntos${MODULE_NAME}
+            OUTPUT_NAME ${ARG_TARGET_NAME}
         )
 
         if(ARG_DEPENDS)
-            add_dependencies(ntos_${MODULE_NAME} ${ARG_DEPENDS})
+            add_dependencies(${ARG_TARGET_NAME} ${ARG_DEPENDS})
         endif()
 
-        message(STATUS "Added module: ${MODULE_NAME}")
+        message(STATUS "Added module: ${MODULE_NAME} as ${ARG_TARGET_NAME}")
     endif()
 endfunction()
 

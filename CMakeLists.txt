@@ -215,9 +215,26 @@ endif()
 
 add_subdirectory(${NTOSKRNL_SOURCE_DIR}/config)
 
-# The executive currently uses the older WRK private-header layout. Keep its
-# source list explicit so CMake never silently substitutes newer converted
-# sources from the same directory.
+# The executive uses the older WRK private-header layout. The source files
+# needed for that layout are staged into the build tree as local copies. The
+# compiler therefore never compiles a source whose path is under ntos-old.
+# ntos-old remains the unused source backup/reference only.
+set(EX_LOCAL_SOURCE_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}/ex-local)
+file(MAKE_DIRECTORY ${EX_LOCAL_SOURCE_DIR})
+
+set(EX_LEGACY_SOURCES
+    mutant.c
+    pool.c
+    pushlock.c
+)
+foreach(EX_SOURCE IN LISTS EX_LEGACY_SOURCES)
+    configure_file(
+        ${REACTOS_SOURCE_DIR}/ntos-old/ex/${EX_SOURCE}
+        ${EX_LOCAL_SOURCE_DIR}/${EX_SOURCE}
+        COPYONLY
+    )
+endforeach()
+
 set(EX_KERNEL_SOURCES
     ${NTOSKRNL_SOURCE_DIR}/ex/callback.c
     ${NTOSKRNL_SOURCE_DIR}/callperf.c
@@ -236,9 +253,9 @@ set(EX_KERNEL_SOURCES
     ${NTOSKRNL_SOURCE_DIR}/hdlsterm.c
     ${NTOSKRNL_SOURCE_DIR}/lookasid.c
     ${NTOSKRNL_SOURCE_DIR}/luid.c
-    ${REACTOS_SOURCE_DIR}/ntos-old/ex/mutant.c
-    ${REACTOS_SOURCE_DIR}/ntos-old/ex/pool.c
-    ${REACTOS_SOURCE_DIR}/ntos-old/ex/pushlock.c
+    ${EX_LOCAL_SOURCE_DIR}/mutant.c
+    ${EX_LOCAL_SOURCE_DIR}/pool.c
+    ${EX_LOCAL_SOURCE_DIR}/pushlock.c
     ${NTOSKRNL_SOURCE_DIR}/ex/nbqueue.c
     ${NTOSKRNL_SOURCE_DIR}/ex/probe.c
     ${NTOSKRNL_SOURCE_DIR}/ex/profile.c

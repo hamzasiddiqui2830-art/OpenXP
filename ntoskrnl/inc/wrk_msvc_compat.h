@@ -22,6 +22,13 @@
 #endif
 #define NTSYSAPI
 
+/* PROCESSOR_FEATURE_MAX is an integer macro in the public API. The WRK
+ * source compares it with a ULONG, so make the bound unsigned for MSVC. */
+#ifdef PROCESSOR_FEATURE_MAX
+#undef PROCESSOR_FEATURE_MAX
+#endif
+#define PROCESSOR_FEATURE_MAX 64UL
+
 #if defined(_MSC_VER) && defined(_X86_)
 #define MiCompareTbFlushTimeStamp MiCompareTbFlushTimeStamp_X86
 #include "../mm/i386/mi386.h"

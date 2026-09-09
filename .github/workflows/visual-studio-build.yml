@@ -1,4 +1,4 @@
-name: Visual Studio Build
+name: CMake Build
 
 on:
   push:
@@ -9,29 +9,29 @@ on:
 jobs:
   build-vs-x86:
     runs-on: windows-latest
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
+    - name: Setup MSVC x86 environment
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x86
 
-    - name: Configure CMake for Visual Studio (x86)
+    - name: Configure CMake (x86)
       run: |
-        cmake -G "Visual Studio 18 2026" -A Win32 `
+        cmake -G Ninja `
+          -DCMAKE_BUILD_TYPE=Release `
           -DWRK_ARCH=i386 `
           -DBUILD_NTOSKRNL_TESTS=OFF `
-          -DCMAKE_BINARY_DIR="${{ github.workspace }}/output-VS-i386" `
           -B "${{ github.workspace }}/output-VS-i386/build" `
           -S "${{ github.workspace }}"
       working-directory: ${{ github.workspace }}
 
     - name: Build with CMake (x86)
       run: |
-        cmake --build "${{ github.workspace }}/output-VS-i386/build" `
-          --config Release `
-          -- /maxcpucount
+        cmake --build "${{ github.workspace }}/output-VS-i386/build" --parallel
       working-directory: ${{ github.workspace }}
 
     - name: Upload x86 build artifacts
@@ -47,29 +47,29 @@ jobs:
 
   build-vs-x64:
     runs-on: windows-latest
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
+    - name: Setup MSVC x64 environment
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
 
-    - name: Configure CMake for Visual Studio (x64)
+    - name: Configure CMake (x64)
       run: |
-        cmake -G "Visual Studio 18 2026" -A x64 `
+        cmake -G Ninja `
+          -DCMAKE_BUILD_TYPE=Release `
           -DWRK_ARCH=amd64 `
           -DBUILD_NTOSKRNL_TESTS=OFF `
-          -DCMAKE_BINARY_DIR="${{ github.workspace }}/output-VS-amd64" `
           -B "${{ github.workspace }}/output-VS-amd64/build" `
           -S "${{ github.workspace }}"
       working-directory: ${{ github.workspace }}
 
     - name: Build with CMake (x64)
       run: |
-        cmake --build "${{ github.workspace }}/output-VS-amd64/build" `
-          --config Release `
-          -- /maxcpucount
+        cmake --build "${{ github.workspace }}/output-VS-amd64/build" --parallel
       working-directory: ${{ github.workspace }}
 
     - name: Upload x64 build artifacts

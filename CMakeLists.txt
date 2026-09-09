@@ -201,6 +201,14 @@ foreach(EX_SOURCE IN LISTS EX_LEGACY_SOURCES)
     configure_file(${REACTOS_SOURCE_DIR}/ntos-old/ex/${EX_SOURCE} ${EX_LOCAL_SOURCE_DIR}/${EX_SOURCE} COPYONLY)
 endforeach()
 
+# The WRK sysinfo implementation has one legacy FIELD_OFFSET comparison
+# whose operands have different signedness with the local MSVC headers.
+# Keep that compatibility exception scoped to this source file rather than
+# weakening /WX for the executive target as a whole.
+if(MSVC)
+    set_source_files_properties(${EX_LOCAL_SOURCE_DIR}/sysinfo.c PROPERTIES COMPILE_OPTIONS "/wd4018")
+endif()
+
 set(EX_SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/ex)
 set(EX_KERNEL_SOURCES
     ${EX_SOURCE_DIR}/callback.c

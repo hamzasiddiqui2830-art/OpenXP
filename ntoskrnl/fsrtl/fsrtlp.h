@@ -2,7 +2,10 @@
 
 Copyright (c) OpenXP Team 2026.
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
 
 Module Name:
@@ -24,6 +27,14 @@ Abstract:
 #pragma warning(disable:4115)   // named type definition in parentheses
 #pragma warning(disable:4706)   // assignment within conditional expression
 
+/*
+ * FsRtlP.h is used as a PCH and must establish the public NT types before
+ * pulling in the kernel umbrella header.  In particular ntrtl.h consumes
+ * RTL_ATOM/PRTL_ATOM and CSHORT, while the normal ntos.h include path is not
+ * guaranteed to have initialized those headers when the PCH is built.
+ */
+#include <ntdef.h>
+#include <ntexapi.h>
 #include <ntos.h>
 #include <FsRtl.h>
 #include <NtDdFt.h>
@@ -46,42 +57,34 @@ Abstract:
 //  The global FsRtl debug level variable, its values are:
 //
 //      0x00000000      Always gets printed (used when about to bugcheck)
-//
 //      0x00000001      Error conditions
 //      0x00000002      Debug hooks
 //      0x00000004
 //      0x00000008
-//
 //      0x00000010
 //      0x00000020
 //      0x00000040
 //      0x00000080
-//
 //      0x00000100
 //      0x00000200
 //      0x00000400
 //      0x00000800
-//
 //      0x00001000
 //      0x00002000
 //      0x00004000
 //      0x00008000
-//
 //      0x00010000
 //      0x00020000
 //      0x00040000
 //      0x00080000
-//
 //      0x00100000
 //      0x00200000
 //      0x00400000
 //      0x00800000
-//
 //      0x01000000
 //      0x02000000
 //      0x04000000      NotifyChange routines
 //      0x08000000      Oplock routines
-//
 //      0x10000000      Name routines
 //      0x20000000      FileLock routines
 //      0x40000000      Vmcb routines
@@ -101,7 +104,7 @@ extern LONG FsRtlDebugTraceIndent;
     LONG _i;                                                  \
     if (((LEVEL) == 0) || (FsRtlDebugTraceLevel & (LEVEL))) { \
         _i = (ULONG)PsGetCurrentThread();                     \
-        DbgPrint("%08lx:",_i);                                 \
+        DbgPrint("%08lx:",_i);                               \
         if ((INDENT) < 0) {                                   \
             FsRtlDebugTraceIndent += (INDENT);                \
         }                                                     \
@@ -109,9 +112,9 @@ extern LONG FsRtlDebugTraceIndent;
             FsRtlDebugTraceIndent = 0;                        \
         }                                                     \
         for (_i=0; _i<FsRtlDebugTraceIndent; _i+=1) {         \
-            DbgPrint(" ");                                     \
+            DbgPrint(" ");                                   \
         }                                                     \
-        DbgPrint(X,Y);                                         \
+        DbgPrint(X,Y);                                        \
         if ((INDENT) > 0) {                                   \
             FsRtlDebugTraceIndent += (INDENT);                \
         }                                                     \
@@ -123,8 +126,8 @@ extern LONG FsRtlDebugTraceIndent;
     VOID FsRtlDump();                                         \
     if (((LEVEL) == 0) || (FsRtlDebugTraceLevel & (LEVEL))) { \
         _i = (ULONG)PsGetCurrentThread();                     \
-        DbgPrint("%08lx:",_i);                                 \
-        DbgPrint(STR);                                         \
+        DbgPrint("%08lx:",_i);                               \
+        DbgPrint(STR);                                        \
         if (PTR != NULL) {FsRtlDump(PTR);}                    \
         DbgBreakPoint();                                      \
     }                                                         \
@@ -163,82 +166,17 @@ FsRtlInitializeWorkerThread (
     VOID
     );
 
-//
-//  This macro returns TRUE if a flag in a set of flags is on and FALSE
-//  otherwise
-//
-
 #define FlagOn(Flags,SingleFlag)        ((Flags) & (SingleFlag))
-
 #define BooleanFlagOn(Flags,SingleFlag) ((BOOLEAN)(((Flags) & (SingleFlag)) != 0))
+#define SetFlag(F,SF) { (F) |= (SF); }
+#define ClearFlag(F,SF) { (F) &= ~(SF); }
 
-#define SetFlag(F,SF) { \
-    (F) |= (SF);        \
-}
-
-#define ClearFlag(F,SF) { \
-    (F) &= ~(SF);         \
-}
-
-//
-//  This macro takes a pointer (or ulong) and returns its rounded up word
-//  value
-//
-
-#define WordAlign(Ptr) (                \
-    ((((ULONG_PTR)(Ptr)) + 1) & -2) \
-    )
-
-//
-//  This macro takes a pointer (or ulong) and returns its rounded up longword
-//  value
-//
-
-#define LongAlign(Ptr) (                \
-    ((((ULONG_PTR)(Ptr)) + 3) & -4) \
-    )
-
-//
-//  This macro takes a pointer (or ulong) and returns its rounded up quadword
-//  value
-//
-
-#define QuadAlign(Ptr) (                \
-    ((((ULONG_PTR)(Ptr)) + 7) & -8) \
-    )
-
-//
-//  This macro takes a ulong and returns its value rounded up to a sector
-//  boundary
-//
-
-#define SectorAlign(Ptr) (                \
-    ((((ULONG_PTR)(Ptr)) + 511) & -512) \
-    )
-
-//
-//  This macro takes a number of bytes and returns the number of sectors
-//  required to contain that many bytes, i.e., it sector aligns and divides
-//  by the size of a sector.
-//
-
-#define SectorsFromBytes(bytes) ( \
-    ((bytes) + 511) / 512         \
-    )
-
-//
-//  This macro takes a number of sectors and returns the number of bytes
-//  contained in that many sectors.
-//
-
-#define BytesFromSectors(sectors) ( \
-    (sectors) * 512                 \
-    )
-
-//
-//  The following types and macros are used to help unpack the packed and
-//  misaligned fields found in the Bios parameter block
-//
+#define WordAlign(Ptr) ((((ULONG_PTR)(Ptr)) + 1) & -2)
+#define LongAlign(Ptr) ((((ULONG_PTR)(Ptr)) + 3) & -4)
+#define QuadAlign(Ptr) ((((ULONG_PTR)(Ptr)) + 7) & -8)
+#define SectorAlign(Ptr) ((((ULONG_PTR)(Ptr)) + 511) & -512)
+#define SectorsFromBytes(bytes) (((bytes) + 511) / 512)
+#define BytesFromSectors(sectors) ((sectors) * 512)
 
 typedef union _UCHAR1 {
     UCHAR  Uchar[1];
@@ -255,60 +193,10 @@ typedef union _UCHAR4 {
     ULONG  ForceAlignment;
 } UCHAR4, *PUCHAR4;
 
-//
-//  This macro copies an unaligned src byte to an aligned dst byte
-//
+#define CopyUchar1(Dst,Src) { *((UCHAR1 *)(Dst)) = *((UNALIGNED UCHAR1 *)(Src)); }
+#define CopyUchar2(Dst,Src) { *((UCHAR2 *)(Dst)) = *((UNALIGNED UCHAR2 *)(Src)); }
+#define CopyUchar4(Dst,Src) { *((UCHAR4 *)(Dst)) = *((UNALIGNED UCHAR4 *)(Src)); }
 
-#define CopyUchar1(Dst,Src) {                                \
-    *((UCHAR1 *)(Dst)) = *((UNALIGNED UCHAR1 *)(Src)); \
-    }
-
-//
-//  This macro copies an unaligned src word to an aligned dst word
-//
-
-#define CopyUchar2(Dst,Src) {                                \
-    *((UCHAR2 *)(Dst)) = *((UNALIGNED UCHAR2 *)(Src)); \
-    }
-
-//
-//  This macro copies an unaligned src longword to an aligned dsr longword
-//
-
-#define CopyUchar4(Dst,Src) {                                \
-    *((UCHAR4 *)(Dst)) = *((UNALIGNED UCHAR4 *)(Src)); \
-    }
-
-
-//
-//  The following macros are used to establish the semantics needed
-//  to do a return from within a try-finally clause.  As a rule every
-//  try clause must end with a label call try_exit.  For example,
-//
-//      try {
-//              :
-//              :
-//
-//      try_exit: NOTHING;
-//      } finally {
-//
-//              :
-//              :
-//      }
-//
-//  Every return statement executed inside of a try clause should use the
-//  try_return macro.  If the compiler fully supports the try-finally construct
-//  then the macro should be
-//
-//      #define try_return(S)  { return(S); }
-//
-//  If the compiler does not support the try-finally construct then the macro
-//  should be
-//
-//      #define try_return(S)  { S; goto try_exit; }
-//
-
-// Include SEH abstraction header for compiler-compatible exception handling
 #include "../inc/seh.h"
 
 #define try_return(S) { S; goto try_exit; }
@@ -318,11 +206,6 @@ typedef union _UCHAR4 {
 
 #define GET_FS_FILTER_CALLBACKS(DevObj) \
     ((DevObj)->DriverObject->DriverExtension->FsFilterCallbacks)
-    
-//
-//  Macro for validating the FastIo dispatch routines before calling
-//  them in the FastIo pass through functions.
-//
 
 #define VALID_FAST_IO_DISPATCH_HANDLER(FastIoDispatchPtr, FieldName) \
     (((FastIoDispatchPtr) != NULL) && \
@@ -339,39 +222,27 @@ typedef union _UCHAR4 {
 #define FSRTL_FILTER_MEMORY_TAG    'gmSF'
 
 typedef struct _FS_FILTER_COMPLETION_NODE {
-
     PDEVICE_OBJECT DeviceObject;
     PFILE_OBJECT FileObject;
     PVOID CompletionContext;
     PFS_FILTER_COMPLETION_CALLBACK CompletionCallback;
-    
 } FS_FILTER_COMPLETION_NODE, *PFS_FILTER_COMPLETION_NODE;
 
 #define FS_FILTER_DEFAULT_STACK_SIZE    15
 
 typedef struct _FS_FILTER_COMPLETION_STACK {
-
     USHORT StackLength;
     USHORT NextStackPosition;
     PFS_FILTER_COMPLETION_NODE Stack;
     FS_FILTER_COMPLETION_NODE DefaultStack[FS_FILTER_DEFAULT_STACK_SIZE];
-    
 } FS_FILTER_COMPLETION_STACK, *PFS_FILTER_COMPLETION_STACK;
 
 typedef struct _FS_FILTER_CTRL {
-
     FS_FILTER_CALLBACK_DATA Data;
-    
     ULONG Flags;
     ULONG Reserved;
-    
     FS_FILTER_COMPLETION_STACK CompletionStack;
-    
 } FS_FILTER_CTRL, *PFS_FILTER_CTRL;
-
-//
-//  Flag values for FS_FILTER_CTRL
-//
 
 #define FS_FILTER_ALLOCATED_COMPLETION_STACK    0x00000001
 #define FS_FILTER_USED_RESERVE_POOL             0x00000002
@@ -408,20 +279,20 @@ FsFilterCtrlFree (
     IN PFS_FILTER_CTRL FsFilterCtrl
     );
 
-#define PUSH_COMPLETION_NODE( completionStack ) \
-    (((completionStack)->NextStackPosition < (completionStack)->StackLength ) ? \
+#define PUSH_COMPLETION_NODE(completionStack) \
+    (((completionStack)->NextStackPosition < (completionStack)->StackLength) ? \
         &(completionStack)->Stack[(completionStack)->NextStackPosition++] : \
-        (ASSERT( FALSE ), NULL) )
+        (ASSERT(FALSE), NULL))
 
-#define POP_COMPLETION_NODE( completionStack ) \
+#define POP_COMPLETION_NODE(completionStack) \
     (ASSERT((completionStack)->NextStackPosition > 0), \
      ((completionStack)->NextStackPosition--))
 
-#define GET_COMPLETION_NODE( completionStack ) \
-    (ASSERT((completionStack)->NextStackPosition > 0),\
+#define GET_COMPLETION_NODE(completionStack) \
+    (ASSERT((completionStack)->NextStackPosition > 0), \
      (&(completionStack)->Stack[(completionStack)->NextStackPosition-1]))
 
-#define FS_FILTER_HAVE_COMPLETIONS( fsFilterCtrl ) \
+#define FS_FILTER_HAVE_COMPLETIONS(fsFilterCtrl) \
     ((fsFilterCtrl)->CompletionStack.NextStackPosition > 0)
 
 VOID
@@ -447,4 +318,3 @@ FsFilterPerformCompletionCallbacks(
     );
 
 #endif // _FSRTLP_
-

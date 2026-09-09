@@ -1065,7 +1065,11 @@ Return Value:
 --*/
 
 {
-    ULONG j;
+    ULONG i,j;
+    PVOID Ace;
+    ULONG AceCount;
+    ULONG Index;
+    ULONG ResultListIndex;
 
     //
     // The remaining bits are the granted bits for each object type on a
@@ -1808,6 +1812,12 @@ Return Value:
 
     PACL Dacl;
 
+    PVOID Ace;
+    ULONG AceCount;
+
+    ULONG i;
+    ULONG j;
+    ULONG Index;
     ULONG PrivilegeCount = 0;
     BOOLEAN Success = FALSE;
     BOOLEAN SystemSecurity = FALSE;

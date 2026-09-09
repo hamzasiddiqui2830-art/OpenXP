@@ -51,19 +51,21 @@ function(add_wrk_module MODULE_NAME)
             # uob.c and tob.c are the original WRK Object Manager user/test
             # programs. They are not kernel implementation units and contain
             # user-mode entry points and intentionally obsolete test APIs.
-            # Building them as part of ntos_ob produces hundreds of misleading
-            # type/calling-convention diagnostics under modern MSVC /WX.
             if(MODULE_NAME STREQUAL "ob" AND
                SOURCE_FILE_NORMALIZED MATCHES "(^|/)(uob|tob)\\.c$")
                 continue()
             endif()
-            # The ct*.c files in the WRK security directory are common
-            # security test programs/routines, not kernel implementation
-            # units. They include tsecomm.c and test-only globals and APIs.
-            # Compiling them into ntos_se causes missing test symbols and
-            # incompatible test-call signatures under the kernel build.
+            # ct*.c files in the WRK security directory are test programs or
+            # test-only routines, not kernel Security implementation units.
             if(MODULE_NAME STREQUAL "se" AND
                SOURCE_FILE_NORMALIZED MATCHES "(^|/)ct[^/]*\\.c$")
+                continue()
+            endif()
+            # dumpuser.c is an old LAN Manager/OS2 user-mode account database
+            # utility. It depends on os2.h and DOS/Net APIs and must not be
+            # compiled into the kernel Security library.
+            if(MODULE_NAME STREQUAL "se" AND
+               SOURCE_FILE_NORMALIZED MATCHES "(^|/)dumpuser\\.c$")
                 continue()
             endif()
             if(MODULE_NAME STREQUAL "rtl" AND
@@ -139,9 +141,6 @@ function(add_wrk_module MODULE_NAME)
             list(APPEND MODULE_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ntoskrnl/i386)
         endif()
 
-        # Apply the module include list to every target, including modules
-        # that pass an explicit SOURCES list. This exposes private module
-        # headers such as ntoskrnl/rtl/ntrtlp.h to the compiler.
         target_include_directories(${ARG_TARGET_NAME} PRIVATE ${MODULE_INCLUDE_DIRS})
 
         if(MSVC AND WRK_ARCH_NAME STREQUAL "x86")

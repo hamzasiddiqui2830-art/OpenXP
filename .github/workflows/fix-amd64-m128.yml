@@ -1,0 +1,49 @@
+name: Fix AMD64 M128 compatibility
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message != 'Fix AMD64 M128 compatibility'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Replace invalid M128 members
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('ntoskrnl/inc/amd64.h')
+          s = p.read_text()
+          old = '''    M128 Xmm6;\n    M128 Xmm7;\n    M128 Xmm8;\n    M128 Xmm9;\n    M128 Xmm10;\n    M128 Xmm11;\n    M128 Xmm12;\n    M128 Xmm13;\n    M128 Xmm14;\n    M128 Xmm15;'''
+          new = old.replace('M128 ', 'M128A ')
+          if s.count(old) != 2:
+              raise SystemExit(f'Expected exactly 2 M128 blocks, found {s.count(old)}')
+          s = s.replace(old, new)
+          if '    M128 Xmm6;' in s:
+              raise SystemExit('Unpatched M128 member block remains')
+          p.write_text(s)
+          PY
+      - name: Verify exact diff
+        shell: bash
+        run: |
+          git diff --check
+          git diff -- ntoskrnl/inc/amd64.h
+          test "$(git diff --numstat -- ntoskrnl/inc/amd64.h | awk '{print $1}')" = "20"
+          test "$(git diff --numstat -- ntoskrnl/inc/amd64.h | awk '{print $2}')" = "20"
+          test "$(git diff --name-only)" = "ntoskrnl/inc/amd64.h"
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ntoskrnl/inc/amd64.h
+          git commit -m 'Fix AMD64 M128 compatibility'
+          git push

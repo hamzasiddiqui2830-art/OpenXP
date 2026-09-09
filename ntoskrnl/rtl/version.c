@@ -46,13 +46,13 @@ Revision History:
 // uses this buggy macro (notably this terminal server) and have been shipped.
 // To fix this bug, a new API VerSetConditionMask is defined which has a new
 // bit layout. To provide backwards compatibility, we need to know if a
-// specific condition mask is a new style mask (has the new bit layout) or is
-// an old style mask. In both bit layouts bit 64 can never be set.
+// specific condition mask is a new style mask (has the new bit layout) or is an
+// old style mask. In both bit layouts bit 64 can never be set.
 // So the new API sets this bit to indicate that the condition mask is a new
 // style condition mask. So the code in this function that extracts the
 // condition uses the new bit layout if bit 63 is set and the old layout if
-// bit 63 is not set. This should allow applications that was compiled with
-// the old macro to work.
+// bit 63 is not set. This should allow applications that was compiled with the
+// old macro to work.
 //
 
 //
@@ -64,7 +64,29 @@ Revision History:
 //
 // Condition extractor for the old style mask.
 //
-#define OLD_CONDITION(_m_,_t_)  (ULONG)((_m_&(0xff<<(1<<_t_)))>>(1<<_t_))
+// The historical macro used (1 << type) as the bit offset. For the higher
+// version types that offset is 64 or greater, so the original expression is
+// undefined and MSVC correctly diagnoses it as C4293. Those old-style masks
+// cannot encode such conditions in a 64-bit value; return no condition rather
+// than performing an invalid shift. Lower types retain the original layout.
+//
+static ULONG
+RtlpVerGetOldCondition(
+    ULONGLONG ConditionMask,
+    ULONG TypeMask
+    )
+{
+    ULONG Shift;
+
+    if (TypeMask >= 6) {
+        return 0;
+    }
+
+    Shift = 1UL << TypeMask;
+    return (ULONG)((ConditionMask >> Shift) & 0xFFULL);
+}
+
+#define OLD_CONDITION(_m_,_t_)  RtlpVerGetOldCondition((_m_),(_t_))
 
 //
 // Test to see  if the mask is an old style mask.
@@ -228,234 +250,3 @@ RtlVerifyVersionInfo(
     This function verifies a version condition.  Basically, this
     function lets an app query the system to see if the app is
     running on a specific version combination.
-
-
-Arguments:
-
-    VersionInfo     - a version structure containing the comparison data
-    TypeMask        - a mask comtaining the data types to look at
-    ConditionMask   - a mask containing conditionals for doing the comparisons
-
-
-Return Value:
-
-    STATUS_INVALID_PARAMETER if the parameters are not valid.
-    STATUS_REVISION_MISMATCH if the versions don't match.
-    STATUS_SUCCESS if the versions match.
-
---*/
-
-{
-    ULONG i;
-    OSVERSIONINFOEXW CurrVersion;
-    BOOLEAN SuiteFound = FALSE;
-    BOOLEAN Equal;
-        NTSTATUS Status;
-    ULONG   Condition;
-
-
-    if (TypeMask == 0) {
-        return STATUS_INVALID_PARAMETER;
-    }
-
-    RtlZeroMemory( &CurrVersion, sizeof(OSVERSIONINFOEXW) );
-    CurrVersion.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
-
-    Status = RtlGetVersion((PRTL_OSVERSIONINFOW)&CurrVersion);
-    if (Status != STATUS_SUCCESS)
-                    return Status;
-
-    if ((TypeMask & VER_SUITENAME) && (VersionInfo->wSuiteMask != 0)) {
-        for (i=0; i<16; i++) {
-            if (VersionInfo->wSuiteMask&(1<<i)) {
-                switch (RTL_GET_CONDITION(ConditionMask,VER_SUITENAME)) {
-                    case VER_AND:
-                        if (!(CurrVersion.wSuiteMask&(1<<i))) {
-                            return STATUS_REVISION_MISMATCH;
-                        }
-                        break;
-
-                    case VER_OR:
-                        if (CurrVersion.wSuiteMask&(1<<i)) {
-                            SuiteFound = TRUE;
-                        }
-                        break;
-
-                    default:
-                        return STATUS_INVALID_PARAMETER;
-                }
-            }
-        }
-        if ((RtlpVerGetConditionMask(ConditionMask,VER_SUITENAME) == VER_OR) && (SuiteFound == FALSE)) {
-            return STATUS_REVISION_MISMATCH;
-        }
-    }
-
-    Equal = TRUE;
-    Condition = VER_EQUAL;
-    if (TypeMask & VER_MAJORVERSION) {
-        Condition = RTL_GET_CONDITION( ConditionMask, VER_MAJORVERSION);
-        if (RtlpVerCompare(
-                Condition,
-                VersionInfo->dwMajorVersion,
-                CurrVersion.dwMajorVersion,
-                &Equal,
-                0
-                ) == FALSE)
-        {
-            if (!Equal) {
-                return STATUS_REVISION_MISMATCH;
-            }
-        }
-    }
-
-    if (Equal) {
-        ASSERT(Condition);
-        if (TypeMask & VER_MINORVERSION) {
-            if (Condition == VER_EQUAL) {
-                Condition = RTL_GET_CONDITION(ConditionMask, VER_MINORVERSION); 
-            }
-            if (RtlpVerCompare(
-                Condition,
-                VersionInfo->dwMinorVersion,
-                CurrVersion.dwMinorVersion,
-                &Equal,
-                LEXICAL_COMPARISON
-                ) == FALSE)
-            {
-                if (!Equal) {
-                    return STATUS_REVISION_MISMATCH;
-                }
-            }
-        }
-
-        if (Equal) {
-            if (TypeMask & VER_SERVICEPACKMAJOR) {
-                if (Condition == VER_EQUAL) {
-                    Condition = RTL_GET_CONDITION(ConditionMask, VER_SERVICEPACKMAJOR); 
-                }
-                if (RtlpVerCompare(
-                    Condition,
-                    VersionInfo->wServicePackMajor,
-                    CurrVersion.wServicePackMajor,
-                    &Equal,
-                    0
-                    ) == FALSE)
-                {
-                    if (!Equal) {
-                        return STATUS_REVISION_MISMATCH;
-                    }
-                }
-            }
-            if (Equal) {
-                if (TypeMask & VER_SERVICEPACKMINOR) {
-                    if (Condition == VER_EQUAL) {
-                        Condition = RTL_GET_CONDITION(ConditionMask, VER_SERVICEPACKMINOR); 
-                    }
-                    if (RtlpVerCompare(
-                        Condition,
-                        (ULONG)VersionInfo->wServicePackMinor,
-                        (ULONG)CurrVersion.wServicePackMinor,
-                        &Equal,
-                        LEXICAL_COMPARISON
-                        ) == FALSE)
-                    {
-                        return STATUS_REVISION_MISMATCH;
-                    }
-                }
-            }
-        }
-    }
-
-    if ((TypeMask & VER_BUILDNUMBER) &&
-        RtlpVerCompare(
-            RTL_GET_CONDITION( ConditionMask, VER_BUILDNUMBER),
-            VersionInfo->dwBuildNumber,
-            CurrVersion.dwBuildNumber,
-            &Equal,
-            0
-            ) == FALSE)
-    {
-        return STATUS_REVISION_MISMATCH;
-    }
-
-    if ((TypeMask & VER_PLATFORMID) &&
-        RtlpVerCompare(
-            RTL_GET_CONDITION( ConditionMask, VER_PLATFORMID),
-            VersionInfo->dwPlatformId,
-            CurrVersion.dwPlatformId,
-            &Equal,
-            0
-            ) == FALSE)
-    {
-        return STATUS_REVISION_MISMATCH;
-    }
-
-
-    if ((TypeMask & VER_PRODUCT_TYPE) &&
-        RtlpVerCompare(
-            RTL_GET_CONDITION( ConditionMask, VER_PRODUCT_TYPE),
-            VersionInfo->wProductType,
-            CurrVersion.wProductType,
-            &Equal,
-            0
-            ) == FALSE)
-    {
-        return STATUS_REVISION_MISMATCH;
-    }
-
-    return STATUS_SUCCESS;
-}
-
-ULONG
-RtlpVerGetConditionMask(
-        ULONGLONG       ConditionMask,
-        ULONG   TypeMask
-        )
-{
-        ULONG   NumBitsToShift;
-        ULONG   Condition = 0;
-
-        if (!TypeMask) {
-                return 0;
-        }
-
-        for (NumBitsToShift = 0; TypeMask;  NumBitsToShift++) {
-                TypeMask >>= 1;
-    }
-
-        Condition |=  (ConditionMask) >> ((NumBitsToShift - 1)
-                                                                        * VER_NUM_BITS_PER_CONDITION_MASK);
-        Condition &= VER_CONDITION_MASK;
-        return Condition;
-}
-
-
-ULONGLONG
-VerSetConditionMask(
-        ULONGLONG       ConditionMask,
-        ULONG   TypeMask,
-        UCHAR   Condition
-        )
-{
-        int     NumBitsToShift;
-
-        Condition &= VER_CONDITION_MASK;
-
-        if (!TypeMask) {
-                return 0;
-    }
-
-        for (NumBitsToShift = 0; TypeMask;  NumBitsToShift++) {
-                TypeMask >>= 1;
-    }
-
-    //
-    // Mark that we are using a new style condition mask
-    //
-    ConditionMask |=  NEW_STYLE_BIT_MASK;
-        ConditionMask |=  (Condition) << ((NumBitsToShift - 1)
-                                * VER_NUM_BITS_PER_CONDITION_MASK);
-
-        return ConditionMask;
-}

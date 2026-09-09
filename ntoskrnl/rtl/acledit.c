@@ -15,8 +15,7 @@ Abstract:
 
 --*/
 
-#include <nt.h>
-#include <ntrtl.h>
+#include <ntrtlp.h>
 #include <seopaque.h>
 
 #define FirstAce(Acl) ((PVOID)((PUCHAR)(Acl) + sizeof(ACL)))
@@ -32,21 +31,8 @@ VOID RtlpDeleteData(IN PVOID Data, IN ULONG RemoveSize, IN ULONG TotalSize);
 #pragma alloc_text(PAGE,RtlValidAcl)
 #pragma alloc_text(PAGE,RtlQueryInformationAcl)
 #pragma alloc_text(PAGE,RtlSetInformationAcl)
-#pragma alloc_text(PAGE,RtlAddAce)
 #pragma alloc_text(PAGE,RtlDeleteAce)
 #pragma alloc_text(PAGE,RtlGetAce)
-#pragma alloc_text(PAGE,RtlAddCompoundAce)
-#pragma alloc_text(PAGE,RtlpAddKnownAce)
-#pragma alloc_text(PAGE,RtlpAddKnownObjectAce)
-#pragma alloc_text(PAGE,RtlAddAccessAllowedAce)
-#pragma alloc_text(PAGE,RtlAddAccessAllowedAceEx)
-#pragma alloc_text(PAGE,RtlAddAccessDeniedAce)
-#pragma alloc_text(PAGE,RtlAddAccessDeniedAceEx)
-#pragma alloc_text(PAGE,RtlAddAuditAccessAce)
-#pragma alloc_text(PAGE,RtlAddAuditAccessAceEx)
-#pragma alloc_text(PAGE,RtlAddAccessAllowedObjectAce)
-#pragma alloc_text(PAGE,RtlAddAccessDeniedObjectAce)
-#pragma alloc_text(PAGE,RtlAddAuditAccessObjectAce)
 #pragma alloc_text(PAGE,RtlFirstFreeAce)
 #pragma alloc_text(PAGE,RtlpAddData)
 #pragma alloc_text(PAGE,RtlpDeleteData)
@@ -137,7 +123,7 @@ RtlQueryInformationAcl(IN PACL Acl, OUT PVOID AclInformation, IN ULONG AclInform
 NTSTATUS NTAPI
 RtlSetInformationAcl(IN PACL Acl, IN PVOID AclInformation, IN ULONG AclInformationLength, IN ACL_INFORMATION_CLASS AclInformationClass)
 {
-    if (AclInformationClass != AclRevisionInformation || AclInformationLength < sizeof(ACL_REVISION_INFORMATION)) return STATUS_INVALID_PARAMETER;
+    if (!ValidAclRevision(Acl) || AclInformationClass != AclRevisionInformation || AclInformationLength < sizeof(ACL_REVISION_INFORMATION)) return STATUS_INVALID_PARAMETER;
     Acl->AclRevision = ((PACL_REVISION_INFORMATION)AclInformation)->AclRevision;
     return STATUS_SUCCESS;
 }
@@ -150,6 +136,7 @@ RtlGetAce(IN PACL Acl, IN ULONG AceIndex, OUT PVOID *Ace)
     if (!Ace || !RtlValidAcl(Acl) || AceIndex >= Acl->AceCount) return STATUS_INVALID_PARAMETER;
     Current = FirstAce(Acl);
     for (i = 0; i < AceIndex; i++) Current = (PACE_HEADER)NextAce(Current);
+    if ((PUCHAR)Current + sizeof(ACE_HEADER) > (PUCHAR)Acl + Acl->AclSize) return STATUS_INVALID_PARAMETER;
     *Ace = Current;
     return STATUS_SUCCESS;
 }
@@ -159,35 +146,39 @@ RtlDeleteAce(IN OUT PACL Acl, IN ULONG AceIndex)
 {
     PVOID Ace;
     PVOID Next;
-    if (!RtlGetAce(Acl, AceIndex, &Ace)) return STATUS_INVALID_PARAMETER;
+    NTSTATUS Status;
+    if (!RtlValidAcl(Acl) || AceIndex >= Acl->AceCount) return STATUS_INVALID_PARAMETER;
+    Status = RtlGetAce(Acl, AceIndex, &Ace);
+    if (!NT_SUCCESS(Status)) return Status;
     Next = NextAce((PACE_HEADER)Ace);
-    RtlpDeleteData(Ace, (ULONG)((PUCHAR)Next - (PUCHAR)Ace), Acl->AclSize - (ULONG)((PUCHAR)Ace - (PUCHAR)Acl));
+    RtlpDeleteData(Ace, (ULONG)((PUCHAR)Next - (PUCHAR)Ace), (ULONG)((PUCHAR)FirstAce(Acl) + Acl->AclSize - (PUCHAR)Ace));
     Acl->AceCount--;
     return STATUS_SUCCESS;
 }
 
-NTSTATUS NTAPI
+BOOLEAN NTAPI
 RtlFirstFreeAce(IN PACL Acl, OUT PVOID *FirstFree)
 {
     PACE_HEADER Ace;
     ULONG i;
-    if (!FirstFree || !RtlValidAcl(Acl)) return STATUS_INVALID_PARAMETER;
+    if (!FirstFree || !RtlValidAcl(Acl)) return FALSE;
     Ace = FirstAce(Acl);
-    for (i = 0; i < Acl->AceCount; i++) Ace = (PACE_HEADER)NextAce(Ace);
-    *FirstFree = (PUCHAR)Ace < (PUCHAR)Acl + Acl->AclSize ? Ace : NULL;
-    return STATUS_SUCCESS;
+    for (i = 0; i < Acl->AceCount; i++) {
+        if ((PUCHAR)Ace + sizeof(ACE_HEADER) > (PUCHAR)Acl + Acl->AclSize) return FALSE;
+        Ace = (PACE_HEADER)NextAce(Ace);
+    }
+    if ((PUCHAR)Ace > (PUCHAR)Acl + Acl->AclSize) return FALSE;
+    *FirstFree = Ace;
+    return TRUE;
 }
 
 VOID NTAPI
 RtlpAddData(IN PVOID From, IN ULONG FromSize, IN PVOID To, IN ULONG ToSize)
 {
-    PUCHAR Src = (PUCHAR)From, Dst = (PUCHAR)To;
-    if (ToSize > FromSize) {
-        ULONG Move = ToSize - FromSize;
-        while (Move--) Dst[ToSize - Move - 1] = Src[FromSize - Move - 1];
-    } else if (ToSize < FromSize) {
-        RtlMoveMemory(Dst, Src, ToSize);
-    }
+    PUCHAR Dst = (PUCHAR)To;
+    ULONG i;
+    for (i = ToSize; i != 0; i--) Dst[i - 1 + FromSize] = Dst[i - 1];
+    RtlMoveMemory(Dst, From, FromSize);
 }
 
 VOID NTAPI
@@ -195,4 +186,5 @@ RtlpDeleteData(IN PVOID Data, IN ULONG RemoveSize, IN ULONG TotalSize)
 {
     PUCHAR Base = (PUCHAR)Data;
     if (TotalSize > RemoveSize) RtlMoveMemory(Base, Base + RemoveSize, TotalSize - RemoveSize);
+    RtlZeroMemory(Base + (TotalSize > RemoveSize ? TotalSize - RemoveSize : 0), RemoveSize);
 }

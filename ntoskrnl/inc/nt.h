@@ -38,15 +38,17 @@ Abstract:
  * redeclares structures that ntrtl.h intentionally defines itself.
  */
 #include <ntdef.h>
+#include <excpt.h>
+#include <stdarg.h>
 
 #ifndef NT_INCLUDED
 #define NT_INCLUDED
 #endif
 
 /*
- * Match the dependency order of the original WRK nt.h.  The architecture
- * header supplies CONTEXT/PCONTEXT and the machine-specific exception types
- * consumed by ntxcapi.h and ntrtl.h.
+ * Match the dependency order of the original WRK nt.h. The architecture
+ * header must precede the kernel API headers because it supplies CONTEXT,
+ * PCONTEXT, and other machine-specific definitions consumed by ntxcapi.h.
  */
 #if defined(_AMD64_)
 #include <ntamd64.h>
@@ -58,13 +60,16 @@ Abstract:
 #include <ntarm64.h>
 #endif
 
-/* These public NT headers provide security-descriptor and process/thread
- * types used by ntrtl.h (including PSECURITY_DESCRIPTOR and CLIENT_ID). */
+/* Kernel-exported scheduling and spin-lock types. */
+#include <ntkeapi.h>
+
+/* Security and process/thread API types consumed by ntrtl.h. */
 #include <ntseapi.h>
 #include <ntpsapi.h>
 
-/* WRK image-format and exception definitions are prerequisites for ntrtl.h. */
+/* Image, memory and exception definitions consumed by ntrtl.h. */
 #include <ntimage.h>
+#include <ntmmapi.h>
 #include <ntxcapi.h>
 
 /* WRK ntrtl.h consumes this declaration before its atom APIs are parsed. */
@@ -78,6 +83,7 @@ typedef RTL_ATOM *PRTL_ATOM;
 #else
 #include <stdint.h>
 #include <stddef.h>
+#include <stdarg.h>
 #endif
 
 /*

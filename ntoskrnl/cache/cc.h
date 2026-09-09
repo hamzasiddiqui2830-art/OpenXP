@@ -76,3 +76,27 @@ typedef KSPIN_LOCK ALIGNED_SPINLOCK;
     KeReleaseQueuedSpinLockFromDpcLevel( &KeGetCurrentPrcb()->LockQueue[LockQueueWorkQueueLock] )
 
 #include <FsRtl.h>
+
+//
+//  Peek at number of available pages.
+//
+
+extern PFN_NUMBER MmAvailablePages;
+
+//
+//  Define our node type codes.
+//
+
+#define CACHE_NTC_SHARED_CACHE_MAP       (0x2FF)
+#define CACHE_NTC_PRIVATE_CACHE_MAP      (0x2FE)
+#define CACHE_NTC_BCB                    (0x2FD)
+#define CACHE_NTC_DEFERRED_WRITE         (0x2FC)
+#define CACHE_NTC_MBCB                   (0x2FB)
+#define CACHE_NTC_OBCB                   (0x2FA)
+#define CACHE_NTC_MBCB_GRANDE            (0x2F9)
+
+//
+//  The following definitions are used to generate meaningful blue bugcheck
+//  screens.  On a bugcheck the file system can output 4 ulongs of useful
+//  information.  The first ulong will have encoded in it a source file id
+//  (in the high word) and the line number of the bugcheck (in the low word).

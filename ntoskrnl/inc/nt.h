@@ -29,6 +29,15 @@ Abstract:
 #include <sal.h>
 
 /*
+ * ntrtl.h is included immediately by ntos.h. Establish the WRK public NT
+ * types it consumes before entering the host Windows SDK include chain.
+ * In particular, ntrtl.h uses RTL_ATOM/PRTL_ATOM, CSHORT and
+ * PNT_PRODUCT_TYPE, which are supplied by these SDK headers.
+ */
+#include <ntdef.h>
+#include <ntexapi.h>
+
+/*
  * Load the NTOSKRNL SpecStrings compatibility layer explicitly before
  * winternl.h. This prevents the Windows SDK from selecting a different
  * SpecStrings definition later in the include chain and guarantees that

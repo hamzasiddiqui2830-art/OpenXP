@@ -18,6 +18,7 @@
 #define LPTSTR PWSTR
 #define TCHAR WCHAR
 #define _T(x) L##x
+#define INET6_ADDRSTRLEN 65
 
 static int
 OpenXpStprintfW(

@@ -84,12 +84,21 @@ function(add_wrk_module MODULE_NAME)
                     get_filename_component(ASM_NAME ${ASM_FILE} NAME_WE)
                     set(CONVERTED_FILE "${ARG_OUTPUT_DIR}/${ASM_NAME}.S")
                     configure_file(${ASM_FILE} ${CONVERTED_FILE} COPYONLY)
-                    list(APPEND MODULE_ASM_SOURCES_CONVERTED ${CONVERTED_FILE})
+                    list(APPEND MODULE_ASM_SOURCES_CONVERTED ${MODULE_ASM_SOURCES_CONVERTED})
                 endforeach()
                 set(MODULE_ASM_SOURCES ${MODULE_ASM_SOURCES_CONVERTED})
             endif()
         else()
             set(MODULE_ASM_SOURCES "")
+        endif()
+
+        if(WRK_ARCH_NAME STREQUAL "x86")
+            file(GLOB MODULE_ASM_SOURCES CONFIGURE_DEPENDS "${ARG_SOURCE_DIR}/i386/*.asm")
+            if(MSVC)
+                # MSVC assembles the original MASM source directly.
+            endif()
+        elseif(WRK_ARCH_NAME STREQUAL "amd64")
+            file(GLOB MODULE_ASM_SOURCES CONFIGURE_DEPENDS "${ARG_SOURCE_DIR}/amd64/*.asm")
         endif()
 
         set(ARG_SOURCES ${MODULE_C_SOURCES} ${MODULE_ASM_SOURCES})
@@ -99,6 +108,8 @@ function(add_wrk_module MODULE_NAME)
         add_library(${ARG_TARGET_NAME} STATIC ${ARG_SOURCES})
 
         set(MODULE_INCLUDE_DIRS
+            ${ARG_SOURCE_DIR}
+            ${CMAKE_SOURCE_DIR}/ntoskrnl/ke
             ${CMAKE_SOURCE_DIR}/ntoskrnl/inc
             ${CMAKE_SOURCE_DIR}/ntoskrnl/rtl
             ${CMAKE_SOURCE_DIR}/ntos-old/rtl

@@ -85,11 +85,11 @@ PMMPTE MiSpecialPoolFirstPte;
 PMMPTE MiSpecialPoolLastPte;
 
 LONG MiSpecialPagesNonPaged;
-LONG MiSpecialPagesPagable;
+LONG MiSpecialPagesPageable;
 LONG MmSpecialPagesInUse;      // Used by the debugger
 
 ULONG MiSpecialPagesNonPagedPeak;
-ULONG MiSpecialPagesPagablePeak;
+ULONG MiSpecialPagesPageablePeak;
 ULONG MiSpecialPagesInUsePeak;
 
 ULONG MiSpecialPagesNonPagedMaximum;
@@ -1300,9 +1300,9 @@ restart:
 
         (PointerPte + 1)->u.Soft.PageFileHigh = MI_SPECIAL_POOL_PTE_PAGEABLE;
 
-        NumberOfSpecialPages = (ULONG) InterlockedIncrement (&MiSpecialPagesPagable);
-        if (NumberOfSpecialPages > MiSpecialPagesPagablePeak) {
-            MiSpecialPagesPagablePeak = NumberOfSpecialPages;
+        NumberOfSpecialPages = (ULONG) InterlockedIncrement (&MiSpecialPagesPageable);
+        if (NumberOfSpecialPages > MiSpecialPagesPageablePeak) {
+            MiSpecialPagesPageablePeak = NumberOfSpecialPages;
         }
     }
     else {

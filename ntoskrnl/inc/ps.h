@@ -11,13 +11,7 @@ Abstract:
 
     This module contains the process structure public data structures and
     procedure prototypes to be used within the NT system.
-
-Author:
-
-    Mark Lucovsky       16-Feb-1989
-
-Revision History:
-
+    
 --*/
 
 #ifndef _PS_
@@ -558,7 +552,6 @@ typedef struct _ETHREAD {
 
         struct {
             unsigned NestedFaultCount : 2;
-            unsigned ApcNeeded : 1;
         };
     };
 
@@ -801,8 +794,42 @@ typedef struct _ETHREAD {
             BOOLEAN LpcReceivedMsgIdValid : 1;
             BOOLEAN LpcExitThreadCalled   : 1;
             BOOLEAN AddressSpaceOwner     : 1;
-        };
+             
+            //
+            // The thread owns a process working set exclusively or shared.
+            //
+
+            BOOLEAN OwnsProcessWorkingSetExclusive : 1;
+            BOOLEAN OwnsProcessWorkingSetShared    : 1;
+
+            //
+            // The thread owns the system working set exclusively or shared.
+            //
+
+            BOOLEAN OwnsSystemWorkingSetExclusive : 1;
+            BOOLEAN OwnsSystemWorkingSetShared    : 1;
+
+            //
+            // The thread owns a session working set exclusively or shared.
+            //
+
+            BOOLEAN OwnsSessionWorkingSetExclusive : 1;
+            BOOLEAN OwnsSessionWorkingSetShared    : 1;
+
+            //
+            // Any working-set ownership flag is set when the thread owns
+            // a working-set lock.
+            //
+
+            #define PS_SAME_THREAD_FLAGS_OWNS_A_WORKING_SET 0x000001F8UL
+
+            //
+            // An APC is needed for this thread.
+            //
+
+            BOOLEAN ApcNeeded : 1;
     };
+};
 
     BOOLEAN ForwardClusterOnly;
     BOOLEAN DisablePageFaultClustering;

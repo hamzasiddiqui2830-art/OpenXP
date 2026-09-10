@@ -285,7 +285,10 @@ static __inline VOID KeLoopTbFlushTimeStampUnlocked(VOID) { while (KeReadTbFlush
 #endif
 #ifndef WRK_MM_CHECK_SYSTEM_IMAGE_DECLARED
 #define WRK_MM_CHECK_SYSTEM_IMAGE_DECLARED
-NTSTATUS MmCheckSystemImage(IN HANDLE ImageFileHandle);
+NTSTATUS MmCheckSystemImage(
+    IN HANDLE ImageFileHandle,
+    IN LOGICAL PurgeSection
+    );
 #endif
 #ifndef WRK_MM_LOCK_PAGEABLE_SECTION_BY_HANDLE_DECLARED
 #define WRK_MM_LOCK_PAGEABLE_SECTION_BY_HANDLE_DECLARED

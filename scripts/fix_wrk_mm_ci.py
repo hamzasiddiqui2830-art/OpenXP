@@ -218,61 +218,19 @@ def edit_mmpatch(text):
 
 
 def edit_i386_aliases(text):
-    # WRK v1.2 defines these aliases only in the WDM block near the
-    # MM_LOWEST_SYSTEM_ADDRESS definitions.  SP0 already has the
-    # misspelled MmLockPagableCodeSection alias there, while OpenXP's
-    # compatibility edits also added the same aliases to the spinlock
-    # block.  Keep the WRK-v1.2 layout and remove the duplicate block.
-    duplicate = """// begin_wdm
-
-#define MmGetProcedureAddress(Address) (Address)
-#define MmLockPageableCodeSection(Address) MmLockPageableDataSection(Address)
-#define MmLockPagableCodeSection(Address) MmLockPagableDataSection(Address)
-#define MmLockPagableDataSection(Address) MmLockPageableDataSection(Address)
-// begin_ntddk begin_ntosp
-"""
-    spinlock_duplicate = """// begin_wdm
-
-#define MmGetProcedureAddress(Address) (Address)
-#define MmLockPageableCodeSection(Address) MmLockPageableDataSection(Address)
-#define MmLockPagableCodeSection(Address) MmLockPageableDataSection(Address)
-#define MmLockPagableDataSection(Address) MmLockPageableDataSection(Address)
-// begin_ntddk begin_ntosp
-
-#define ExAcquireSpinLock"""
-    if spinlock_duplicate in text:
-        text = text.replace(spinlock_duplicate, "// begin_wdm\n\n// begin_ntddk begin_ntosp\n\n#define ExAcquireSpinLock", 1)
-
-    # If the aliases were inserted without the exact surrounding text,
-    # remove just the duplicate definitions from the earlier spinlock block.
-    early_marker = "#define ExAcquireSpinLock(Lock, OldIrql) KeAcquireSpinLock((Lock), (OldIrql))"
-    early_pos = text.find(early_marker)
-    if early_pos > 0:
-        block_start = text.rfind("// begin_wdm", 0, early_pos)
-        if block_start >= 0:
-            block = text[block_start:early_pos]
-            for line in (
-                "#define MmGetProcedureAddress(Address) (Address)\n",
-                "#define MmLockPageableCodeSection(Address) MmLockPageableDataSection(Address)\n",
-                "#define MmLockPagableCodeSection(Address) MmLockPageableDataSection(Address)\n",
-                "#define MmLockPagableDataSection(Address) MmLockPageableDataSection(Address)\n",
-            ):
-                block = block.replace(line, "")
-            text = text[:block_start] + block + text[early_pos:]
-
-    # Ensure the complete WRK-v1.2 alias set exists in the real WDM block.
-    aliases = """// begin_wdm
-
-#define MmGetProcedureAddress(Address) (Address)
-#define MmLockPageableCodeSection(Address) MmLockPageableDataSection(Address)
-#define MmLockPagableCodeSection(Address) MmLockPageableDataSection(Address)
-#define MmLockPagableDataSection(Address) MmLockPageableDataSection(Address)
-
-// end_ntddk end_wdm"""
-    if aliases not in text:
-        marker = "// begin_wdm\n\n#define MmGetProcedureAddress(Address) (Address)\n#define MmLockPagableCodeSection(Address) MmLockPagableDataSection(Address)\n\n// end_ntddk end_wdm"
-        if marker in text:
-            text = text.replace(marker, aliases, 1)
+    # WRK v1.2 keeps the pageable-code aliases in the MM/WDM block.
+    # Remove only surplus occurrences so the SP0 misspelled alias remains
+    # source-compatible while MSVC /WX no longer sees a redefinition.
+    lines = [
+        "#define MmGetProcedureAddress(Address) (Address)\n",
+        "#define MmLockPageableCodeSection(Address) MmLockPageableDataSection(Address)\n",
+        "#define MmLockPagableCodeSection(Address) MmLockPageableDataSection(Address)\n",
+        "#define MmLockPagableDataSection(Address) MmLockPageableDataSection(Address)\n",
+    ]
+    for line in lines:
+        if text.count(line) > 1:
+            first = text.find(line)
+            text = text[:first] + text[first + len(line):]
     return text
 
 

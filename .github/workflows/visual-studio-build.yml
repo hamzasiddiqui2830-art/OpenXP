@@ -28,10 +28,19 @@ jobs:
           if (-not $s.Contains($Old)) { throw "$Path: expected SP0 form not found" }
           [IO.File]::WriteAllText($p, $s.Replace($Old, $New))
         }
+        function Replace-Regex($Path, $Pattern, $New) {
+          $p = Join-Path $env:GITHUB_WORKSPACE $Path
+          $s = [IO.File]::ReadAllText($p)
+          if ($s.Contains($New)) { return }
+          if (-not [regex]::IsMatch($s, $Pattern)) { throw "$Path: expected SP0 form not found" }
+          $s = [regex]::Replace($s, $Pattern, $New, [Text.RegularExpressions.RegexOptions]::Multiline)
+          [IO.File]::WriteAllText($p, $s)
+        }
         Replace-Exact 'ntoskrnl/inc/ps.h' '    KGUARDED_MUTEX WorkingSetMutex;' '    EX_PUSH_LOCK WorkingSetMutex;'
-        Replace-Exact 'ntoskrnl/inc/ps.h' "    BOOLEAN ForwardClusterOnly;`r`n    BOOLEAN DisablePageFaultClustering;" "    BOOLEAN ForwardClusterOnly;`r`n    BOOLEAN DisablePageFaultClustering;`r`n    UCHAR ActiveFaultCount;"
+        Replace-Regex 'ntoskrnl/inc/ps.h' '    BOOLEAN ForwardClusterOnly;\r?\n    BOOLEAN DisablePageFaultClustering;' "    BOOLEAN ForwardClusterOnly;`r`n    BOOLEAN DisablePageFaultClustering;`r`n    UCHAR ActiveFaultCount;"
         Replace-Exact 'ntoskrnl/mm/i386/mi386.h' 'typedef struct _MMPTE_TRANSITION { ULONG Valid : 1; ULONG Prototype : 1; ULONG Protection : 5; ULONG Transition : 1; ULONG Reserved0 : 3; ULONG PageFrameNumber : 20 - PAGE_SHIFT; ULONG Reserved : 11; } MMPTE_TRANSITION;' 'typedef struct _MMPTE_TRANSITION { ULONG Valid : 1; ULONG Write : 1; ULONG Owner : 1; ULONG WriteThrough : 1; ULONG CacheDisable : 1; ULONG Protection : 5; ULONG Prototype : 1; ULONG Transition : 1; ULONG PageFrameNumber : 20; } MMPTE_TRANSITION;'
-        Replace-Exact 'ntoskrnl/inc/i386.h' '    ULONG   SpareFields0[4];' @'    LONG MmPageFaultCount;
+        Replace-Exact 'ntoskrnl/inc/i386.h' '    ULONG   SpareFields0[4];' @'
+    LONG MmPageFaultCount;
     LONG MmCopyOnWriteCount;
     LONG MmTransitionCount;
     LONG MmCacheTransitionCount;
@@ -45,11 +54,11 @@ jobs:
     LONG MmMappedPagesWriteCount;
     LONG MmMappedWriteIoCount;
     ULONG SpareFields0[1];'@
-        Replace-Exact 'ntoskrnl/inc/i386.h' '    volatile ULONGLONG IsrTime;' "    volatile ULONGLONG IsrTime;`r`n    ULONGLONG SpareField1;"
+        Replace-Regex 'ntoskrnl/inc/i386.h' '    volatile ULONGLONG IsrTime;\r?\n' "    volatile ULONGLONG IsrTime;`r`n    ULONGLONG SpareField1;`r`n"
         Replace-Exact 'ntoskrnl/mm/mi.h' '        KeFlushProcessTb ();' '        KeFlushProcessTb (AllProcessors);'
         $pool = Join-Path $env:GITHUB_WORKSPACE 'ntos-old/ex/pool.c'
         $s = [IO.File]::ReadAllText($pool)
-        $s = $s.Replace('#define InterlockedExchangeAddSizeT(a,b) InterlockedExchangeAdd((PLONG)(a),(LONG)(b))' + "`r`n", '')
+        $s = [regex]::Replace($s, '(?m)^#define InterlockedExchangeAddSizeT\(a,b\) InterlockedExchangeAdd\(\(PLONG\)\(a\),\(LONG\)\(b\)\)\r?\n?', '')
         [IO.File]::WriteAllText($pool, $s)
         $compat = Join-Path $env:GITHUB_WORKSPACE 'ntoskrnl/inc/wrk_msvc_compat.h'
         $s = [IO.File]::ReadAllText($compat)
@@ -112,10 +121,19 @@ jobs:
           if (-not $s.Contains($Old)) { throw "$Path: expected SP0 form not found" }
           [IO.File]::WriteAllText($p, $s.Replace($Old, $New))
         }
+        function Replace-Regex($Path, $Pattern, $New) {
+          $p = Join-Path $env:GITHUB_WORKSPACE $Path
+          $s = [IO.File]::ReadAllText($p)
+          if ($s.Contains($New)) { return }
+          if (-not [regex]::IsMatch($s, $Pattern)) { throw "$Path: expected SP0 form not found" }
+          $s = [regex]::Replace($s, $Pattern, $New, [Text.RegularExpressions.RegexOptions]::Multiline)
+          [IO.File]::WriteAllText($p, $s)
+        }
         Replace-Exact 'ntoskrnl/inc/ps.h' '    KGUARDED_MUTEX WorkingSetMutex;' '    EX_PUSH_LOCK WorkingSetMutex;'
-        Replace-Exact 'ntoskrnl/inc/ps.h' "    BOOLEAN ForwardClusterOnly;`r`n    BOOLEAN DisablePageFaultClustering;" "    BOOLEAN ForwardClusterOnly;`r`n    BOOLEAN DisablePageFaultClustering;`r`n    UCHAR ActiveFaultCount;"
+        Replace-Regex 'ntoskrnl/inc/ps.h' '    BOOLEAN ForwardClusterOnly;\r?\n    BOOLEAN DisablePageFaultClustering;' "    BOOLEAN ForwardClusterOnly;`r`n    BOOLEAN DisablePageFaultClustering;`r`n    UCHAR ActiveFaultCount;"
         Replace-Exact 'ntoskrnl/mm/i386/mi386.h' 'typedef struct _MMPTE_TRANSITION { ULONG Valid : 1; ULONG Prototype : 1; ULONG Protection : 5; ULONG Transition : 1; ULONG Reserved0 : 3; ULONG PageFrameNumber : 20 - PAGE_SHIFT; ULONG Reserved : 11; } MMPTE_TRANSITION;' 'typedef struct _MMPTE_TRANSITION { ULONG Valid : 1; ULONG Write : 1; ULONG Owner : 1; ULONG WriteThrough : 1; ULONG CacheDisable : 1; ULONG Protection : 5; ULONG Prototype : 1; ULONG Transition : 1; ULONG PageFrameNumber : 20; } MMPTE_TRANSITION;'
-        Replace-Exact 'ntoskrnl/inc/i386.h' '    ULONG   SpareFields0[4];' @'    LONG MmPageFaultCount;
+        Replace-Exact 'ntoskrnl/inc/i386.h' '    ULONG   SpareFields0[4];' @'
+    LONG MmPageFaultCount;
     LONG MmCopyOnWriteCount;
     LONG MmTransitionCount;
     LONG MmCacheTransitionCount;
@@ -129,11 +147,11 @@ jobs:
     LONG MmMappedPagesWriteCount;
     LONG MmMappedWriteIoCount;
     ULONG SpareFields0[1];'@
-        Replace-Exact 'ntoskrnl/inc/i386.h' '    volatile ULONGLONG IsrTime;' "    volatile ULONGLONG IsrTime;`r`n    ULONGLONG SpareField1;"
+        Replace-Regex 'ntoskrnl/inc/i386.h' '    volatile ULONGLONG IsrTime;\r?\n' "    volatile ULONGLONG IsrTime;`r`n    ULONGLONG SpareField1;`r`n"
         Replace-Exact 'ntoskrnl/mm/mi.h' '        KeFlushProcessTb ();' '        KeFlushProcessTb (AllProcessors);'
         $pool = Join-Path $env:GITHUB_WORKSPACE 'ntos-old/ex/pool.c'
         $s = [IO.File]::ReadAllText($pool)
-        $s = $s.Replace('#define InterlockedExchangeAddSizeT(a,b) InterlockedExchangeAdd((PLONG)(a),(LONG)(b))' + "`r`n", '')
+        $s = [regex]::Replace($s, '(?m)^#define InterlockedExchangeAddSizeT\(a,b\) InterlockedExchangeAdd\(\(PLONG\)\(a\),\(LONG\)\(b\)\)\r?\n?', '')
         [IO.File]::WriteAllText($pool, $s)
         $compat = Join-Path $env:GITHUB_WORKSPACE 'ntoskrnl/inc/wrk_msvc_compat.h'
         $s = [IO.File]::ReadAllText($compat)

@@ -1569,7 +1569,7 @@ MmCopyToCachedPage (
     IN PVOID UserBuffer,
     IN ULONG Offset,
     IN SIZE_T CountInBytes,
-    IN BOOLEAN DontZero
+    IN LOGICAL ExposeZeroPageOk
     );
 
 VOID

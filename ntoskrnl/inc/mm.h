@@ -2607,4 +2607,9 @@ MmPerfVadTreeWalk (
 #define MM_ALLOCATE_REQUIRE_CONTIGUOUS_CHUNKS    0x00000020
 #endif
 
+NTSTATUS
+MmGrowKernelStackEx (
+    __in PVOID CurrentStack,
+    __in SIZE_T CommitSize
+    );
 #endif  // MM

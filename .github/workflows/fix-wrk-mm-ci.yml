@@ -1,0 +1,169 @@
+name: fix WRK MM CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/fix-wrk-mm-ci.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply verified WRK v1.2 fixes
+        shell: python
+        run: |
+          from pathlib import Path
+          import re, subprocess
+
+          def edit(path, fn):
+              p = Path(path)
+              s = p.read_text(encoding='utf-8')
+              ns = fn(s)
+              if ns != s:
+                  p.write_text(ns, encoding='utf-8', newline='')
+                  print('changed', path)
+              else:
+                  print('unchanged', path)
+
+          # WRK x86 private MM declarations/macros belong in the architecture header.
+          def mi386(s):
+              additions = r'''
+
+#ifndef MI_RESERVED_BITS_CANONICAL
+#define MI_RESERVED_BITS_CANONICAL(VirtualAddress) TRUE
+#endif
+
+#ifndef MI_DISPLAY_TRAP_INFORMATION
+#define MI_DISPLAY_TRAP_INFORMATION(TrapInformation) \
+    KdPrint(("MM:***EIP %p, EFL %p\n", \
+             ((PKTRAP_FRAME)(TrapInformation))->Eip, \
+             ((PKTRAP_FRAME)(TrapInformation))->EFlags));
+#endif
+
+#ifndef MI_SET_PAGE_DIRTY
+#if defined(NT_UP)
+#define MI_SET_PAGE_DIRTY(PPTE,VA,PFNHELD)
+#else
+#define MI_SET_PAGE_DIRTY(PPTE,VA,PFNHELD) \
+    if ((PPTE)->u.Hard.Dirty == 1) { \
+        MiSetDirtyBit ((VA),(PPTE),(PFNHELD)); \
+    }
+#endif
+#endif
+
+#ifndef MI_IS_CACHING_DISABLED
+#define MI_IS_CACHING_DISABLED(PPTE) ((PPTE)->u.Hard.CacheDisable == 1)
+#endif
+
+#ifndef MM_SESSION_SPACE_DEFAULT
+#define MM_SESSION_SPACE_DEFAULT        (0xA0000000)
+#define MM_SESSION_SPACE_DEFAULT_END    (0xC0000000)
+#endif
+
+extern ULONG_PTR MmBootImageSize;
+extern ULONG MiMaximumWorkingSet;
+extern ULONG_PTR MiUseMaximumSystemSpace;
+extern ULONG_PTR MiUseMaximumSystemSpaceEnd;
+extern ULONG MiMaximumSystemCacheSizeExtra;
+extern MMPTE MmPteGlobal;
+extern PVOID MmHyperSpaceEnd;
+'''
+              if 'extern ULONG_PTR MmBootImageSize;' not in s:
+                  s += additions
+              if 'MmLockPageableCodeSection(Address)' not in s:
+                  s += r'''
+
+#define MmGetProcedureAddress(Address) (Address)
+#define MmLockPageableCodeSection(Address) MmLockPageableDataSection(Address)
+#define MmLockPagableCodeSection(Address) MmLockPageableDataSection(Address)
+#define MmLockPagableDataSection(Address) MmLockPageableDataSection(Address)
+'''
+              return s
+          edit('ntoskrnl/mm/i386/mi386.h', mi386)
+
+          # WRK x86 feature bits.
+          def i386(s):
+              if 'KF_GLOBAL_32BIT_EXECUTE' not in s:
+                  marker = '#define CR0_PG  0x80000000'
+                  ins = '#define KF_DTS              0x00020000\n#define KF_NOEXECUTE        0x20000000\n#define KF_GLOBAL_32BIT_EXECUTE 0x40000000\n#define KF_GLOBAL_32BIT_NOEXECUTE 0x80000000\n\n'
+                  s = s.replace(marker, ins + marker, 1)
+              return s
+          edit('ntoskrnl/inc/i386.h', i386)
+
+          # Exact WRK KPROCESS layout around execute options/quantum fields.
+          def ke(s):
+              if 'typedef struct _KEXECUTE_OPTIONS' not in s:
+                  marker = 'typedef struct _KPROCESS {'
+                  typedef = '''typedef struct _KEXECUTE_OPTIONS {\n    UCHAR ExecuteDisable : 1;\n    UCHAR ExecuteEnable : 1;\n    UCHAR DisableThunkEmulation : 1;\n    UCHAR Permanent : 1;\n    UCHAR ExecuteDispatchEnable : 1;\n    UCHAR ImageDispatchEnable : 1;\n    UCHAR Spare : 2;\n} KEXECUTE_OPTIONS, *PKEXECUTE_OPTIONS;\n\n'''
+                  s = s.replace(marker, typedef + marker, 1)
+              old = '''    USHORT StackCount;\n    SCHAR BasePriority;\n    SCHAR ThreadQuantum;\n    BOOLEAN AutoAlignment;\n    UCHAR State;\n    UCHAR ThreadSeed;\n    BOOLEAN DisableBoost;\n    UCHAR PowerState;\n    BOOLEAN DisableQuantum;\n    UCHAR IdealNode;\n    UCHAR Spare;'''
+              new = '''    USHORT StackCount;\n    SCHAR BasePriority;\n    SCHAR QuantumReset;\n    UCHAR State;\n    UCHAR ThreadSeed;\n    UCHAR PowerState;\n    UCHAR IdealNode;\n    BOOLEAN Visited;\n    union {\n        KEXECUTE_OPTIONS Flags;\n        UCHAR ExecuteOptions;\n    };'''
+              if old in s:
+                  s = s.replace(old, new, 1)
+              if 'KeZeroSinglePage (' not in s:
+                  pos = s.rfind('\n#endif')
+                  s = s[:pos] + '''\n\nVOID\nKeZeroSinglePage (\n    IN PVOID PageBase\n    );\n''' + s[pos:]
+              return s
+          edit('ntoskrnl/inc/ke.h', ke)
+
+          # Declarations must precede ALLOC_PRAGMA use in mmfault.c.
+          def mmh(s):
+              if 'MmGetExecuteOptions (' not in s:
+                  marker = '#ifdef ALLOC_PRAGMA'
+                  decl = '''NTSTATUS\nMmGetExecuteOptions (\n    IN PULONG ExecuteOptions\n    );\n\nVOID\nMmGetImageInformation (\n    OUT PSECTION_IMAGE_INFORMATION ImageInformation\n    );\n\n'''
+                  s = s.replace(marker, decl + marker, 1)
+              return s
+          edit('ntoskrnl/inc/mm.h', mmh)
+
+          # Mirror synchronization is now the native MM dynamic-memory push lock.
+          def mirror(s):
+              s = s.replace('KeAcquireGuardedMutex (&MmDynamicMemoryMutex);', 'MI_LOCK_DYNAMIC_MEMORY_EXCLUSIVE();')
+              s = s.replace('KeReleaseGuardedMutex (&MmDynamicMemoryMutex);', 'MI_UNLOCK_DYNAMIC_MEMORY_EXCLUSIVE();')
+              return s
+          edit('ntoskrnl/mm/mirror.c', mirror)
+
+          # Mirror definitions are private MM declarations; paging-file count is ULONG in WRK x86.
+          def mih(s):
+              if '#define MM_MIRRORING_ENABLED' not in s:
+                  marker = 'extern EX_PUSH_LOCK MmDynamicMemoryLock;'
+                  defs = '''\n\nextern ULONG MmMirroring;\n#define MM_MIRRORING_ENABLED    0x1\n#define MM_MIRRORING_VERIFYING  0x2\nextern PRTL_BITMAP MiMirrorBitMap;\nextern PRTL_BITMAP MiMirrorBitMap2;\nextern LOGICAL MiMirroringActive;\nextern ULONG MmTotalPagesForPagingFile;'''
+                  s = s.replace(marker, marker + defs, 1)
+              return s
+          edit('ntoskrnl/mm/mi.h', mih)
+
+          # Storage for x86 MM globals. OpenXP has no separate active data386.c.
+          def mig(s):
+              if 'ULONG MmTotalPagesForPagingFile = 0;' not in s:
+                  s = s.replace('#if defined(_X86_)\nMMPTE MmPteGlobal = {0x0};\nPVOID MmHyperSpaceEnd;', '#if defined(_X86_)\nMMPTE MmPteGlobal = {0x0};\nPVOID MmHyperSpaceEnd;\nULONG_PTR MmBootImageSize;\nULONG MiMaximumWorkingSet = ((ULONG)(2*1024*1024*1024 - 64*1024) >> PAGE_SHIFT);\nULONG_PTR MiUseMaximumSystemSpace;\nULONG_PTR MiUseMaximumSystemSpaceEnd;\nULONG MiMaximumSystemCacheSizeExtra;\nULONG MmTotalPagesForPagingFile = 0;')
+              return s
+          edit('ntoskrnl/mm/miglobal.c', mig)
+
+          # The dynamic-memory lock must be initialized before use.
+          def mminit(s):
+              if 'MI_INITIALIZE_DYNAMIC_MEMORY_LOCK();' not in s:
+                  needle = 'KeInitializeGuardedMutex (&MmSectionBasedMutex);'
+                  if needle in s:
+                      s = s.replace(needle, needle + '\n    MI_INITIALIZE_DYNAMIC_MEMORY_LOCK();', 1)
+              return s
+          edit('ntoskrnl/mm/mminit.c', mminit)
+
+          # mmpatch.c already receives this define from the build command line.
+          edit('ntoskrnl/mm/mmpatch.c', lambda s: s.replace('\n#define NTOS_KERNEL_RUNTIME\n', '\n', 1))
+
+          subprocess.run(['git','config','user.name','github-actions[bot]'], check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'], check=True)
+          subprocess.run(['git','add','ntoskrnl'], check=True)
+          if subprocess.run(['git','diff','--cached','--quiet']).returncode == 0:
+              print('No source changes required')
+              raise SystemExit(0)
+          subprocess.run(['git','commit','-m','mm: fix remaining WRK v1.2 x86 MM declarations'], check=True)
+          subprocess.run(['git','push','origin','HEAD:main'], check=True)
+          # Remove this workflow in a second commit so it cannot repeat.
+          subprocess.run(['git','rm','-f','.github/workflows/fix-wrk-mm-ci.yml'], check=True)
+          subprocess.run(['git','commit','-m','ci: remove one-shot MM migration workflow'], check=True)
+          subprocess.run(['git','push','origin','HEAD:main'], check=True)

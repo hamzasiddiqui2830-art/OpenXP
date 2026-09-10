@@ -454,6 +454,33 @@ extern PMMPTE MiInitialSystemPageDirectory;
 #define MI_BARRIER_SYNCHRONIZE(TimeStamp) do { (void)(TimeStamp); KeMemoryBarrier(); } while (0)
 #endif
 
+//++
+// VOID
+// MI_BARRIER_STAMP_ZEROED_PAGE (
+//    IN PULONG PointerTimeStamp
+//    );
+//
+// Routine Description:
+//
+//    MI_BARRIER_STAMP_ZEROED_PAGE issues an interlocked read to get the
+//    current IPI barrier sequence stamp.  This is called AFTER a page is
+//    zeroed.
+//
+// Arguments
+//
+//    PointerTimeStamp - Supplies a timestamp pointer to fill with the
+//                       current IPI barrier sequence stamp.
+//
+// Return Value:
+//
+//    None.
+//
+//--
+
+// does nothing on i386.
+
+#define MI_BARRIER_STAMP_ZEROED_PAGE(PointerTimeStamp)
+
 #endif /* _MI386_ */
 
 

@@ -440,6 +440,26 @@ extern PMMPTE MiInitialSystemPageDirectory;
 #ifndef MM_SESSION_SPACE_DEFAULT
 #define MM_SESSION_SPACE_DEFAULT        (0xA0000000)
 #define MM_SESSION_SPACE_DEFAULT_END    (0xC0000000)
+
+#define MM_SYSTEM_SPACE_START ((ULONG_PTR)MmSystemCacheWorkingSetList)
+#define MI_MAXIMUM_PAGEFILE_SIZE (((UINT64)1 * 1024 * 1024 - 1) * PAGE_SIZE)
+#define MI_WRITE_INVALID_PTE_WITHOUT_WS MI_WRITE_INVALID_PTE
+#define MI_GET_NEXT_COLOR(COLOR) ((COLOR + 1) & MM_COLOR_MASK)
+#define MI_GET_MODIFIED_PAGE_BY_COLOR(PAGE,COLOR) \
+            PAGE = MmModifiedPageListByColor[COLOR].Flink
+#define MI_GET_MODIFIED_PAGE_ANY_COLOR(PAGE,COLOR) \
+            { \
+                if (MmTotalPagesForPagingFile == 0) { \
+                    PAGE = MM_EMPTY_LIST; \
+                } else { \
+                    PAGE = MmModifiedPageListByColor[COLOR].Flink; \
+                } \
+            }
+#define MI_SET_PAGING_FILE_INFO(OUTPTE,PPTE,FILEINFO,OFFSET) \
+       (OUTPTE).u.Long = (PPTE).u.Long; \
+       (OUTPTE).u.Soft.PageFileHigh = (OFFSET); \
+       (OUTPTE).u.Soft.PageFileLow = (FILEINFO);
+
 #endif
 
 extern ULONG_PTR MmBootImageSize;

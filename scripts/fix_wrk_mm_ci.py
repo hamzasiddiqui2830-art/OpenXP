@@ -147,7 +147,11 @@ MmGetImageInformation (
 
 
 def edit_mmfault(text):
-    block = """NTSTATUS
+    # MSVC requires every function named by #pragma alloc_text to have
+    # been declared before the pragma.  WRK v1.2 declares these entry
+    # points before the ALLOC_PRAGMA block; keep that ordering in the
+    # SP0 source instead of hiding the problem with an alias or pragma.
+    declarations = """NTSTATUS
 MmGetExecuteOptions (
     IN PULONG ExecuteOptions
     );
@@ -159,9 +163,12 @@ MmGetImageInformation (
 
 """
     pragma = "#ifdef ALLOC_PRAGMA\n#pragma alloc_text(PAGE, MmGetExecuteOptions)"
-    if pragma in text and text.find(block) > text.find(pragma):
-        text = text.replace(block, "", 1)
-        text = text.replace("#ifdef ALLOC_PRAGMA", block + "#ifdef ALLOC_PRAGMA", 1)
+
+    if pragma in text:
+        before_pragma = text[:text.find("#ifdef ALLOC_PRAGMA")]
+        if "MmGetExecuteOptions (" not in before_pragma:
+            text = text.replace("#ifdef ALLOC_PRAGMA", declarations + "#ifdef ALLOC_PRAGMA", 1)
+
     return text
 
 
@@ -217,26 +224,8 @@ def edit_mmpatch(text):
     return text.replace("\n#define NTOS_KERNEL_RUNTIME\n", "\n", 1)
 
 
-def edit_i386_aliases(text):
-    # WRK v1.2 keeps the pageable-code aliases in the MM/WDM block.
-    # Remove only surplus occurrences so the SP0 misspelled alias remains
-    # source-compatible while MSVC /WX no longer sees a redefinition.
-    lines = [
-        "#define MmGetProcedureAddress(Address) (Address)\n",
-        "#define MmLockPageableCodeSection(Address) MmLockPageableDataSection(Address)\n",
-        "#define MmLockPagableCodeSection(Address) MmLockPageableDataSection(Address)\n",
-        "#define MmLockPagableDataSection(Address) MmLockPageableDataSection(Address)\n",
-    ]
-    for line in lines:
-        if text.count(line) > 1:
-            first = text.find(line)
-            text = text[:first] + text[first + len(line):]
-    return text
-
-
 edit("ntoskrnl/mm/i386/mi386.h", edit_mi386)
 edit("ntoskrnl/inc/i386.h", edit_i386)
-edit("ntoskrnl/inc/i386.h", edit_i386_aliases)
 edit("ntoskrnl/inc/ke.h", edit_ke)
 edit("ntoskrnl/inc/mm.h", edit_mmh)
 edit("ntoskrnl/mm/mmfault.c", edit_mmfault)

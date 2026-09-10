@@ -946,7 +946,8 @@ MmAdjustWorkingSetSizeEx (
     IN SIZE_T WorkingSetMaximum,
     IN ULONG SystemCache,
     IN BOOLEAN IncreaseOkay,
-    IN ULONG Flags
+    IN ULONG Flags,
+    OUT PBOOLEAN IncreaseRequested
     );
 
 NTSTATUS

@@ -18,6 +18,16 @@ Abstract:
 
 #include "mi.h"
 
+NTSTATUS
+MmGetExecuteOptions (
+    IN PULONG ExecuteOptions
+    );
+
+VOID
+MmGetImageInformation (
+    OUT PSECTION_IMAGE_INFORMATION ImageInformation
+    );
+
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text(PAGE, MmGetExecuteOptions)
 #pragma alloc_text(PAGE, MmGetImageInformation)

@@ -1296,9 +1296,9 @@ restart:
             return NULL;
         }
 
-        Header->Ulong1 |= MI_SPECIAL_POOL_PAGABLE;
+        Header->Ulong1 |= MI_SPECIAL_POOL_PAGEABLE;
 
-        (PointerPte + 1)->u.Soft.PageFileHigh = MI_SPECIAL_POOL_PTE_PAGABLE;
+        (PointerPte + 1)->u.Soft.PageFileHigh = MI_SPECIAL_POOL_PTE_PAGEABLE;
 
         NumberOfSpecialPages = (ULONG) InterlockedIncrement (&MiSpecialPagesPagable);
         if (NumberOfSpecialPages > MiSpecialPagesPagablePeak) {
@@ -1307,7 +1307,7 @@ restart:
     }
     else {
 
-        (PointerPte + 1)->u.Soft.PageFileHigh = MI_SPECIAL_POOL_PTE_NONPAGABLE;
+        (PointerPte + 1)->u.Soft.PageFileHigh = MI_SPECIAL_POOL_PTE_NONPAGEABLE;
 
         NumberOfSpecialPages = (ULONG) InterlockedIncrement (&MiSpecialPagesNonPaged);
         if (NumberOfSpecialPages > MiSpecialPagesNonPagedPeak) {
@@ -1428,8 +1428,8 @@ Environment:
         BufferAtPageEnd = FALSE;
     }
 
-    if (Header->Ulong1 & MI_SPECIAL_POOL_PAGABLE) {
-        ASSERT ((PointerPte + 1)->u.Soft.PageFileHigh == MI_SPECIAL_POOL_PTE_PAGABLE);
+    if (Header->Ulong1 & MI_SPECIAL_POOL_PAGEABLE) {
+        ASSERT ((PointerPte + 1)->u.Soft.PageFileHigh == MI_SPECIAL_POOL_PTE_PAGEABLE);
         if (KeGetCurrentIrql() > APC_LEVEL) {
             KeBugCheckEx (SPECIAL_POOL_DETECTED_MEMORY_CORRUPTION,
                           KeGetCurrentIrql(),
@@ -1440,7 +1440,7 @@ Environment:
         PoolType = PagedPool;
     }
     else {
-        ASSERT ((PointerPte + 1)->u.Soft.PageFileHigh == MI_SPECIAL_POOL_PTE_NONPAGABLE);
+        ASSERT ((PointerPte + 1)->u.Soft.PageFileHigh == MI_SPECIAL_POOL_PTE_NONPAGEABLE);
         if (KeGetCurrentIrql() > DISPATCH_LEVEL) {
             KeBugCheckEx (SPECIAL_POOL_DETECTED_MEMORY_CORRUPTION,
                           KeGetCurrentIrql(),
@@ -1462,7 +1462,7 @@ Environment:
         NextEntry = PointerPte - MmSystemPteBase;
     }
 
-    NumberOfBytesRequested = (ULONG)(USHORT)(Header->Ulong1 & ~(MI_SPECIAL_POOL_PAGABLE | MI_SPECIAL_POOL_VERIFIER | MI_SPECIAL_POOL_IN_SESSION));
+    NumberOfBytesRequested = (ULONG)(USHORT)(Header->Ulong1 & ~(MI_SPECIAL_POOL_PAGEABLE | MI_SPECIAL_POOL_VERIFIER | MI_SPECIAL_POOL_IN_SESSION));
 
     //
     // We gave the caller pool-header aligned data, so account for
@@ -1836,8 +1836,8 @@ Environment:
     // that freed pages get their PTEs chained together through PageFileHigh.
     //
 
-    if ((PointerPte->u.Soft.PageFileHigh == MI_SPECIAL_POOL_PTE_PAGABLE) ||
-        (PointerPte->u.Soft.PageFileHigh == MI_SPECIAL_POOL_PTE_NONPAGABLE)) {
+    if ((PointerPte->u.Soft.PageFileHigh == MI_SPECIAL_POOL_PTE_PAGEABLE) ||
+        (PointerPte->u.Soft.PageFileHigh == MI_SPECIAL_POOL_PTE_NONPAGEABLE)) {
             return FALSE;
     }
 
@@ -1887,7 +1887,7 @@ Environment:
     // that freed pages get their PTEs chained together through PageFileHigh.
     //
 
-    if ((PointerPte + 1)->u.Soft.PageFileHigh == MI_SPECIAL_POOL_PTE_NONPAGABLE) {
+    if ((PointerPte + 1)->u.Soft.PageFileHigh == MI_SPECIAL_POOL_PTE_NONPAGEABLE) {
         return TRUE;
     }
 
@@ -2028,7 +2028,7 @@ Environment:
     }
     else
 #endif
-    if ((PointerPte + 1)->u.Soft.PageFileHigh == MI_SPECIAL_POOL_PTE_PAGABLE) {
+    if ((PointerPte + 1)->u.Soft.PageFileHigh == MI_SPECIAL_POOL_PTE_PAGEABLE) {
         Pagable = TRUE;
         SystemWsLocked = TRUE;
         LOCK_WORKING_SET (CurrentThread, VmSupport);

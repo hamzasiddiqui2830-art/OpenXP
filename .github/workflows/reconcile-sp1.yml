@@ -50,9 +50,30 @@ jobs:
                   '    volatile ULONGLONG IsrTime;\n',
                   '    volatile ULONGLONG IsrTime;\n    ULONGLONG SpareField1;\n')
 
+          # WRK v1.2/SP1 KeFlushProcessTb has no AllProcessors parameter.
+          # The target processor set is derived from the current process.
           replace('ntoskrnl/mm/mi.h',
-                  '        KeFlushProcessTb ();\n',
-                  '        KeFlushProcessTb (AllProcessors);\n')
+                  '        KeFlushProcessTb (AllProcessors);\n',
+                  '        KeFlushProcessTb ();\n')
+
+          # Move the public/private declaration and NT_UP inline definition to
+          # the WRK v1.2/SP1 zero-argument form.
+          ke = Path('ntoskrnl/inc/ke.h')
+          s = ke.read_text()
+          old = 'KeFlushProcessTb (\n    IN BOOLEAN AllProcessors\n    )'
+          count = s.count(old)
+          if count != 2:
+              raise SystemExit(f'ntoskrnl/inc/ke.h: expected two SP0 KeFlushProcessTb signatures, found {count}')
+          s = s.replace(old, 'KeFlushProcessTb (\n    VOID\n    )')
+          ke.write_text(s)
+
+          # The compatibility macro was only masking the SP0/SP1 signature
+          # mismatch. Once ke.h is SP1-shaped it must not rewrite the call.
+          compat = Path('ntoskrnl/inc/wrk_msvc_compat.h')
+          s = compat.read_text()
+          old = '''#ifndef WRK_KE_FLUSH_PROCESS_TB_ZERO_ARG_COMPAT\n#define WRK_KE_FLUSH_PROCESS_TB_ZERO_ARG_COMPAT\n#define KeFlushProcessTb() KeFlushProcessTb(FALSE)\n#endif\n'''
+          if old in s:
+              compat.write_text(s.replace(old, '', 1))
 
           p = Path('ntos-old/ex/pool.c')
           s = p.read_text()
@@ -60,17 +81,11 @@ jobs:
           if old in s:
               p.write_text(s.replace(old, '', 1))
 
-          compat = Path('ntoskrnl/inc/wrk_msvc_compat.h')
-          s = compat.read_text()
-          old = '''#ifndef KeFlushProcessTb\n#define KeFlushProcessTb() KeFlushProcessTb(FALSE)\n#endif\n'''
-          if old in s:
-              compat.write_text(s.replace(old, '', 1))
-
       - name: Commit patch
         run: |
           git config user.name 'OpenXP CI'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add ntoskrnl/inc/ps.h ntoskrnl/mm/i386/mi386.h ntoskrnl/inc/i386.h ntoskrnl/mm/mi.h ntos-old/ex/pool.c ntoskrnl/inc/wrk_msvc_compat.h
+          git add ntoskrnl/inc/ps.h ntoskrnl/mm/i386/mi386.h ntoskrnl/inc/i386.h ntoskrnl/inc/ke.h ntoskrnl/mm/mi.h ntos-old/ex/pool.c ntoskrnl/inc/wrk_msvc_compat.h
           git diff --cached --check
           if git diff --cached --quiet; then exit 0; fi
           git commit -m 'Apply SP1 structural reconciliation'

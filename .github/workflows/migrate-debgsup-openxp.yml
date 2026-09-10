@@ -3,7 +3,7 @@ name: migrate debugsup to OpenXP MM locks
 on:
   push:
     paths:
-      - 'migration-trigger.txt'
+      - '.github/workflows/migrate-debgsup-openxp.yml'
 
 permissions:
   contents: write
@@ -16,74 +16,89 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply source-level WRK v1.2 adaptation
+      - name: Adapt debugsup to native OpenXP working-set locks
         shell: python
         run: |
           from pathlib import Path
           import re
 
-          debugsup = Path('ntoskrnl/mm/debugsup.c')
-          text = debugsup.read_text(encoding='utf-8')
+          debugsup = Path("ntoskrnl/mm/debugsup.c")
+          text = debugsup.read_text(encoding="utf-8")
 
-          old = 'if (KeGetOwnerGuardedMutex (&Ws->WorkingSetMutex) == KeGetCurrentThread ()) {'
-          new = '''if ((Ws == &MmSystemCacheWs &&
-                     ((Thread->OwnsSystemWorkingSetExclusive != 0) ||
-                      (Thread->OwnsSystemWorkingSetShared != 0))) ||
-                    ((Ws)->Flags.SessionSpace == 1 &&
-                     ((Thread->OwnsSessionWorkingSetExclusive != 0) ||
-                      (Thread->OwnsSessionWorkingSetShared != 0))) ||
-                    ((Ws)->Flags.SessionSpace == 0 &&
-                     (Thread->ApcState.Process == (PKPROCESS)PsGetCurrentProcess ()) &&
-                     ((Thread->OwnsProcessWorkingSetExclusive != 0) ||
-                      (Thread->OwnsProcessWorkingSetShared != 0)))) {'''
+          old = "if (KeGetOwnerGuardedMutex (&Ws->WorkingSetMutex) == KeGetCurrentThread ()) {"
+          new = """if ((Ws == &MmSystemCacheWs &&
+                       ((Thread->OwnsSystemWorkingSetExclusive != 0) ||
+                        (Thread->OwnsSystemWorkingSetShared != 0))) ||
+                      ((Ws)->Flags.SessionSpace == 1 &&
+                       ((Thread->OwnsSessionWorkingSetExclusive != 0) ||
+                        (Thread->OwnsSessionWorkingSetShared != 0))) ||
+                      ((Ws)->Flags.SessionSpace == 0 &&
+                       (Thread->ApcState.Process == (PKPROCESS)PsGetCurrentProcess ()) &&
+                       ((Thread->OwnsProcessWorkingSetExclusive != 0) ||
+                        (Thread->OwnsProcessWorkingSetShared != 0)))) {"""
+
           if text.count(old) != 1:
-              raise SystemExit(f'expected one working-set owner check, found {text.count(old)}')
+              raise SystemExit("expected exactly one legacy working-set owner check")
           text = text.replace(old, new)
 
-          if text.count('LOCK_WORKING_SET (Ws);') != 1:
-              raise SystemExit('expected one legacy LOCK_WORKING_SET call')
-          text = text.replace('LOCK_WORKING_SET (Ws);', 'LOCK_WORKING_SET (Thread, Ws);')
+          if text.count("LOCK_WORKING_SET (Ws);") != 1:
+              raise SystemExit("expected exactly one legacy LOCK_WORKING_SET call")
+          text = text.replace("LOCK_WORKING_SET (Ws);", "LOCK_WORKING_SET (Thread, Ws);")
 
-          if text.count('UNLOCK_WORKING_SET (Ws);') != 3:
-              raise SystemExit(f'expected three legacy UNLOCK_WORKING_SET calls, found {text.count("UNLOCK_WORKING_SET (Ws);")}')
-          text = text.replace('UNLOCK_WORKING_SET (Ws);', 'UNLOCK_WORKING_SET (Thread, Ws);')
+          unlock = "UNLOCK_WORKING_SET (Ws);"
+          if text.count(unlock) != 3:
+              raise SystemExit("expected exactly three legacy UNLOCK_WORKING_SET calls")
+          text = text.replace(unlock, "UNLOCK_WORKING_SET (Thread, Ws);")
+          debugsup.write_text(text, encoding="utf-8", newline="")
 
-          debugsup.write_text(text, encoding='utf-8', newline='')
+          compat = Path("ntoskrnl/inc/wrk_msvc_compat.h")
+          ctext = compat.read_text(encoding="utf-8")
 
-          compat = Path('ntoskrnl/inc/wrk_msvc_compat.h')
-          ctext = compat.read_text(encoding='utf-8')
-          marker = '/* debugsup.c is WRK v1.2 source: restore its one-argument working-set API'
-          start = ctext.find(marker)
-          if start == -1:
-              raise SystemExit('debugsup compatibility block not found')
-          end = ctext.find('#endif /* _WRK_MSVC_COMPAT_H_ */', start)
-          if end == -1:
-              raise SystemExit('compat header terminator not found')
-          ctext = ctext[:start] + ctext[end:]
-          compat.write_text(ctext, encoding='utf-8', newline='')
+          block_start = ctext.find("/* debugsup.c is WRK v1.2 source:")
+          if block_start < 0:
+              raise SystemExit("debugsup compatibility block was not found")
+          block_end = ctext.find("#endif\n\n#endif /* _WRK_MSVC_COMPAT_H_ */", block_start)
+          if block_end < 0:
+              raise SystemExit("debugsup compatibility block terminator was not found")
+          ctext = ctext[:block_start] + ctext[block_end + len("#endif\n"):]
 
-          builder = Path('cmake/modules/WRKModuleBuilder.cmake')
-          btext = builder.read_text(encoding='utf-8')
-          block = '''
+          ownership_aliases = re.compile(
+              r"#ifndef OwnsSystemWorkingSetExclusive\n#define OwnsSystemWorkingSetExclusive MemoryMaker\n#endif\n"
+              r"#ifndef OwnsSystemWorkingSetShared\n#define OwnsSystemWorkingSetShared KeyedEventInUse\n#endif\n"
+              r"#ifndef OwnsSessionWorkingSetExclusive\n#define OwnsSessionWorkingSetExclusive ActiveExWorker\n#endif\n"
+              r"#ifndef OwnsSessionWorkingSetShared\n#define OwnsSessionWorkingSetShared ExWorkerCanWaitUser\n#endif\n"
+              r"#ifndef OwnsProcessWorkingSetExclusive\n#define OwnsProcessWorkingSetExclusive MemoryMaker\n#endif\n"
+              r"#ifndef OwnsProcessWorkingSetShared\n#define OwnsProcessWorkingSetShared KeyedEventInUse\n#endif\n"
+          )
+          ctext, removed = ownership_aliases.subn("", ctext, count=1)
+          if removed != 1:
+              raise SystemExit("working-set ownership compatibility aliases were not found")
+          compat.write_text(ctext, encoding="utf-8", newline="")
+
+          builder = Path("cmake/modules/WRKModuleBuilder.cmake")
+          btext = builder.read_text(encoding="utf-8")
+          cmake_block = '''
             if(MODULE_NAME STREQUAL "mm")
                 set_source_files_properties(
                     ${CMAKE_SOURCE_DIR}/ntoskrnl/mm/debugsup.c
                     PROPERTIES COMPILE_OPTIONS "/FI${CMAKE_SOURCE_DIR}/ntoskrnl/inc/wrk_debugsup_msvc_compat.h")
             endif()
 '''
-          if btext.count(block) != 1:
-              raise SystemExit(f'expected one debugsup CMake compatibility block, found {btext.count(block)}')
-          btext = btext.replace(block, '\n')
-          builder.write_text(btext, encoding='utf-8', newline='')
+          if btext.count(cmake_block) != 1:
+              raise SystemExit("debugsup CMake force-include block was not found exactly once")
+          btext = btext.replace(cmake_block, "\n")
+          builder.write_text(btext, encoding="utf-8", newline="")
 
-          Path('ntoskrnl/inc/wrk_debugsup_msvc_compat.h').unlink()
-          Path('migration-trigger.txt').unlink()
+          compat_header = Path("ntoskrnl/inc/wrk_debugsup_msvc_compat.h")
+          if compat_header.exists():
+              compat_header.unlink()
 
-      - name: Commit migration
+      - name: Commit native OpenXP migration and remove this temporary workflow
         shell: bash
         run: |
           git config user.name "OpenXP automation"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add ntoskrnl/mm/debugsup.c ntoskrnl/inc/wrk_msvc_compat.h cmake/modules/WRKModuleBuilder.cmake ntoskrnl/inc/wrk_debugsup_msvc_compat.h migration-trigger.txt
-          git commit -m "mm: adapt debugsup to OpenXP working-set locks"
+          git rm -f .github/workflows/migrate-debgsup-openxp.yml
+          git add ntoskrnl/mm/debugsup.c ntoskrnl/inc/wrk_msvc_compat.h cmake/modules/WRKModuleBuilder.cmake ntoskrnl/inc/wrk_debugsup_msvc_compat.h
+          git commit -m "mm: adapt debugsup to native OpenXP working-set locks"
           git push

@@ -14,10 +14,21 @@ def edit(relpath, transform):
         print(f"unchanged {relpath}")
 
 
-def edit_mi386(text):
-    additions = """
+def insert_before_final_guard(text, block):
+    """Insert a block inside the header guard, immediately before its final #endif."""
+    pos = text.rfind("#endif")
+    if pos < 0:
+        raise RuntimeError("cannot safely patch header: final #endif not found")
+    return text[:pos].rstrip() + "\n\n" + block.rstrip() + "\n\n" + text[pos:]
 
-#define MM_SYSTEM_SPACE_START ((ULONG_PTR)MmSystemCacheWorkingSetList)
+
+def edit_mi386(text):
+    # These are WRK v1.2 x86 MM private definitions.  They belong in the
+    # architecture-private header included by mi.h, not in a forced-include
+    # compatibility shim.  Use a deterministic fallback when the older SP0
+    # marker is absent, which is why the previous version silently failed to
+    # install these definitions.
+    additions = """#define MM_SYSTEM_SPACE_START ((ULONG_PTR)MmSystemCacheWorkingSetList)
 #define MI_MAXIMUM_PAGEFILE_SIZE (((UINT64)1 * 1024 * 1024 - 1) * PAGE_SIZE)
 #define MI_WRITE_INVALID_PTE_WITHOUT_WS MI_WRITE_INVALID_PTE
 #define MI_GET_NEXT_COLOR(COLOR) ((COLOR + 1) & MM_COLOR_MASK)
@@ -34,25 +45,28 @@ def edit_mi386(text):
 #define MI_SET_PAGING_FILE_INFO(OUTPTE,PPTE,FILEINFO,OFFSET) \\
        (OUTPTE).u.Long = (PPTE).u.Long; \\
        (OUTPTE).u.Soft.PageFileHigh = (OFFSET); \\
-       (OUTPTE).u.Soft.PageFileLow = (FILEINFO);
+       (OUTPTE).u.Soft.PageFileLow = (FILEINFO);"""
 
-"""
     if "#define MM_SYSTEM_SPACE_START" not in text:
         marker = "#define MM_SYSTEM_SPACE_END (0xFFFFFFFF)"
         if marker in text:
-            text = text.replace(marker, additions + marker, 1)
+            text = text.replace(marker, additions + "\n" + marker, 1)
+        else:
+            text = insert_before_final_guard(text, additions)
 
-    if "extern ULONG_PTR MmBootImageSize;" not in text:
-        text += """
-
-extern ULONG_PTR MmBootImageSize;
+    externs = """extern ULONG_PTR MmBootImageSize;
 extern ULONG MiMaximumWorkingSet;
 extern ULONG_PTR MiUseMaximumSystemSpace;
 extern ULONG_PTR MiUseMaximumSystemSpaceEnd;
 extern ULONG MiMaximumSystemCacheSizeExtra;
 extern MMPTE MmPteGlobal;
-extern PVOID MmHyperSpaceEnd;
-"""
+extern PVOID MmHyperSpaceEnd;"""
+
+    # The old implementation appended these after the include guard, which
+    # is not safe header hygiene.  Keep them inside the guard and idempotent.
+    if "extern ULONG_PTR MmBootImageSize;" not in text:
+        text = insert_before_final_guard(text, externs)
+
     return text
 
 

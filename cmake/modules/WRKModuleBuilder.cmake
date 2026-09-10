@@ -55,14 +55,6 @@ function(add_wrk_module MODULE_NAME)
                SOURCE_FILE_NORMALIZED MATCHES "(^|/)(uob|tob)\\.c$")
                 continue()
             endif()
-            # The Security directory contains a large set of legacy test and
-            # user-mode programs whose names begin with ct, t, or u. They are
-            # not kernel Security implementation units and depend on obsolete
-            # test-only headers/APIs. Exclude them from the kernel target.
-            if(MODULE_NAME STREQUAL "se" AND
-               SOURCE_FILE_NORMALIZED MATCHES "(^|/)(ct|t|u)[^/]*\\.c$")
-                continue()
-            endif()
             if(MODULE_NAME STREQUAL "rtl" AND
                SOURCE_FILE_NORMALIZED MATCHES "(^|/)(generr|heapdbg|heapdll|heapleak|heaplowf)\\.c$")
                 continue()

@@ -12,13 +12,6 @@ Abstract:
     This module contains the public data structures and procedure
     prototypes for the memory management system.
 
-Author:
-
-    Lou Perazzoli (loup) 20-Mar-1989
-    Landy Wang (landyw) 02-June-1997
-
-Revision History:
-
 --*/
 
 #ifndef _MM_
@@ -823,6 +816,7 @@ MmInitializeProcessAddressSpace (
     IN PEPROCESS ProcessToInitialize,
     IN PEPROCESS ProcessToClone OPTIONAL,
     IN PVOID SectionToMap OPTIONAL,
+    IN OUT PULONG CreateFlags,
     OUT POBJECT_NAME_INFORMATION * pAuditName OPTIONAL
     );
 

@@ -49,18 +49,22 @@ jobs:
           elif text.count(owner_new) != 1:
               raise SystemExit("expected one legacy or already-migrated working-set owner check")
 
-          lock_old = "LOCK_WORKING_SET (Ws);"
+          lock_old = re.compile(r"(?m)^[ \t]*LOCK_WORKING_SET \(Ws\);[ \t]*$")
           lock_new = "LOCK_WORKING_SET (Thread, Ws);"
-          if text.count(lock_old) == 1:
-              text = text.replace(lock_old, lock_new, 1)
-          elif text.count(lock_new) != 1:
+          legacy_locks = lock_old.findall(text)
+          native_locks = re.findall(r"(?m)^[ \t]*LOCK_WORKING_SET \(Thread, Ws\);[ \t]*$", text)
+          if len(legacy_locks) == 1:
+              text = lock_old.sub(lock_new, text, count=1)
+          elif len(native_locks) != 1:
               raise SystemExit("expected exactly one legacy or already-migrated LOCK_WORKING_SET call")
 
-          unlock_old = "UNLOCK_WORKING_SET (Ws);"
+          unlock_old = re.compile(r"(?m)^[ \t]*UNLOCK_WORKING_SET \(Ws\);[ \t]*$")
           unlock_new = "UNLOCK_WORKING_SET (Thread, Ws);"
-          if text.count(unlock_old) == 3:
-              text = text.replace(unlock_old, unlock_new)
-          elif text.count(unlock_new) != 3:
+          legacy_unlocks = unlock_old.findall(text)
+          native_unlocks = re.findall(r"(?m)^[ \t]*UNLOCK_WORKING_SET \(Thread, Ws\);[ \t]*$", text)
+          if len(legacy_unlocks) == 3:
+              text = unlock_old.sub(unlock_new, text)
+          elif len(native_unlocks) != 3:
               raise SystemExit("expected exactly three legacy or already-migrated UNLOCK_WORKING_SET calls")
           write(debugsup, text)
 
@@ -108,11 +112,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ! grep -nF 'LOCK_WORKING_SET (Ws);' ntoskrnl/mm/debugsup.c
-          ! grep -nF 'UNLOCK_WORKING_SET (Ws);' ntoskrnl/mm/debugsup.c
+          ! grep -nE '^[[:space:]]*LOCK_WORKING_SET \(Ws\);[[:space:]]*$' ntoskrnl/mm/debugsup.c
+          ! grep -nE '^[[:space:]]*UNLOCK_WORKING_SET \(Ws\);[[:space:]]*$' ntoskrnl/mm/debugsup.c
           ! grep -nF 'KeGetOwnerGuardedMutex (&Ws->WorkingSetMutex)' ntoskrnl/mm/debugsup.c
-          test "$(grep -cF 'LOCK_WORKING_SET (Thread, Ws);' ntoskrnl/mm/debugsup.c)" -eq 1
-          test "$(grep -cF 'UNLOCK_WORKING_SET (Thread, Ws);' ntoskrnl/mm/debugsup.c)" -eq 3
+          test "$(grep -cE '^[[:space:]]*LOCK_WORKING_SET \(Thread, Ws\);[[:space:]]*$' ntoskrnl/mm/debugsup.c)" -eq 1
+          test "$(grep -cE '^[[:space:]]*UNLOCK_WORKING_SET \(Thread, Ws\);[[:space:]]*$' ntoskrnl/mm/debugsup.c)" -eq 3
           grep -nF 'OwnsSystemWorkingSetExclusive' ntoskrnl/mm/debugsup.c
           test ! -e ntoskrnl/inc/wrk_debugsup_msvc_compat.h
           ! grep -nF 'wrk_debugsup_msvc_compat.h' cmake/modules/WRKModuleBuilder.cmake
@@ -126,6 +130,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git rm -f .github/workflows/migrate-debgsup-openxp.yml
           git rm -f migration-trigger.txt 2>/dev/null || true
-          git add ntoskrnl/mm/debugsup.c ntoskrnl/inc/wrk_msvc_compat.h cmake/modules/WRKModuleBuilder.cmake ntoskrnl/inc/wrk_debugsup_msvc_compat.h
+          git add -A
           git commit -m "mm: adapt debugsup to native OpenXP working-set locks"
           git push

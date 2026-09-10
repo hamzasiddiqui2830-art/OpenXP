@@ -44,9 +44,11 @@ jobs:
               "     ((Thread->OwnsProcessWorkingSetExclusive != 0) ||\n"
               "      (Thread->OwnsProcessWorkingSetShared != 0)))) {"
           )
-          if text.count(owner_old) == 1:
+          owner_old_count = text.count(owner_old)
+          owner_new_count = text.count(owner_new)
+          if owner_old_count == 1:
               text = text.replace(owner_old, owner_new, 1)
-          elif text.count(owner_new) != 1:
+          elif owner_new_count != 1:
               raise SystemExit("expected one legacy or already-migrated working-set owner check")
 
           lock_old = re.compile(r"(?m)^[ \t]*LOCK_WORKING_SET \(Ws\);[ \t]*$")
@@ -62,10 +64,10 @@ jobs:
           unlock_new = "UNLOCK_WORKING_SET (Thread, Ws);"
           legacy_unlocks = unlock_old.findall(text)
           native_unlocks = re.findall(r"(?m)^[ \t]*UNLOCK_WORKING_SET \(Thread, Ws\);[ \t]*$", text)
-          if len(legacy_unlocks) == 3:
+          if len(legacy_unlocks) > 0:
               text = unlock_old.sub(unlock_new, text)
-          elif len(native_unlocks) != 3:
-              raise SystemExit("expected exactly three legacy or already-migrated UNLOCK_WORKING_SET calls")
+          elif len(native_unlocks) != 4:
+              raise SystemExit("expected exactly four legacy or already-migrated UNLOCK_WORKING_SET calls")
           write(debugsup, text)
 
           compat_path = "ntoskrnl/inc/wrk_msvc_compat.h"
@@ -116,7 +118,7 @@ jobs:
           ! grep -nE '^[[:space:]]*UNLOCK_WORKING_SET \(Ws\);[[:space:]]*$' ntoskrnl/mm/debugsup.c
           ! grep -nF 'KeGetOwnerGuardedMutex (&Ws->WorkingSetMutex)' ntoskrnl/mm/debugsup.c
           test "$(grep -cE '^[[:space:]]*LOCK_WORKING_SET \(Thread, Ws\);[[:space:]]*$' ntoskrnl/mm/debugsup.c)" -eq 1
-          test "$(grep -cE '^[[:space:]]*UNLOCK_WORKING_SET \(Thread, Ws\);[[:space:]]*$' ntoskrnl/mm/debugsup.c)" -eq 3
+          test "$(grep -cE '^[[:space:]]*UNLOCK_WORKING_SET \(Thread, Ws\);[[:space:]]*$' ntoskrnl/mm/debugsup.c)" -eq 4
           grep -nF 'OwnsSystemWorkingSetExclusive' ntoskrnl/mm/debugsup.c
           test ! -e ntoskrnl/inc/wrk_debugsup_msvc_compat.h
           ! grep -nF 'wrk_debugsup_msvc_compat.h' cmake/modules/WRKModuleBuilder.cmake

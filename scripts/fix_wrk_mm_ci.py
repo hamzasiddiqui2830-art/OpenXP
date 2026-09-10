@@ -15,35 +15,35 @@ def edit(relpath, transform):
 
 
 def edit_mi386(text):
+    additions = """
+
+#define MM_SYSTEM_SPACE_START ((ULONG_PTR)MmSystemCacheWorkingSetList)
+#define MI_MAXIMUM_PAGEFILE_SIZE (((UINT64)1 * 1024 * 1024 - 1) * PAGE_SIZE)
+#define MI_WRITE_INVALID_PTE_WITHOUT_WS MI_WRITE_INVALID_PTE
+#define MI_GET_NEXT_COLOR(COLOR) ((COLOR + 1) & MM_COLOR_MASK)
+#define MI_GET_MODIFIED_PAGE_BY_COLOR(PAGE,COLOR) \\
+            PAGE = MmModifiedPageListByColor[COLOR].Flink
+#define MI_GET_MODIFIED_PAGE_ANY_COLOR(PAGE,COLOR) \\
+            { \\
+                if (MmTotalPagesForPagingFile == 0) { \\
+                    PAGE = MM_EMPTY_LIST; \\
+                } else { \\
+                    PAGE = MmModifiedPageListByColor[COLOR].Flink; \\
+                } \\
+            }
+#define MI_SET_PAGING_FILE_INFO(OUTPTE,PPTE,FILEINFO,OFFSET) \\
+       (OUTPTE).u.Long = (PPTE).u.Long; \\
+       (OUTPTE).u.Soft.PageFileHigh = (OFFSET); \\
+       (OUTPTE).u.Soft.PageFileLow = (FILEINFO);
+
+"""
+    if "#define MM_SYSTEM_SPACE_START" not in text:
+        marker = "#define MM_SYSTEM_SPACE_END (0xFFFFFFFF)"
+        if marker in text:
+            text = text.replace(marker, additions + marker, 1)
+
     if "extern ULONG_PTR MmBootImageSize;" not in text:
         text += """
-
-#ifndef MI_RESERVED_BITS_CANONICAL
-#define MI_RESERVED_BITS_CANONICAL(VirtualAddress) TRUE
-#endif
-
-#ifndef MI_DISPLAY_TRAP_INFORMATION
-#define MI_DISPLAY_TRAP_INFORMATION(TrapInformation) \\
-    KdPrint(("MM:***EIP %p, EFL %p\\n", \\
-             ((PKTRAP_FRAME)(TrapInformation))->Eip, \\
-             ((PKTRAP_FRAME)(TrapInformation))->EFlags));
-#endif
-
-#ifndef MI_SET_PAGE_DIRTY
-#define MI_SET_PAGE_DIRTY(PPTE,VA,PFNHELD) \\
-    if ((PPTE)->u.Hard.Dirty == 1) { \\
-        MiSetDirtyBit ((VA),(PPTE),(PFNHELD)); \\
-    }
-#endif
-
-#ifndef MI_IS_CACHING_DISABLED
-#define MI_IS_CACHING_DISABLED(PPTE) ((PPTE)->u.Hard.CacheDisable == 1)
-#endif
-
-#ifndef MM_SESSION_SPACE_DEFAULT
-#define MM_SESSION_SPACE_DEFAULT        (0xA0000000)
-#define MM_SESSION_SPACE_DEFAULT_END    (0xC0000000)
-#endif
 
 extern ULONG_PTR MmBootImageSize;
 extern ULONG MiMaximumWorkingSet;
@@ -146,6 +146,25 @@ MmGetImageInformation (
     return text
 
 
+def edit_mmfault(text):
+    block = """NTSTATUS
+MmGetExecuteOptions (
+    IN PULONG ExecuteOptions
+    );
+
+VOID
+MmGetImageInformation (
+    OUT PSECTION_IMAGE_INFORMATION ImageInformation
+    );
+
+"""
+    pragma = "#ifdef ALLOC_PRAGMA\n#pragma alloc_text(PAGE, MmGetExecuteOptions)"
+    if pragma in text and text.find(block) > text.find(pragma):
+        text = text.replace(block, "", 1)
+        text = text.replace("#ifdef ALLOC_PRAGMA", block + "#ifdef ALLOC_PRAGMA", 1)
+    return text
+
+
 def edit_mirror(text):
     return (text
             .replace("KeAcquireGuardedMutex (&MmDynamicMemoryMutex);", "MI_LOCK_DYNAMIC_MEMORY_EXCLUSIVE();")
@@ -198,10 +217,27 @@ def edit_mmpatch(text):
     return text.replace("\n#define NTOS_KERNEL_RUNTIME\n", "\n", 1)
 
 
+def edit_i386_aliases(text):
+    if "#define MmLockPageableCodeSection(Address) MmLockPageableDataSection(Address)" not in text:
+        marker = "// begin_wdm"
+        aliases = """// begin_wdm
+
+#define MmGetProcedureAddress(Address) (Address)
+#define MmLockPageableCodeSection(Address) MmLockPageableDataSection(Address)
+#define MmLockPagableCodeSection(Address) MmLockPageableDataSection(Address)
+#define MmLockPagableDataSection(Address) MmLockPageableDataSection(Address)
+"""
+        if marker in text:
+            text = text.replace(marker, aliases, 1)
+    return text
+
+
 edit("ntoskrnl/mm/i386/mi386.h", edit_mi386)
 edit("ntoskrnl/inc/i386.h", edit_i386)
+edit("ntoskrnl/inc/i386.h", edit_i386_aliases)
 edit("ntoskrnl/inc/ke.h", edit_ke)
 edit("ntoskrnl/inc/mm.h", edit_mmh)
+edit("ntoskrnl/mm/mmfault.c", edit_mmfault)
 edit("ntoskrnl/mm/mirror.c", edit_mirror)
 edit("ntoskrnl/mm/mi.h", edit_mih)
 edit("ntoskrnl/mm/miglobal.c", edit_miglobal)

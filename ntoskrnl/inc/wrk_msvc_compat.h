@@ -22,6 +22,80 @@
 #define PROCESSOR_FEATURE_MAX 64UL
 
 #if defined(_MSC_VER) && defined(_X86_)
+
+/* WRK v1.2 x86 MM primitives which must be visible while mi386.h is parsed. */
+#ifndef MI_FAULT_STATUS_INDICATES_EXECUTION
+#define MI_FAULT_STATUS_INDICATES_EXECUTION(_FaultStatus) 0
+#endif
+#ifndef MI_FAULT_STATUS_INDICATES_WRITE
+#define MI_FAULT_STATUS_INDICATES_WRITE(_FaultStatus) (_FaultStatus & 0x1)
+#endif
+#ifndef MI_CLEAR_FAULT_STATUS
+#define MI_CLEAR_FAULT_STATUS(_FaultStatus) (_FaultStatus = 0)
+#endif
+#ifndef MI_IS_PTE_EXECUTABLE
+#define MI_IS_PTE_EXECUTABLE(_TempPte) (1)
+#endif
+#ifndef MI_NO_FAULT_FOUND
+#define MI_NO_FAULT_FOUND(FAULTSTATUS, PPTE, VA, PFNHELD) \
+    if ((MI_FAULT_STATUS_INDICATES_WRITE(FAULTSTATUS)) && ((PPTE)->u.Hard.Dirty == 0)) { \
+        MiSetDirtyBit ((VA), (PPTE), (PFNHELD)); \
+    }
+#endif
+#ifndef MI_SET_PTE_IN_WORKING_SET
+#define MI_SET_PTE_IN_WORKING_SET(PTE, WSINDEX)
+#endif
+#ifndef MI_SET_GLOBAL_STATE
+#define MI_SET_GLOBAL_STATE(PTE, STATE) if (STATE) { (PTE).u.Hard.Global = 1; } else { (PTE).u.Hard.Global = 0; }
+#endif
+#ifndef MI_BARRIER_SYNCHRONIZE
+#define MI_BARRIER_SYNCHRONIZE(TimeStamp)
+#endif
+#ifndef MI_MAKE_VALID_USER_PTE
+#define MI_MAKE_VALID_USER_PTE(OUTPTE,FRAME,PMASK,PPTE) \
+       ASSERT (PPTE <= MiHighestUserPte); \
+       (OUTPTE).u.Long = 0; \
+       (OUTPTE).u.Hard.Valid = 1; \
+       (OUTPTE).u.Hard.Accessed = 1; \
+       (OUTPTE).u.Hard.PageFrameNumber = FRAME; \
+       (OUTPTE).u.Long |= MmProtectToPteMask[PMASK]; \
+       (OUTPTE).u.Hard.Owner = MI_PTE_OWNER_USER;
+#endif
+#ifndef MI_MAKE_VALID_KERNEL_PTE
+#define MI_MAKE_VALID_KERNEL_PTE(OUTPTE,FRAME,PMASK,PPTE) \
+       ASSERT (PPTE > MiHighestUserPte); \
+       ASSERT (!MI_IS_SESSION_PTE (PPTE)); \
+       ASSERT ((PPTE < (PMMPTE)PDE_BASE) || (PPTE > (PMMPTE)PDE_TOP)); \
+       (OUTPTE).u.Long = 0; \
+       (OUTPTE).u.Hard.Valid = 1; \
+       (OUTPTE).u.Hard.Accessed = 1; \
+       (OUTPTE).u.Hard.PageFrameNumber = FRAME; \
+       (OUTPTE).u.Long |= MmPteGlobal.u.Long; \
+       (OUTPTE).u.Long |= MmProtectToPteMask[PMASK];
+#endif
+#ifndef MI_WRITE_VALID_PTE_NEW_PAGE
+#define MI_WRITE_VALID_PTE_NEW_PAGE(_PointerPte, _TempPte) \
+       InterlockedExchangePte ((_PointerPte), (_TempPte).u.Long)
+#endif
+#ifndef MI_IS_PROCESS_SPACE_ADDRESS
+#define MI_IS_PROCESS_SPACE_ADDRESS(VA) \
+       (((PVOID)(VA) <= (PVOID)MM_HIGHEST_USER_ADDRESS) || \
+        ((PVOID)(VA) >= (PVOID)PTE_BASE && (PVOID)(VA) <= (PVOID)MmHyperSpaceEnd))
+#endif
+#ifndef MI_PREPARE_FOR_NONCACHED
+#define MI_PREPARE_FOR_NONCACHED(_CacheAttribute) \
+       if (_CacheAttribute != MiCached) { \
+           MI_FLUSH_ENTIRE_TB (0x20); \
+           KeInvalidateAllCaches (); \
+       }
+#endif
+#ifndef MI_DISABLE_LARGE_PTE_CACHING
+#define MI_DISABLE_LARGE_PTE_CACHING(PTE) MI_DISABLE_CACHING(PTE)
+#endif
+#ifndef MI_SET_LARGE_PTE_WRITE_COMBINE
+#define MI_SET_LARGE_PTE_WRITE_COMBINE(PTE) MI_SET_PTE_WRITE_COMBINE(PTE)
+#endif
+
 #define MiCompareTbFlushTimeStamp MiCompareTbFlushTimeStamp_X86
 #include "../mm/i386/mi386.h"
 #undef MiCompareTbFlushTimeStamp

@@ -1,0 +1,89 @@
+name: migrate debugsup to OpenXP MM locks
+
+on:
+  push:
+    paths:
+      - 'migration-trigger.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply source-level WRK v1.2 adaptation
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          debugsup = Path('ntoskrnl/mm/debugsup.c')
+          text = debugsup.read_text(encoding='utf-8')
+
+          old = 'if (KeGetOwnerGuardedMutex (&Ws->WorkingSetMutex) == KeGetCurrentThread ()) {'
+          new = '''if ((Ws == &MmSystemCacheWs &&
+                     ((Thread->OwnsSystemWorkingSetExclusive != 0) ||
+                      (Thread->OwnsSystemWorkingSetShared != 0))) ||
+                    ((Ws)->Flags.SessionSpace == 1 &&
+                     ((Thread->OwnsSessionWorkingSetExclusive != 0) ||
+                      (Thread->OwnsSessionWorkingSetShared != 0))) ||
+                    ((Ws)->Flags.SessionSpace == 0 &&
+                     (Thread->ApcState.Process == (PKPROCESS)PsGetCurrentProcess ()) &&
+                     ((Thread->OwnsProcessWorkingSetExclusive != 0) ||
+                      (Thread->OwnsProcessWorkingSetShared != 0)))) {'''
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one working-set owner check, found {text.count(old)}')
+          text = text.replace(old, new)
+
+          if text.count('LOCK_WORKING_SET (Ws);') != 1:
+              raise SystemExit('expected one legacy LOCK_WORKING_SET call')
+          text = text.replace('LOCK_WORKING_SET (Ws);', 'LOCK_WORKING_SET (Thread, Ws);')
+
+          if text.count('UNLOCK_WORKING_SET (Ws);') != 3:
+              raise SystemExit(f'expected three legacy UNLOCK_WORKING_SET calls, found {text.count("UNLOCK_WORKING_SET (Ws);")}')
+          text = text.replace('UNLOCK_WORKING_SET (Ws);', 'UNLOCK_WORKING_SET (Thread, Ws);')
+
+          debugsup.write_text(text, encoding='utf-8', newline='')
+
+          compat = Path('ntoskrnl/inc/wrk_msvc_compat.h')
+          ctext = compat.read_text(encoding='utf-8')
+          marker = '/* debugsup.c is WRK v1.2 source: restore its one-argument working-set API'
+          start = ctext.find(marker)
+          if start == -1:
+              raise SystemExit('debugsup compatibility block not found')
+          end = ctext.find('#endif /* _WRK_MSVC_COMPAT_H_ */', start)
+          if end == -1:
+              raise SystemExit('compat header terminator not found')
+          ctext = ctext[:start] + ctext[end:]
+          compat.write_text(ctext, encoding='utf-8', newline='')
+
+          builder = Path('cmake/modules/WRKModuleBuilder.cmake')
+          btext = builder.read_text(encoding='utf-8')
+          block = '''
+            if(MODULE_NAME STREQUAL "mm")
+                set_source_files_properties(
+                    ${CMAKE_SOURCE_DIR}/ntoskrnl/mm/debugsup.c
+                    PROPERTIES COMPILE_OPTIONS "/FI${CMAKE_SOURCE_DIR}/ntoskrnl/inc/wrk_debugsup_msvc_compat.h")
+            endif()
+'''
+          if btext.count(block) != 1:
+              raise SystemExit(f'expected one debugsup CMake compatibility block, found {btext.count(block)}')
+          btext = btext.replace(block, '\n')
+          builder.write_text(btext, encoding='utf-8', newline='')
+
+          Path('ntoskrnl/inc/wrk_debugsup_msvc_compat.h').unlink()
+          Path('migration-trigger.txt').unlink()
+
+      - name: Commit migration
+        shell: bash
+        run: |
+          git config user.name "OpenXP automation"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ntoskrnl/mm/debugsup.c ntoskrnl/inc/wrk_msvc_compat.h cmake/modules/WRKModuleBuilder.cmake ntoskrnl/inc/wrk_debugsup_msvc_compat.h migration-trigger.txt
+          git commit -m "mm: adapt debugsup to OpenXP working-set locks"
+          git push

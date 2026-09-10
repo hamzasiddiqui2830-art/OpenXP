@@ -3,12 +3,6 @@
 
 #include "ntos.h"
 
-/*
- * The WRK headers are shared between consumers and the kernel itself.
- * During a kernel build these APIs are being defined, not imported from
- * another DLL. Clear the legacy import annotations before private headers
- * such as ex.h are parsed by the source files.
- */
 #ifdef NTHALAPI
 #undef NTHALAPI
 #endif
@@ -22,8 +16,6 @@
 #endif
 #define NTSYSAPI
 
-/* PROCESSOR_FEATURE_MAX is an integer macro in the public API. The WRK
- * source compares it with a ULONG, so make the bound unsigned for MSVC. */
 #ifdef PROCESSOR_FEATURE_MAX
 #undef PROCESSOR_FEATURE_MAX
 #endif
@@ -33,6 +25,46 @@
 #define MiCompareTbFlushTimeStamp MiCompareTbFlushTimeStamp_X86
 #include "../mm/i386/mi386.h"
 #undef MiCompareTbFlushTimeStamp
+
+/*
+ * OpenXP's KeFlushProcessTb retains the SP0 BOOLEAN contract.  The WRK MM
+ * macro calls the routine without an argument, so adapt only that zero-arg
+ * spelling; calls which explicitly pass TRUE/FALSE remain untouched.
+ */
+#ifndef WRK_KE_FLUSH_PROCESS_TB_ZERO_ARG_COMPAT
+#define WRK_KE_FLUSH_PROCESS_TB_ZERO_ARG_COMPAT
+#define KeFlushProcessTb() KeFlushProcessTb(FALSE)
+#endif
+
+/* WRK names the x86 dirty-bit mask through the HARDWARE_PTE interface. */
+#ifndef HARDWARE_PTE_DIRTY_MASK
+#define HARDWARE_PTE_DIRTY_MASK MM_PTE_DIRTY_MASK
+#endif
+
+/*
+ * Prototype PTE addresses are encoded in the software PTE.  This is the
+ * x86 WRK encoding; do not substitute the newer AMD64 representation.
+ */
+#ifndef MiPteToProto
+#define MiPteToProto(lpte) \
+    (PMMPTE)((PMMPTE)(((((lpte)->u.Long) >> 11) << 9) + \
+    (((((lpte)->u.Long)) << 24) >> 23) + MmProtopte_Base))
+#endif
+
+#ifndef MI_DETERMINE_OWNER
+#define MI_DETERMINE_OWNER(PPTE) ((PPTE)->u.Hard.Owner)
+#endif
+
+#ifndef MI_MAKE_TRANSITION_PTE
+#define MI_MAKE_TRANSITION_PTE(OUTPTE, PAGEFRAME, PROTECT, PPTE) do { \
+    (OUTPTE).u.Trans.PageFrameNumber = (PAGEFRAME); \
+    (OUTPTE).u.Trans.Prototype = 0; \
+    (OUTPTE).u.Trans.Transition = 1; \
+    (OUTPTE).u.Trans.Protection = (PROTECT); \
+    (OUTPTE).u.Trans.Owner = MI_DETERMINE_OWNER(PPTE); \
+} while (0)
+#endif
+
 #endif
 
 #if defined(_MSC_VER) && !defined(__cplusplus)
@@ -50,7 +82,6 @@
 #endif
 #endif
 
-/* Legacy executive sources use these WRK configuration-manager constants. */
 #ifndef COMPLUS_PACKAGE_KEYPATH
 #define COMPLUS_PACKAGE_KEYPATH L"\\Registry\\Machine\\SOFTWARE\\Microsoft\\.NETFramework"
 #endif
@@ -61,92 +92,57 @@
 #define COMPLUS_PACKAGE_INVALID ((ULONG)-1)
 #endif
 
-/*
- * sysinfo.c places these routines in the alloc_text pragma list before
- * their old-style WRK definitions. MSVC requires a declaration first.
- */
 #ifndef _WRK_COMPLUS_PACKAGE_ROUTINES_DECLARED
 #define _WRK_COMPLUS_PACKAGE_ROUTINES_DECLARED
 NTSTATUS ExpReadComPlusPackage(VOID);
 NTSTATUS ExpUpdateComPlusPackage(IN ULONG ComPlusPackageStatus);
 #endif
 
-/* The active ki.h declaration uses LONG; old executive sources redeclare it
- * as ULONG. Keep the benign old redeclaration from becoming /WX C4142. */
 #if defined(_MSC_VER) && defined(_X86_)
 #pragma warning(disable: 4142)
 #endif
 
-/*
- * cmdata.h supplies CM_KEY_HASH and CM_NAME_HASH. The reconstructed local
- * configuration-manager header still consumes the WRK hash-table wrappers,
- * so define those wrappers here after the base hash types are available.
- */
 #include "cmdata.h"
 
 #ifndef _WRK_CM_HASH_TABLE_ENTRIES_DEFINED
 #define _WRK_CM_HASH_TABLE_ENTRIES_DEFINED
-
 typedef struct _CM_KEY_HASH_TABLE_ENTRY {
     EX_PUSH_LOCK Lock;
     PKTHREAD Owner;
     PCM_KEY_HASH Entry;
 } CM_KEY_HASH_TABLE_ENTRY, *PCM_KEY_HASH_TABLE_ENTRY;
-
 typedef struct _CM_NAME_HASH_TABLE_ENTRY {
     EX_PUSH_LOCK Lock;
     PCM_NAME_HASH Entry;
 } CM_NAME_HASH_TABLE_ENTRY, *PCM_NAME_HASH_TABLE_ENTRY;
-
 #endif
 
-/* systime.c keeps this WRK worker private and references it from an
- * alloc_text pragma before its conditional definition under WPA_CHECK. */
 #ifndef _WRK_EXP_WATCH_EXPIRATION_DATA_WORK_DECLARED
 #define _WRK_EXP_WATCH_EXPIRATION_DATA_WORK_DECLARED
 static VOID ExpWatchExpirationDataWork(IN PVOID Context);
 #endif
 
-/*
- * uuid.c uses the WRK spelling for the 32-bit aligned ULONG probe helper.
- * The local ex.h exposes the generic small-structure probe instead.
- */
 #ifndef ProbeForWriteUlongAligned32
 #define ProbeForWriteUlongAligned32(_Address) \
     ProbeForWriteSmallStructure((PVOID)(_Address), sizeof(ULONG), sizeof(ULONG))
 #endif
 
-/*
- * The local ex.h predates the cache-aware rundown additions. Keep the
- * public WRK structure and declarations available to rundown.c before its
- * alloc_text pragmas and function definitions are parsed by MSVC.
- */
 #ifndef _WRK_EX_RUNDOWN_REF_CACHE_AWARE_DEFINED
 #define _WRK_EX_RUNDOWN_REF_CACHE_AWARE_DEFINED
-
 typedef struct _EX_RUNDOWN_REF_CACHE_AWARE {
     PEX_RUNDOWN_REF RunRefs;
     PVOID PoolToFree;
     ULONG RunRefSize;
     ULONG Number;
 } EX_RUNDOWN_REF_CACHE_AWARE, *PEX_RUNDOWN_REF_CACHE_AWARE;
-
 #endif
 
 #ifndef _WRK_EX_RUNDOWN_CACHE_AWARE_API_DECLARED
 #define _WRK_EX_RUNDOWN_CACHE_AWARE_API_DECLARED
-PEX_RUNDOWN_REF_CACHE_AWARE ExAllocateCacheAwareRundownProtection(
-    IN POOL_TYPE PoolType,
-    IN ULONG PoolTag
-    );
+PEX_RUNDOWN_REF_CACHE_AWARE ExAllocateCacheAwareRundownProtection(IN POOL_TYPE PoolType, IN ULONG PoolTag);
 SIZE_T ExSizeOfRundownProtectionCacheAware(VOID);
-VOID ExInitializeRundownProtectionCacheAware(
-    IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCacheAware,
-    IN SIZE_T Size
-    );
-VOID ExFreeCacheAwareRundownProtection(
-    IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCacheAware
-    );
+VOID ExInitializeRundownProtectionCacheAware(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCacheAware, IN SIZE_T Size);
+VOID ExFreeCacheAwareRundownProtection(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCacheAware);
 #endif
 
 #ifndef MAX_PAGE_FILES
@@ -254,13 +250,6 @@ VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
 #define Hand Size
 #endif
 
-/*
- * WRK 1.2 Object Manager sources use private object-attribute bits that
- * are not present in the reconstructed public nt.h/ob.h headers yet.
- * These values are part of the WRK Object Manager contract, not compiler
- * workarounds, so keep them here only until the corresponding private
- * definitions are restored to ob.h.
- */
 #ifndef OBJ_VALID_PRIVATE_ATTRIBUTES
 #define OBJ_VALID_PRIVATE_ATTRIBUTES 0x00010000L
 #endif
@@ -271,11 +260,6 @@ VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
 #define OBJ_KERNEL_EXCLUSIVE 0x00010000L
 #endif
 
-/*
- * WRK object creation code expects the safe Unicode-string probe helper.
- * The reconstructed ex.h has the same primitive operations but is missing
- * this WRK inline, so provide the canonical wrapper here.
- */
 #ifndef ProbeAndReadUnicodeStringEx
 FORCEINLINE
 VOID

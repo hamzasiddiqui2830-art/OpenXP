@@ -45,7 +45,6 @@ Revision History:
 #define PTE_PER_PAGE ((ULONG)1024)
 #define PD_PER_SYSTEM ((ULONG)1)
 
-/* x86 virtual-address layout constants required by the common MM code. */
 #define MM_EMPTY_LIST ((ULONG)0xFFFFFFFF)
 #define MM_EMPTY_PTE_LIST ((ULONG)0xFFFFF)
 #define MM_VIRTUAL_PAGE_FILLER 0
@@ -74,16 +73,11 @@ Revision History:
 #define MM_USER_PAGE_TABLE_PAGES (768)
 #define MM_USER_PAGE_DIRECTORY_PAGES (1)
 #define MM_USER_PAGE_DIRECTORY_PARENT_PAGES (1)
-
 #define MM_SYSTEM_CACHE_WORKING_SET ((ULONG)0xC0C00000)
 #define MM_SYSTEM_CACHE_START ((ULONG)0xC1000000)
 #define MM_SYSTEM_CACHE_END ((ULONG)0xE1000000)
 #define MM_SYSTEM_VIEW_START ((ULONG)0xA0000000)
 #define MM_SYSTEM_VIEW_SIZE (16 * 1024 * 1024)
-#define MM_LOWEST_4MB_START ((32 * 1024 * 1024) / PAGE_SIZE)
-#define MM_DEFAULT_4MB_START (((1024 * 1024) / PAGE_SIZE) * 4096)
-#define MM_HIGHEST_4MB_START (((1024 * 1024) / PAGE_SIZE) * 4096)
-#define MM_PAGED_POOL_START (MmPagedPoolStart)
 #define MM_DEFAULT_PAGED_POOL_START ((ULONG)0xE1000000)
 #define MM_LOWEST_NONPAGED_SYSTEM_START ((PVOID)0xEB000000)
 #define MM_NONPAGED_POOL_END ((PVOID)0xFFBE0000)
@@ -95,8 +89,6 @@ Revision History:
 #define MM_DEFAULT_SYSTEM_PTES 11000
 #define MM_MAX_INITIAL_NONPAGED_POOL ((ULONG)(128 * 1024 * 1024))
 #define MM_MAX_ADDITIONAL_NONPAGED_POOL ((ULONG)(128 * 1024 * 1024))
-#define MM_MAX_PAGED_POOL ((ULONG)MM_NONPAGED_POOL_END - (ULONG)MM_PAGED_POOL_START)
-#define MM_MAX_TOTAL_POOL ((ULONG)MM_NONPAGED_POOL_END - (ULONG)MM_PAGED_POOL_START)
 
 #ifndef MM_SECONDARY_COLORS
 #define MM_SECONDARY_COLORS (MM_SECONDARY_COLORS_DEFAULT)
@@ -125,219 +117,52 @@ extern PMMCOLOR_TABLES MmFreePagesByColor[2];
 
 #if !defined (_X86PAE_)
 
-typedef struct _MMPTE_SOFTWARE {
-    ULONG Valid : 1;
-    ULONG PageFileLow : 4;
-    ULONG Protection : 5;
-    ULONG Prototype : 1;
-    ULONG Transition : 1;
-    ULONG PageFileHigh : 20;
-} MMPTE_SOFTWARE;
-
-typedef struct _MMPTE_TRANSITION {
-    ULONG Valid : 1;
-    ULONG Prototype : 1;
-    ULONG Protection : 5;
-    ULONG Transition : 1;
-    ULONG Reserved0 : 3;
-    ULONG PageFrameNumber : 20 - PAGE_SHIFT;
-    ULONG Reserved : 11;
-} MMPTE_TRANSITION;
-
-typedef struct _MMPTE_PROTOTYPE {
-    ULONG Valid : 1;
-    ULONG Prototype : 1;
-    ULONG ReadOnly : 1;
-    ULONG Reserved : 9;
-    ULONG ProtoAddress : 20;
-} MMPTE_PROTOTYPE;
-
-typedef struct _MMPTE_SUBSECTION {
-    ULONG Valid : 1;
-    ULONG Prototype : 1;
-    ULONG Protection : 5;
-    ULONG WhichPool : 1;
-    ULONG Reserved : 4;
-    ULONG SubsectionAddress : 20;
-} MMPTE_SUBSECTION;
-
-typedef struct _MMPTE_LIST {
-    ULONG Valid : 1;
-    ULONG Prototype : 1;
-    ULONG Protection : 5;
-    ULONG Transition : 1;
-    ULONG OneEntry : 1;
-    ULONG filler : 3;
-    ULONG NextEntry : 20;
-} MMPTE_LIST;
-
-#define _HARDWARE_PTE_WORKING_SET_BITS  11
-
-typedef struct _MMPTE_HARDWARE {
-    ULONG Valid : 1;
-    ULONG Write : 1;
-    ULONG Owner : 1;
-    ULONG WriteThrough : 1;
-    ULONG CacheDisable : 1;
-    ULONG Accessed : 1;
-    ULONG Dirty : 1;
-    ULONG LargePage : 1;
-    ULONG Global : 1;
-    ULONG CopyOnWrite : 1;
-    ULONG Prototype : 1;
-    ULONG reserved : 1;
-    ULONG PageFrameNumber : 20;
-} MMPTE_HARDWARE, *PMMPTE_HARDWARE;
-
-typedef struct _MMPTE_LARGEPAGE {
-    ULONG Valid : 1;
-    ULONG Write : 1;
-    ULONG Owner : 1;
-    ULONG WriteThrough : 1;
-    ULONG CacheDisable : 1;
-    ULONG Accessed : 1;
-    ULONG Dirty : 1;
-    ULONG LargePage : 1;
-    ULONG Global : 1;
-    ULONG CopyOnWrite : 1;
-    ULONG Prototype : 1;
-    ULONG reserved : 1;
-    ULONG PageFrameNumber : 20;
-} MMPTE_LARGEPAGE, *PMMPTE_LARGEPAGE;
-
+typedef struct _MMPTE_SOFTWARE { ULONG Valid : 1; ULONG PageFileLow : 4; ULONG Protection : 5; ULONG Prototype : 1; ULONG Transition : 1; ULONG PageFileHigh : 20; } MMPTE_SOFTWARE;
+typedef struct _MMPTE_TRANSITION { ULONG Valid : 1; ULONG Prototype : 1; ULONG Protection : 5; ULONG Transition : 1; ULONG Reserved0 : 3; ULONG PageFrameNumber : 20 - PAGE_SHIFT; ULONG Reserved : 11; } MMPTE_TRANSITION;
+typedef struct _MMPTE_PROTOTYPE { ULONG Valid : 1; ULONG Prototype : 1; ULONG ReadOnly : 1; ULONG Reserved : 9; ULONG ProtoAddress : 20; } MMPTE_PROTOTYPE;
+typedef struct _MMPTE_SUBSECTION { ULONG Valid : 1; ULONG Prototype : 1; ULONG Protection : 5; ULONG WhichPool : 1; ULONG Reserved : 4; ULONG SubsectionAddress : 20; } MMPTE_SUBSECTION;
+typedef struct _MMPTE_LIST { ULONG Valid : 1; ULONG Prototype : 1; ULONG Protection : 5; ULONG Transition : 1; ULONG OneEntry : 1; ULONG filler : 3; ULONG NextEntry : 20; } MMPTE_LIST;
+#define _HARDWARE_PTE_WORKING_SET_BITS 11
+typedef struct _MMPTE_HARDWARE { ULONG Valid : 1; ULONG Write : 1; ULONG Owner : 1; ULONG WriteThrough : 1; ULONG CacheDisable : 1; ULONG Accessed : 1; ULONG Dirty : 1; ULONG LargePage : 1; ULONG Global : 1; ULONG CopyOnWrite : 1; ULONG Prototype : 1; ULONG reserved : 1; ULONG PageFrameNumber : 20; } MMPTE_HARDWARE, *PMMPTE_HARDWARE;
+typedef struct _MMPTE_LARGEPAGE { ULONG Valid : 1; ULONG Write : 1; ULONG Owner : 1; ULONG WriteThrough : 1; ULONG CacheDisable : 1; ULONG Accessed : 1; ULONG Dirty : 1; ULONG LargePage : 1; ULONG Global : 1; ULONG CopyOnWrite : 1; ULONG Prototype : 1; ULONG reserved : 1; ULONG PageFrameNumber : 20; } MMPTE_LARGEPAGE, *PMMPTE_LARGEPAGE;
 #else
-
-typedef struct _MMPTE_SOFTWARE {
-    ULONGLONG Valid : 1;
-    ULONGLONG Prototype : 1;
-    ULONGLONG Protection : 5;
-    ULONGLONG Transition : 1;
-    ULONGLONG Reserved0 : 3;
-    ULONGLONG UsedPageTableEntries : PTE_PER_PAGE_BITS;
-    ULONGLONG Reserved : 16 - PTE_PER_PAGE_BITS;
-    ULONGLONG PageFileLow : 4;
-    ULONGLONG PageFileHigh : 32;
-} MMPTE_SOFTWARE;
-
-typedef struct _MMPTE_TRANSITION {
-    ULONGLONG Valid : 1;
-    ULONGLONG Prototype : 1;
-    ULONGLONG Protection : 5;
-    ULONGLONG Transition : 1;
-    ULONGLONG Reserved0 : 3;
-    ULONGLONG PageFrameNumber : 26 - PAGE_SHIFT;
-    ULONGLONG Reserved : 24;
-} MMPTE_TRANSITION;
-
-typedef struct _MMPTE_PROTOTYPE {
-    ULONGLONG Valid : 1;
-    ULONGLONG Prototype : 1;
-    ULONGLONG ReadOnly : 1;
-    ULONGLONG Reserved : 9;
-    ULONGLONG ProtoAddress : 52;
-} MMPTE_PROTOTYPE;
-
-typedef struct _MMPTE_SUBSECTION {
-    ULONGLONG Valid : 1;
-    ULONGLONG Prototype : 1;
-    ULONGLONG Protection : 5;
-    ULONGLONG WhichPool : 1;
-    ULONGLONG Reserved : 4;
-    ULONGLONG SubsectionAddress : 52;
-} MMPTE_SUBSECTION;
-
-typedef struct _MMPTE_LIST {
-    ULONGLONG Valid : 1;
-    ULONGLONG Prototype : 1;
-    ULONGLONG Protection : 5;
-    ULONGLONG Transition : 1;
-    ULONGLONG OneEntry : 1;
-    ULONGLONG filler : 3;
-    ULONGLONG NextEntry : 52;
-} MMPTE_LIST;
-
-#define _HARDWARE_PTE_WORKING_SET_BITS  11
-
-typedef struct _MMPTE_HARDWARE {
-    ULONGLONG Valid : 1;
-    ULONGLONG Write : 1;
-    ULONGLONG Owner : 1;
-    ULONGLONG WriteThrough : 1;
-    ULONGLONG CacheDisable : 1;
-    ULONGLONG Accessed : 1;
-    ULONGLONG Dirty : 1;
-    ULONGLONG LargePage : 1;
-    ULONGLONG Global : 1;
-    ULONGLONG CopyOnWrite : 1;
-    ULONGLONG Prototype : 1;
-    ULONGLONG reserved0 : 1;
-    ULONGLONG PageFrameNumber : 26;
-    ULONGLONG reserved1 : 25;
-    ULONGLONG SoftwareWsIndex : _HARDWARE_PTE_WORKING_SET_BITS;
-} MMPTE_HARDWARE, *PMMPTE_HARDWARE;
-
+/* PAE definitions retained from the existing header. */
+typedef struct _MMPTE_SOFTWARE { ULONGLONG Valid : 1; ULONGLONG Prototype : 1; ULONGLONG Protection : 5; ULONGLONG Transition : 1; ULONGLONG Reserved0 : 3; ULONGLONG UsedPageTableEntries : PTE_PER_PAGE_BITS; ULONGLONG Reserved : 16 - PTE_PER_PAGE_BITS; ULONGLONG PageFileLow : 4; ULONGLONG PageFileHigh : 32; } MMPTE_SOFTWARE;
+typedef struct _MMPTE_TRANSITION { ULONGLONG Valid : 1; ULONGLONG Prototype : 1; ULONGLONG Protection : 5; ULONGLONG Transition : 1; ULONGLONG Reserved0 : 3; ULONGLONG PageFrameNumber : 26 - PAGE_SHIFT; ULONGLONG Reserved : 24; } MMPTE_TRANSITION;
+typedef struct _MMPTE_PROTOTYPE { ULONGLONG Valid : 1; ULONGLONG Prototype : 1; ULONGLONG ReadOnly : 1; ULONGLONG Reserved : 9; ULONGLONG ProtoAddress : 52; } MMPTE_PROTOTYPE;
+typedef struct _MMPTE_SUBSECTION { ULONGLONG Valid : 1; ULONGLONG Prototype : 1; ULONGLONG Protection : 5; ULONGLONG WhichPool : 1; ULONGLONG Reserved : 4; ULONGLONG SubsectionAddress : 52; } MMPTE_SUBSECTION;
+typedef struct _MMPTE_LIST { ULONGLONG Valid : 1; ULONGLONG Prototype : 1; ULONGLONG Protection : 5; ULONGLONG Transition : 1; ULONGLONG OneEntry : 1; ULONGLONG filler : 3; ULONGLONG NextEntry : 52; } MMPTE_LIST;
+#define _HARDWARE_PTE_WORKING_SET_BITS 11
+typedef struct _MMPTE_HARDWARE { ULONGLONG Valid : 1; ULONGLONG Write : 1; ULONGLONG Owner : 1; ULONGLONG WriteThrough : 1; ULONGLONG CacheDisable : 1; ULONGLONG Accessed : 1; ULONGLONG Dirty : 1; ULONGLONG LargePage : 1; ULONGLONG Global : 1; ULONGLONG CopyOnWrite : 1; ULONGLONG Prototype : 1; ULONGLONG reserved0 : 1; ULONGLONG PageFrameNumber : 26; ULONGLONG reserved1 : 25; ULONGLONG SoftwareWsIndex : _HARDWARE_PTE_WORKING_SET_BITS; } MMPTE_HARDWARE, *PMMPTE_HARDWARE;
 typedef MMPTE_HARDWARE MMPTE_LARGEPAGE;
-
 #endif
 
-typedef struct _MMPTE {
-    union {
-        ULONG Long;
+typedef struct _MMPTE { union { ULONG Long;
 #if defined (_X86PAE_)
-        ULONGLONG LongLong;
+ULONGLONG LongLong;
 #endif
-        MMPTE_HARDWARE Hard;
-        MMPTE_LARGEPAGE Large;
-        HARDWARE_PTE Flush;
-        MMPTE_PROTOTYPE Proto;
-        MMPTE_SOFTWARE Soft;
-        MMPTE_TRANSITION Trans;
-        MMPTE_SUBSECTION Subsect;
-        MMPTE_LIST List;
-    } u;
-} MMPTE;
-
+MMPTE_HARDWARE Hard; MMPTE_LARGEPAGE Large; HARDWARE_PTE Flush; MMPTE_PROTOTYPE Proto; MMPTE_SOFTWARE Soft; MMPTE_TRANSITION Trans; MMPTE_SUBSECTION Subsect; MMPTE_LIST List; } u; } MMPTE;
 typedef MMPTE *PMMPTE;
 
+#if defined(_WIN64)
+#define InterlockedExchangeAddSizeT(a,b) InterlockedExchangeAdd64((PLONGLONG)(a),(b))
+#define InterlockedIncrementSizeT(a) InterlockedIncrement64((PLONGLONG)(a))
+#define InterlockedDecrementSizeT(a) InterlockedDecrement64((PLONGLONG)(a))
+#else
+#define InterlockedExchangeAddSizeT(a,b) InterlockedExchangeAdd((PLONG)(a),(LONG)(b))
+#define InterlockedIncrementSizeT(a) InterlockedIncrement((PLONG)(a))
+#define InterlockedDecrementSizeT(a) InterlockedDecrement((PLONG)(a))
+#endif
+
 #if !defined (_X86PAE_)
-#define InterlockedCompareExchangePte(_PointerPte, _NewContents, _OldContents) \
-        InterlockedCompareExchange ((PLONG)(_PointerPte), (LONG)(_NewContents), (LONG)(_OldContents))
-#define InterlockedExchangePte(_PointerPte, _NewContents) \
-        InterlockedExchange ((PLONG)(_PointerPte), (LONG)(_NewContents))
+#define InterlockedCompareExchangePte(_PointerPte, _NewContents, _OldContents) InterlockedCompareExchange ((PLONG)(_PointerPte), (LONG)(_NewContents), (LONG)(_OldContents))
+#define InterlockedExchangePte(_PointerPte, _NewContents) InterlockedExchange ((PLONG)(_PointerPte), (LONG)(_NewContents))
 #else
-#define InterlockedCompareExchangePte(_PointerPte, _NewContents, _OldContents) \
-        InterlockedCompareExchange64 ((PLONGLONG)(_PointerPte), (LONGLONG)(_NewContents), (LONGLONG)(_OldContents))
-#define InterlockedExchangePte(_PointerPte, _NewContents) \
-        InterlockedExchange64 ((PLONGLONG)(_PointerPte), (LONGLONG)(_NewContents))
+#define InterlockedCompareExchangePte(_PointerPte, _NewContents, _OldContents) InterlockedCompareExchange64 ((PLONGLONG)(_PointerPte), (LONGLONG)(_NewContents), (LONGLONG)(_OldContents))
+#define InterlockedExchangePte(_PointerPte, _NewContents) InterlockedExchange64 ((PLONGLONG)(_PointerPte), (LONGLONG)(_NewContents))
 #endif
 
-FORCEINLINE
-BOOLEAN
-MiCompareTbFlushTimeStamp (
-    IN ULONG OldStamp,
-    IN ULONG Mask
-    )
-{
-    ULONG NewStamp;
-    ULONG Diff;
-
-    NewStamp = KeReadTbFlushTimeStamp ();
-    Diff = ((NewStamp - OldStamp) & Mask);
-
-#if defined(NT_UP)
-    if (Diff != 0) {
-        return FALSE;
-    }
-#else
-    if (Diff > 2) {
-        return FALSE;
-    }
-    if (((OldStamp & 1) == 0) && (Diff >= 2)) {
-        return FALSE;
-    }
-#endif
-    return TRUE;
-}
+FORCEINLINE BOOLEAN MiCompareTbFlushTimeStamp (IN ULONG OldStamp, IN ULONG Mask) { ULONG NewStamp; ULONG Diff; NewStamp = KeReadTbFlushTimeStamp (); Diff = ((NewStamp - OldStamp) & Mask); #if defined(NT_UP) if (Diff != 0) return FALSE; #else if (Diff > 2) return FALSE; if (((OldStamp & 1) == 0) && (Diff >= 2)) return FALSE; #endif return TRUE; }
 
 #define MI_GET_PAGE_FRAME_FROM_PTE(PTE) ((ULONG)((PTE)->u.Hard.PageFrameNumber))
 #define MI_GET_PAGE_FRAME_FROM_TRANSITION_PTE(PTE) ((ULONG)((PTE)->u.Trans.PageFrameNumber))

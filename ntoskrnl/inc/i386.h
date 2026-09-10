@@ -611,7 +611,7 @@ KeFlushCurrentTb (                                  // nthal
 #define MmLockPageableCodeSection(Address) MmLockPageableDataSection(Address)
 #define MmLockPagableCodeSection(Address) MmLockPageableDataSection(Address)
 #define MmLockPagableDataSection(Address) MmLockPageableDataSection(Address)
- begin_ntddk begin_ntosp
+// begin_ntddk begin_ntosp
 
 #define ExAcquireSpinLock(Lock, OldIrql) KeAcquireSpinLock((Lock), (OldIrql))
 #define ExReleaseSpinLock(Lock, OldIrql) KeReleaseSpinLock((Lock), (OldIrql))

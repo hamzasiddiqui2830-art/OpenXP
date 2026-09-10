@@ -202,24 +202,6 @@ VOID ExFreeCacheAwareRundownProtection(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCach
 #define NodeShiftedColor PageColor
 #endif
 #endif
-#ifndef OwnsSystemWorkingSetExclusive
-#define OwnsSystemWorkingSetExclusive MemoryMaker
-#endif
-#ifndef OwnsSystemWorkingSetShared
-#define OwnsSystemWorkingSetShared KeyedEventInUse
-#endif
-#ifndef OwnsSessionWorkingSetExclusive
-#define OwnsSessionWorkingSetExclusive ActiveExWorker
-#endif
-#ifndef OwnsSessionWorkingSetShared
-#define OwnsSessionWorkingSetShared ExWorkerCanWaitUser
-#endif
-#ifndef OwnsProcessWorkingSetExclusive
-#define OwnsProcessWorkingSetExclusive MemoryMaker
-#endif
-#ifndef OwnsProcessWorkingSetShared
-#define OwnsProcessWorkingSetShared KeyedEventInUse
-#endif
 #ifndef KeLoopTbFlushTimeStampUnlocked
 static __inline VOID KeLoopTbFlushTimeStampUnlocked(VOID) { while (KeReadTbFlushTimeStamp() & 1) { YieldProcessor(); } }
 #endif
@@ -253,36 +235,5 @@ VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
 FORCEINLINE VOID ProbeAndReadUnicodeStringEx(OUT PUNICODE_STRING Destination, IN PUNICODE_STRING Source) { ProbeForRead(Source, sizeof(UNICODE_STRING), sizeof(ULONG)); *Destination = *Source; }
 #endif
 
-/* debugsup.c is WRK v1.2 source: restore its one-argument working-set API
- * against OpenXP's current EX_PUSH_LOCK MMSUPPORT without changing other MM
- * translation units. This block is enabled only for that source file. */
-#if defined(WRK_MSVC_DEBUGSUP_LEGACY_WS) && defined(_MSC_VER) && defined(_X86_)
-static __inline BOOLEAN WrkMsvcWsOwned(PMMSUPPORT WsInfo) {
-    PETHREAD Thread = PsGetCurrentThread();
-    if (WsInfo == &MmSystemCacheWs) return (Thread->OwnsSystemWorkingSetExclusive != 0) || (Thread->OwnsSystemWorkingSetShared != 0);
-    if (WsInfo->Flags.SessionSpace != 0) return (Thread->OwnsSessionWorkingSetExclusive != 0) || (Thread->OwnsSessionWorkingSetShared != 0);
-    return (Thread->ApcState.Process == (PKPROCESS)PsGetCurrentProcess()) && ((Thread->OwnsProcessWorkingSetExclusive != 0) || (Thread->OwnsProcessWorkingSetShared != 0));
-}
-static __inline PKTHREAD WrkMsvcWsOwner(PEX_PUSH_LOCK Lock) {
-    PMMSUPPORT WsInfo = CONTAINING_RECORD(Lock, MMSUPPORT, WorkingSetMutex);
-    return WrkMsvcWsOwned(WsInfo) ? &PsGetCurrentThread()->Tcb : NULL;
-}
-#ifdef LOCK_WORKING_SET
-#undef LOCK_WORKING_SET
-#endif
-#define LOCK_WORKING_SET(WSINFO) do { PETHREAD _Thread = PsGetCurrentThread(); KeEnterGuardedRegionThread (&_Thread->Tcb); ExAcquirePushLockExclusive (&(WSINFO)->WorkingSetMutex); if ((WSINFO) == &MmSystemCacheWs) { _Thread->OwnsSystemWorkingSetExclusive = 1; } else if ((WSINFO)->Flags.SessionSpace != 0) { _Thread->OwnsSessionWorkingSetExclusive = 1; } else { _Thread->OwnsProcessWorkingSetExclusive = 1; } } while (0)
-#ifdef UNLOCK_WORKING_SET
-#undef UNLOCK_WORKING_SET
-#endif
-#define UNLOCK_WORKING_SET(WSINFO) do { PETHREAD _Thread = PsGetCurrentThread(); ASSERT (WrkMsvcWsOwned (WSINFO)); if ((WSINFO) == &MmSystemCacheWs) { _Thread->OwnsSystemWorkingSetExclusive = 0; } else if ((WSINFO)->Flags.SessionSpace != 0) { _Thread->OwnsSessionWorkingSetExclusive = 0; } else { _Thread->OwnsProcessWorkingSetExclusive = 0; } ExReleasePushLockExclusive (&(WSINFO)->WorkingSetMutex); KeLeaveGuardedRegionThread (&_Thread->Tcb); } while (0)
-#ifdef MM_WS_LOCK_ASSERT
-#undef MM_WS_LOCK_ASSERT
-#endif
-#define MM_WS_LOCK_ASSERT(WSINFO) ASSERT (WrkMsvcWsOwned (WSINFO))
-#ifdef KeGetOwnerGuardedMutex
-#undef KeGetOwnerGuardedMutex
-#endif
-#define KeGetOwnerGuardedMutex(LOCK) WrkMsvcWsOwner(LOCK)
-#endif
 
 #endif /* _WRK_MSVC_COMPAT_H_ */

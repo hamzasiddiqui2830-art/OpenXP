@@ -670,13 +670,21 @@ Return Value:
                     Ws = &MmSystemCacheWs;
                 }
 
-                if (KeGetOwnerGuardedMutex (&Ws->WorkingSetMutex) == KeGetCurrentThread ()) {
+                if ((Ws == &MmSystemCacheWs &&
+     ((Thread->OwnsSystemWorkingSetExclusive != 0) ||
+      (Thread->OwnsSystemWorkingSetShared != 0))) ||
+    ((Ws)->Flags.SessionSpace == 1 &&
+     ((Thread->OwnsSessionWorkingSetExclusive != 0) ||
+      (Thread->OwnsSessionWorkingSetShared != 0))) ||
+    ((Ws)->Flags.SessionSpace == 0 &&
+     ((Thread->OwnsProcessWorkingSetExclusive != 0) ||
+      (Thread->OwnsProcessWorkingSetShared != 0)))) {
                     return STATUS_INVALID_PARAMETER_4;
                 }
 
                 PfnHeld = TRUE;
 
-                LOCK_WORKING_SET (Ws);
+LOCK_WORKING_SET (Thread, Ws);
 
                 LOCK_PFN (PfnIrql);
             }
@@ -723,7 +731,7 @@ Return Value:
                 UNLOCK_PFN (PfnIrql);
             }
             if (Ws != NULL) {
-                UNLOCK_WORKING_SET (Ws);
+UNLOCK_WORKING_SET (Thread, Ws);
             }
 
             return STATUS_INVALID_PARAMETER_1;
@@ -755,7 +763,7 @@ Return Value:
                 UNLOCK_PFN (PfnIrql);
             }
             if (Ws != NULL) {
-                UNLOCK_WORKING_SET (Ws);
+UNLOCK_WORKING_SET (Thread, Ws);
             }
 
             return STATUS_INVALID_PARAMETER_1;
@@ -815,7 +823,7 @@ Return Value:
                 ExReleaseSpinLock (&MmIoTrackerLock, OldIrql);
             }
             if (Ws != NULL) {
-                UNLOCK_WORKING_SET (Ws);
+UNLOCK_WORKING_SET (Thread, Ws);
             }
             return STATUS_INVALID_PARAMETER_1;
         }
@@ -918,7 +926,7 @@ ReadData:
     }
 
     if (Ws != NULL) {
-        UNLOCK_WORKING_SET (Ws);
+UNLOCK_WORKING_SET (Thread, Ws);
     }
 
     return STATUS_SUCCESS;

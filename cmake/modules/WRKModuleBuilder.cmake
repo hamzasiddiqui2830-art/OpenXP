@@ -132,12 +132,6 @@ function(add_wrk_module MODULE_NAME)
             if(MODULE_NAME STREQUAL "rtl" OR MODULE_NAME STREQUAL "se")
                 target_compile_options(${ARG_TARGET_NAME} PRIVATE /wd4101)
             endif()
-
-            if(MODULE_NAME STREQUAL "mm")
-                set_source_files_properties(
-                    ${CMAKE_SOURCE_DIR}/ntoskrnl/mm/debugsup.c
-                    PROPERTIES COMPILE_OPTIONS "/FI${CMAKE_SOURCE_DIR}/ntoskrnl/inc/wrk_debugsup_msvc_compat.h")
-            endif()
         endif()
 
         set_target_properties(${ARG_TARGET_NAME} PROPERTIES

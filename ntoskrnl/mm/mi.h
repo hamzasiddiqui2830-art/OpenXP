@@ -1942,6 +1942,14 @@ extern PFN_NUMBER MmDynamicPfn;
 
 extern EX_PUSH_LOCK MmDynamicMemoryLock;
 
+extern ULONG MmMirroring;
+#define MM_MIRRORING_ENABLED    0x1
+#define MM_MIRRORING_VERIFYING  0x2
+extern PRTL_BITMAP MiMirrorBitMap;
+extern PRTL_BITMAP MiMirrorBitMap2;
+extern LOGICAL MiMirroringActive;
+extern ULONG MmTotalPagesForPagingFile;
+
 #define MI_INITIALIZE_DYNAMIC_MEMORY_LOCK()   ExInitializePushLock (&MmDynamicMemoryLock);
 
 #define MI_LOCK_DYNAMIC_MEMORY_EXCLUSIVE()    ExAcquirePushLockExclusive (&MmDynamicMemoryLock);

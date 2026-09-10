@@ -115,6 +115,11 @@ typedef ULONG PFN_NUMBER, *PPFN_NUMBER;
 // Define constants to access the bits in CR0.
 //
 
+#define KF_DTS              0x00020000
+#define KF_NOEXECUTE        0x20000000
+#define KF_GLOBAL_32BIT_EXECUTE 0x40000000
+#define KF_GLOBAL_32BIT_NOEXECUTE 0x80000000
+
 #define CR0_PG  0x80000000          // paging
 #define CR0_ET  0x00000010          // extension type (80387)
 #define CR0_TS  0x00000008          // task switched

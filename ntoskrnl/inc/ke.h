@@ -688,6 +688,16 @@ extern PKNODE KeNodeBlock[];
 // Process object structure definition
 //
 
+typedef struct _KEXECUTE_OPTIONS {
+    UCHAR ExecuteDisable : 1;
+    UCHAR ExecuteEnable : 1;
+    UCHAR DisableThunkEmulation : 1;
+    UCHAR Permanent : 1;
+    UCHAR ExecuteDispatchEnable : 1;
+    UCHAR ImageDispatchEnable : 1;
+    UCHAR Spare : 2;
+} KEXECUTE_OPTIONS, *PKEXECUTE_OPTIONS;
+
 typedef struct _KPROCESS {
 
     //
@@ -759,15 +769,16 @@ typedef struct _KPROCESS {
     KAFFINITY Affinity;
     USHORT StackCount;
     SCHAR BasePriority;
-    SCHAR ThreadQuantum;
-    BOOLEAN AutoAlignment;
+    SCHAR QuantumReset;
     UCHAR State;
     UCHAR ThreadSeed;
-    BOOLEAN DisableBoost;
     UCHAR PowerState;
-    BOOLEAN DisableQuantum;
     UCHAR IdealNode;
-    UCHAR Spare;
+    BOOLEAN Visited;
+    union {
+        KEXECUTE_OPTIONS Flags;
+        UCHAR ExecuteOptions;
+    };
 
 #if !defined(_X86_)
 
@@ -3778,5 +3789,11 @@ typedef struct _KGUARDED_MUTEX {
     };
 
 } KGUARDED_MUTEX, *PKGUARDED_MUTEX;
+
+
+VOID
+KeZeroSinglePage (
+    IN PVOID PageBase
+    );
 
 #endif // _KE_

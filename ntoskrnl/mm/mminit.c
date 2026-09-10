@@ -1074,6 +1074,7 @@ Environment:
 
         KeInitializeGuardedMutex (&MmSectionCommitMutex);
         KeInitializeGuardedMutex (&MmSectionBasedMutex);
+    MI_INITIALIZE_DYNAMIC_MEMORY_LOCK();
 
         MI_INITIALIZE_DYNAMIC_MEMORY_LOCK ();
 

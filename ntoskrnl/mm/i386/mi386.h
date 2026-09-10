@@ -413,3 +413,39 @@ extern PMMPTE MiInitialSystemPageDirectory;
 #endif
 
 #endif /* _MI386_ */
+
+
+#ifndef MI_RESERVED_BITS_CANONICAL
+#define MI_RESERVED_BITS_CANONICAL(VirtualAddress) TRUE
+#endif
+
+#ifndef MI_DISPLAY_TRAP_INFORMATION
+#define MI_DISPLAY_TRAP_INFORMATION(TrapInformation) \
+    KdPrint(("MM:***EIP %p, EFL %p\n", \
+             ((PKTRAP_FRAME)(TrapInformation))->Eip, \
+             ((PKTRAP_FRAME)(TrapInformation))->EFlags));
+#endif
+
+#ifndef MI_SET_PAGE_DIRTY
+#define MI_SET_PAGE_DIRTY(PPTE,VA,PFNHELD) \
+    if ((PPTE)->u.Hard.Dirty == 1) { \
+        MiSetDirtyBit ((VA),(PPTE),(PFNHELD)); \
+    }
+#endif
+
+#ifndef MI_IS_CACHING_DISABLED
+#define MI_IS_CACHING_DISABLED(PPTE) ((PPTE)->u.Hard.CacheDisable == 1)
+#endif
+
+#ifndef MM_SESSION_SPACE_DEFAULT
+#define MM_SESSION_SPACE_DEFAULT        (0xA0000000)
+#define MM_SESSION_SPACE_DEFAULT_END    (0xC0000000)
+#endif
+
+extern ULONG_PTR MmBootImageSize;
+extern ULONG MiMaximumWorkingSet;
+extern ULONG_PTR MiUseMaximumSystemSpace;
+extern ULONG_PTR MiUseMaximumSystemSpaceEnd;
+extern ULONG MiMaximumSystemCacheSizeExtra;
+extern MMPTE MmPteGlobal;
+extern PVOID MmHyperSpaceEnd;

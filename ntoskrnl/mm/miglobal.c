@@ -28,6 +28,12 @@ ULONG_PTR MmVirtualBias;
 #if defined(_X86_)
 MMPTE MmPteGlobal = {0x0};
 PVOID MmHyperSpaceEnd;
+ULONG_PTR MmBootImageSize;
+ULONG MiMaximumWorkingSet;
+ULONG_PTR MiUseMaximumSystemSpace;
+ULONG_PTR MiUseMaximumSystemSpaceEnd;
+ULONG MiMaximumSystemCacheSizeExtra;
+ULONG MmTotalPagesForPagingFile = 0;
 #endif
 
 #endif

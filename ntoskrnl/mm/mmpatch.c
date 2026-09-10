@@ -22,7 +22,6 @@ Revision History:
 #include "mi.h"
 #pragma hdrstop
 
-#define NTOS_KERNEL_RUNTIME
 
 #include "hotpatch.h"
 

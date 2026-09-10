@@ -124,7 +124,7 @@ MmCreateMirror (
     // Serialize here with dynamic memory additions and removals.
     //
 
-    KeAcquireGuardedMutex (&MmDynamicMemoryMutex);
+    MI_LOCK_DYNAMIC_MEMORY_EXCLUSIVE();
 
     ASSERT (MiMirroringActive == FALSE);
 
@@ -178,7 +178,7 @@ MmCreateMirror (
         MmUnlockPagableImageSection(ExPageLockHandle);
         MiZeroingDisabled = FALSE;
         ASSERT (MiMirroringActive == FALSE);
-        KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
+        MI_UNLOCK_DYNAMIC_MEMORY_EXCLUSIVE();
         return Status;
     }
     
@@ -404,7 +404,7 @@ MmCreateMirror (
                 MiZeroingDisabled = FALSE;
                 MmUnlockPagableImageSection(ExPageLockHandle);
                 MiMirroringActive = FALSE;
-                KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
+                MI_UNLOCK_DYNAMIC_MEMORY_EXCLUSIVE();
                 return Status;
             }
     
@@ -484,7 +484,7 @@ MmCreateMirror (
         MmUnlockPagableImageSection(ExPageLockHandle);
         MiZeroingDisabled = FALSE;
         MiMirroringActive = FALSE;
-        KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
+        MI_UNLOCK_DYNAMIC_MEMORY_EXCLUSIVE();
         return Status;
     }
 
@@ -662,7 +662,7 @@ MmCreateMirror (
             UNLOCK_PFN2 (ExitIrql);
             MiZeroingDisabled = FALSE;
             MmUnlockPagableImageSection(ExPageLockHandle);
-            KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
+            MI_UNLOCK_DYNAMIC_MEMORY_EXCLUSIVE();
             return Status;
         }
 
@@ -738,7 +738,7 @@ MmCreateMirror (
                 UNLOCK_PFN2 (ExitIrql);
                 MiZeroingDisabled = FALSE;
                 MmUnlockPagableImageSection(ExPageLockHandle);
-                KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
+                MI_UNLOCK_DYNAMIC_MEMORY_EXCLUSIVE();
                 return Status;
             }
     
@@ -777,7 +777,7 @@ MmCreateMirror (
 
     MmUnlockPagableImageSection(ExPageLockHandle);
 
-    KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
+    MI_UNLOCK_DYNAMIC_MEMORY_EXCLUSIVE();
 
     return Status;
 }

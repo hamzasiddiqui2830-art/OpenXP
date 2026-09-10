@@ -607,10 +607,6 @@ KeFlushCurrentTb (                                  // nthal
 
 // begin_wdm
 
-#define MmGetProcedureAddress(Address) (Address)
-#define MmLockPageableCodeSection(Address) MmLockPageableDataSection(Address)
-#define MmLockPagableCodeSection(Address) MmLockPageableDataSection(Address)
-#define MmLockPagableDataSection(Address) MmLockPageableDataSection(Address)
 // begin_ntddk begin_ntosp
 
 #define ExAcquireSpinLock(Lock, OldIrql) KeAcquireSpinLock((Lock), (OldIrql))
@@ -1896,7 +1892,9 @@ extern ULONG MmUserProbeAddress;
 // begin_wdm
 
 #define MmGetProcedureAddress(Address) (Address)
-#define MmLockPagableCodeSection(Address) MmLockPagableDataSection(Address)
+#define MmLockPageableCodeSection(Address) MmLockPageableDataSection(Address)
+#define MmLockPagableCodeSection(Address) MmLockPageableDataSection(Address)
+#define MmLockPagableDataSection(Address) MmLockPageableDataSection(Address)
 
 // end_ntddk end_wdm
 

@@ -49,7 +49,7 @@
 
 /*
  * The x86 WRK sources use a small set of SP1 MM helpers which are absent
- * from OpenXP's older x86 private headers.  Keep these definitions here,
+ * from OpenXP's older x86 private headers. Keep these definitions here,
  * but do not include mi.h: this header is force-included for every NTOS
  * translation unit and including the MM private header here changes the
  * declaration/include order of unrelated modules.
@@ -90,6 +90,12 @@
 #ifndef MiGetSubsectionAddress
 #define MiGetSubsectionAddress(lpte) (((lpte)->u.Long & 0x80000000) ? ((PSUBSECTION)((PCHAR)MmSubsectionBase + ((((lpte)->u.Long & 0x7ffff800) >> 4) | (((lpte)->u.Long << 2) & 0x78)))) : ((PSUBSECTION)((PCHAR)MmNonPagedPoolEnd - (((((lpte)->u.Long) >> 11) << 7) | (((lpte)->u.Long << 2) & 0x78)))))
 #endif
+
+/* x86 MM private symbols referenced by the WRK SP1 source set. */
+extern PVOID MiSystemCacheStartExtra;
+extern PVOID MiSystemCacheEndExtra;
+extern BOOLEAN MiWriteCombiningPtes;
+extern ULONG MiDetermineUserGlobalPteMask(IN PMMPTE PointerPte);
 #endif
 
 #if defined(_MSC_VER) && !defined(__cplusplus)

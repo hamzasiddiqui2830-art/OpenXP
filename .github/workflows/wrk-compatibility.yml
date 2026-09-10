@@ -1,0 +1,41 @@
+name: WRK Compatibility Patch
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  patch-active-ntoskrnl:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout OpenXP
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Apply WRK v1.2 SP0 compatibility edits
+        shell: pwsh
+        run: python scripts/fix_wrk_mm_ci.py
+
+      - name: Verify ntos-old was not modified
+        shell: pwsh
+        run: |
+          $changed = git status --short -- ntos-old
+          if ($changed) {
+            Write-Error "WRK compatibility patch modified ntos-old; this is forbidden."
+            exit 1
+          }
+
+      - name: Configure OpenXP x86
+        shell: cmd
+        run: configure.cmd vs i386
+
+      - name: Build OpenXP x86
+        shell: cmd
+        run: cmake --build "%GITHUB_WORKSPACE%\output-vs-i386\build" --config Release --parallel

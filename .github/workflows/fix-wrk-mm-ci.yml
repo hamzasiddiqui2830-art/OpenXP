@@ -1,0 +1,36 @@
+name: fix WRK MM CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - scripts/fix_wrk_mm_ci.py
+      - .github/workflows/fix-wrk-mm-ci.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply MM edits
+        run: python scripts/fix_wrk_mm_ci.py
+
+      - name: Commit MM edits
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ntoskrnl
+          if git diff --cached --quiet; then
+            echo 'No MM source changes required.'
+            exit 0
+          fi
+          git commit -m 'mm: apply WRK v1.2 x86 MM edits'
+          git push origin HEAD:main

@@ -26,21 +26,17 @@
 #include "../mm/i386/mi386.h"
 #undef MiCompareTbFlushTimeStamp
 
-
 #ifndef HARDWARE_PTE_DIRTY_MASK
 #define HARDWARE_PTE_DIRTY_MASK MM_PTE_DIRTY_MASK
 #endif
-
 #ifndef MiPteToProto
 #define MiPteToProto(lpte) \
     (PMMPTE)((PMMPTE)(((((lpte)->u.Long) >> 11) << 9) + \
     (((((lpte)->u.Long)) << 24) >> 23) + MmProtopte_Base))
 #endif
-
 #ifndef MI_DETERMINE_OWNER
 #define MI_DETERMINE_OWNER(PPTE) ((PPTE)->u.Hard.Owner)
 #endif
-
 #ifndef MI_MAKE_TRANSITION_PTE
 #define MI_MAKE_TRANSITION_PTE(OUTPTE, PAGEFRAME, PROTECT, PPTE) do { \
     (OUTPTE).u.Trans.PageFrameNumber = (PAGEFRAME); \
@@ -49,6 +45,50 @@
     (OUTPTE).u.Trans.Protection = (PROTECT); \
     (OUTPTE).u.Trans.Owner = MI_DETERMINE_OWNER(PPTE); \
 } while (0)
+#endif
+
+/*
+ * The x86 WRK sources use a small set of SP1 MM helpers which are absent
+ * from OpenXP's older x86 private headers.  Keep these definitions here,
+ * but do not include mi.h: this header is force-included for every NTOS
+ * translation unit and including the MM private header here changes the
+ * declaration/include order of unrelated modules.
+ */
+#ifndef Writable
+#define Writable Write
+#endif
+#ifndef MI_IS_SYSTEM_CACHE_ADDRESS
+#define MI_IS_SYSTEM_CACHE_ADDRESS(VA) ((((PVOID)(VA) >= (PVOID)MmSystemCacheStart) && ((PVOID)(VA) <= (PVOID)MmSystemCacheEnd)) || (((PVOID)(VA) >= (PVOID)MiSystemCacheStartExtra) && ((PVOID)(VA) <= (PVOID)MiSystemCacheEndExtra)))
+#endif
+#ifndef MiIsVirtualAddressOnPdeBoundary
+#define MiIsVirtualAddressOnPdeBoundary(VA) (((ULONG_PTR)(VA) & PAGE_DIRECTORY_MASK) == 0)
+#endif
+#ifndef IS_PTE_NOT_DEMAND_ZERO
+#define IS_PTE_NOT_DEMAND_ZERO(PTE) ((PTE).u.Long & (ULONG)0xFFFFFC01)
+#endif
+#ifndef MI_IS_PFN_DELETED
+#define MI_IS_PFN_DELETED(PPFN) ((ULONG_PTR)(PPFN)->PteAddress & 0x1)
+#endif
+#ifndef MI_SET_PTE_DIRTY
+#define MI_SET_PTE_DIRTY(PTE) ((PTE).u.Long |= HARDWARE_PTE_DIRTY_MASK)
+#endif
+#ifndef MI_MAKE_VALID_PTE
+#define MI_MAKE_VALID_PTE(OUTPTE, FRAME, PMASK, PPTE) (OUTPTE).u.Long = ((FRAME << 12) | (MmProtectToPteMask[PMASK]) | MiDetermineUserGlobalPteMask((PMMPTE)(PPTE)))
+#endif
+#ifndef MI_DISABLE_CACHING
+#define MI_DISABLE_CACHING(PTE) do { (PTE).u.Hard.CacheDisable = 1; (PTE).u.Hard.WriteThrough = 1; } while (0)
+#endif
+#ifndef MI_SET_PTE_WRITE_COMBINE
+#define MI_SET_PTE_WRITE_COMBINE(PTE) do { if (MiWriteCombiningPtes == TRUE) { (PTE).u.Hard.CacheDisable = 0; (PTE).u.Hard.WriteThrough = 1; } else { (PTE).u.Hard.CacheDisable = 1; (PTE).u.Hard.WriteThrough = 0; } } while (0)
+#endif
+#ifndef MiFillMemoryPte
+#define MiFillMemoryPte(Destination, Length, Pattern) RtlFillMemoryUlong((Destination), (Length) * sizeof(MMPTE), (Pattern))
+#endif
+#ifndef MiGetSubsectionAddressForPte
+#define MiGetSubsectionAddressForPte(VA) (((ULONG)(VA) < (ULONG)MmSubsectionBase + 128*1024*1024) ? ((((((ULONG)(VA) - (ULONG)MmSubsectionBase) >> 2) & (ULONG)0x0000001E) | ((((ULONG)(VA) - (ULONG)MmSubsectionBase) << 4) & (ULONG)0x7ffff800)) | 0x80000000) : (((((ULONG)MmNonPagedPoolEnd - (ULONG)(VA)) >> 2) & (ULONG)0x0000001E) | ((((ULONG)MmNonPagedPoolEnd - (ULONG)(VA)) << 4) & (ULONG)0x7ffff800)))
+#endif
+#ifndef MiGetSubsectionAddress
+#define MiGetSubsectionAddress(lpte) (((lpte)->u.Long & 0x80000000) ? ((PSUBSECTION)((PCHAR)MmSubsectionBase + ((((lpte)->u.Long & 0x7ffff800) >> 4) | (((lpte)->u.Long << 2) & 0x78)))) : ((PSUBSECTION)((PCHAR)MmNonPagedPoolEnd - (((((lpte)->u.Long) >> 11) << 7) | (((lpte)->u.Long << 2) & 0x78)))))
 #endif
 #endif
 
@@ -228,8 +268,6 @@ NTSTATUS MmCheckSystemImage(IN HANDLE ImageFileHandle);
 VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
 #endif
 
-/* WRK SP1 uses the modern spelling in MM sources; OpenXP's exported SP0
- * declaration retains the historical "Pagable" spelling. */
 #ifndef MmUnlockPageableImageSection
 #define MmUnlockPageableImageSection MmUnlockPagableImageSection
 #endif
@@ -245,7 +283,7 @@ VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
 #define OBJ_VALID_PRIVATE_ATTRIBUTES 0x00010000L
 #endif
 #ifndef OBJ_ALL_VALID_ATTRIBUTES
-#define OBJ_ALL_VALID_ATTRIBUTES (OBJ_VALID_PRIVATE_ATTRIBUTES | OBJ_VALID_ATTRIBUTES)
+#define OBJ_ALL_VALID_ATTRIBUTES (OBJ_VALID_PRIVATE_ATTRIBUTES | OBJ_ATTRIBUTES)
 #endif
 #ifndef OBJ_KERNEL_EXCLUSIVE
 #define OBJ_KERNEL_EXCLUSIVE 0x00010000L

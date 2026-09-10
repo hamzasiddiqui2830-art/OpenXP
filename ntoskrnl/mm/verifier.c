@@ -4046,7 +4046,7 @@ VerifierKeInitializeTimerEx (
     // active timer.  Make sure the timer table list is initialized.
     //
 
-    if (KiTimerTableListHead[0].Flink != NULL) {
+    if (KiTimerTableListHead[0].Entry.Flink != NULL) {
         KeCheckForTimer(Timer, sizeof(KTIMER));
     }
 

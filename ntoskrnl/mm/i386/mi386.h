@@ -514,6 +514,8 @@ extern PMMPTE MiInitialSystemPageDirectory;
 #define MI_IS_CACHING_DISABLED(PPTE) ((PPTE)->u.Hard.CacheDisable == 1)
 #endif
 
+#define IMAGE_FILE_MACHINE_NATIVE 0x014c
+
 #ifndef MM_SESSION_SPACE_DEFAULT
 #define MM_SESSION_SPACE_DEFAULT        (0xA0000000)
 #define MM_SESSION_SPACE_DEFAULT_END    (0xC0000000)

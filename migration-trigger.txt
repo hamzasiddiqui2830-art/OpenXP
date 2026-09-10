@@ -1,1 +1,2 @@
 one-shot migration trigger
+workflow yaml validated; run migration

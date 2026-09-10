@@ -483,7 +483,7 @@ Environment:
     ASSERT (DummyPagePfn->OriginalPte.u.Long == MM_DEMAND_ZERO_WRITE_PTE);
 
     ASSERT (DummyPagePfn->u3.e2.ReferenceCount == 2);
-    MI_REMOVE_LOCKED_PAGE_CHARGE_AND_DECREF(DummyPagePfn, 17);
+    MI_REMOVE_LOCKED_PAGE_CHARGE_AND_DECREF(DummyPagePfn);
 
     //
     // Clear the read in progress bit as this page may never have used for an
@@ -1506,7 +1506,7 @@ Environment:
         //
 
         Pfn1->u3.e1.PrototypePte = 0;
-        MI_ADD_LOCKED_PAGE_CHARGE(Pfn1, TRUE, 11);
+        MI_ADD_LOCKED_PAGE_CHARGE(Pfn1);
         Pfn1->u3.e2.ReferenceCount += 1;
 
         Pfn1->u3.e1.ReadInProgress = 1;
@@ -1656,7 +1656,7 @@ Environment:
                 if (PointerPde != MiGetPteAddress (RlePrototypePte)) {
 
                     ASSERT (PfnProto->u3.e2.ReferenceCount > 1);
-                    MI_REMOVE_LOCKED_PAGE_CHARGE_AND_DECREF(PfnProto, 5);
+                    MI_REMOVE_LOCKED_PAGE_CHARGE_AND_DECREF(PfnProto);
                     PfnProto = NULL;
                 }
             }
@@ -1680,7 +1680,7 @@ Environment:
                 }
 
                 PfnProto = MI_PFN_ELEMENT (PointerPde->u.Hard.PageFrameNumber);
-                MI_ADD_LOCKED_PAGE_CHARGE(PfnProto, TRUE, 4);
+                MI_ADD_LOCKED_PAGE_CHARGE(PfnProto);
                 PfnProto->u3.e2.ReferenceCount += 1;
                 ASSERT (PfnProto->u3.e2.ReferenceCount > 1);
             }
@@ -1758,7 +1758,7 @@ Environment:
                 //
 
                 Pfn1->u3.e1.PrototypePte = 1;
-                MI_ADD_LOCKED_PAGE_CHARGE(Pfn1, TRUE, 38);
+                MI_ADD_LOCKED_PAGE_CHARGE(Pfn1);
                 Pfn1->u2.ShareCount -= 1;
                 Pfn1->u3.e1.PageLocation = ZeroedPageList;
 
@@ -2042,7 +2042,7 @@ Environment:
                     MiRestoreTransitionPte (Pfn1);
 
                     MI_SET_PFN_DELETED (Pfn1);
-                    MI_REMOVE_LOCKED_PAGE_CHARGE_AND_DECREF(Pfn1, 39);
+                    MI_REMOVE_LOCKED_PAGE_CHARGE_AND_DECREF(Pfn1);
                 }
 
                 Page -= 1;
@@ -2095,7 +2095,7 @@ Environment:
     if (PfnProto != NULL) {
         LOCK_PFN (OldIrql);
         ASSERT (PfnProto->u3.e2.ReferenceCount > 1);
-        MI_REMOVE_LOCKED_PAGE_CHARGE_AND_DECREF(PfnProto, 5);
+        MI_REMOVE_LOCKED_PAGE_CHARGE_AND_DECREF(PfnProto);
         UNLOCK_PFN (OldIrql);
     }
 
@@ -2354,7 +2354,7 @@ Environment:
                 }
             }
 
-            MI_REMOVE_LOCKED_PAGE_CHARGE_AND_DECREF(PfnClusterPage, 39);
+            MI_REMOVE_LOCKED_PAGE_CHARGE_AND_DECREF(PfnClusterPage);
 
             Page += 1;
             NumberOfBytes -= PAGE_SIZE;

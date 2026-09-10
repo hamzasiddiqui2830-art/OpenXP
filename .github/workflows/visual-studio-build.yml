@@ -14,24 +14,6 @@ jobs:
     - name: Checkout OpenXP
       uses: actions/checkout@v4
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.x"
-
-    - name: Apply WRK v1.2 SP0 compatibility edits
-      shell: pwsh
-      run: python scripts/apply_wrk_compatibility.py
-
-    - name: Verify ntos-old was not modified
-      shell: pwsh
-      run: |
-        $changed = git status --short -- ntos-old
-        if ($changed) {
-          Write-Error "WRK compatibility patch modified ntos-old; this is forbidden."
-          exit 1
-        }
-
     - name: Setup MSVC x86 environment
       uses: ilammy/msvc-dev-cmd@v1
       with:
@@ -64,24 +46,6 @@ jobs:
     steps:
     - name: Checkout OpenXP
       uses: actions/checkout@v4
-
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.x"
-
-    - name: Apply WRK v1.2 SP0 compatibility edits
-      shell: pwsh
-      run: python scripts/apply_wrk_compatibility.py
-
-    - name: Verify ntos-old was not modified
-      shell: pwsh
-      run: |
-        $changed = git status --short -- ntos-old
-        if ($changed) {
-          Write-Error "WRK compatibility patch modified ntos-old; this is forbidden."
-          exit 1
-        }
 
     - name: Setup MSVC x64 environment
       uses: ilammy/msvc-dev-cmd@v1

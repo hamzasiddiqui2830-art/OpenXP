@@ -1314,6 +1314,7 @@ typedef struct _KPRCB {
 //
 
     volatile ULONGLONG IsrTime;
+    ULONGLONG SpareField1;
 
 //
 // Npx save area - 16-byte aligned.

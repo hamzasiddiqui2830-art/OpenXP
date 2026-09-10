@@ -1,0 +1,141 @@
+name: apply WRK v1.2 MM fixes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/apply-wrk-sp1-mm-fixes.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply source-verified WRK v1.2 fixes
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          import subprocess
+
+          def read(p): return Path(p).read_text(encoding='utf-8')
+          def write(p, s): Path(p).write_text(s, encoding='utf-8', newline='')
+
+          # Native x86 MM cache-attribute preparation: exact WRK v1.2 i386 semantics.
+          p = 'ntoskrnl/mm/i386/mi386.h'
+          s = read(p)
+          old = '#ifndef MI_PREPARE_FOR_NONCACHED\n#define MI_PREPARE_FOR_NONCACHED(CacheAttribute) ((void)(CacheAttribute))\n#endif'
+          new = '#ifndef MI_PREPARE_FOR_NONCACHED\n#define MI_PREPARE_FOR_NONCACHED(_CacheAttribute) \\\n    if (_CacheAttribute != MiCached) { \\\n        MI_FLUSH_ENTIRE_TB (0x20); \\\n        KeInvalidateAllCaches (); \\\n    }\n#endif'
+          assert old in s
+          s = s.replace(old, new, 1)
+
+          # Exact WRK x86 no-op working-set index and barrier semantics.
+          s = re.sub(r'#ifndef MI_SET_PTE_IN_WORKING_SET\n#define MI_SET_PTE_IN_WORKING_SET\(PTE, WORKING_SET_INDEX\) \(\(void\)0\)\n#endif',
+                     '#ifndef MI_SET_PTE_IN_WORKING_SET\n#define MI_SET_PTE_IN_WORKING_SET(PTE, WSINDEX)\n#endif', s, count=1)
+          s = re.sub(r'#ifndef MI_BARRIER_SYNCHRONIZE\n#define MI_BARRIER_SYNCHRONIZE\([^\n]*\)[\s\S]*?#endif',
+                     '#ifndef MI_BARRIER_SYNCHRONIZE\n#define MI_BARRIER_SYNCHRONIZE(TimeStamp)\n#endif', s, count=1)
+          s = re.sub(r'#ifndef MI_SET_GLOBAL_STATE\n#define MI_SET_GLOBAL_STATE\([^\n]*\)[\s\S]*?#endif',
+                     '#ifndef MI_SET_GLOBAL_STATE\n#define MI_SET_GLOBAL_STATE(PTE,STATE) \\\n    if (STATE) { \\\n        (PTE).u.Long |= MmPteGlobal.u.Long; \\\n    } \\\n    else { \\\n        (PTE).u.Long &= ~MmPteGlobal.u.Long; \\\n    }\n#endif', s, count=1)
+          # Exact WRK x86 MI_NO_FAULT_FOUND.
+          s = re.sub(r'#ifndef MI_NO_FAULT_FOUND\n#define MI_NO_FAULT_FOUND\([^\n]*\)[\s\S]*?#endif',
+                     '#if defined(NT_UP)\n#define MI_NO_FAULT_FOUND(FAULTSTATUS,PPTE,VA,PFNHELD)\n#else\n#define MI_NO_FAULT_FOUND(FAULTSTATUS,PPTE,VA,PFNHELD) \\\n    if ((MI_FAULT_STATUS_INDICATES_WRITE(FAULTSTATUS)) && ((PPTE)->u.Hard.Dirty == 0)) { \\\n        MiSetDirtyBit ((VA),(PPTE),(PFNHELD)); \\\n    }\n#endif', s, count=1)
+          # WRK x86 definitions required by the active SP1 mmfault path.
+          additions = '''\n#ifndef MI_RESERVED_BITS_CANONICAL\n#define MI_RESERVED_BITS_CANONICAL(VirtualAddress) TRUE\n#endif\n\n#ifndef MI_DISPLAY_TRAP_INFORMATION\n#define MI_DISPLAY_TRAP_INFORMATION(TrapInformation) \\\n    KdPrint(("MM:***EIP %p, EFL %p\\n", \\\n             ((PKTRAP_FRAME)(TrapInformation))->Eip, \\\n             ((PKTRAP_FRAME)(TrapInformation))->EFlags));\n#endif\n\n#ifndef MI_SET_PAGE_DIRTY\n#if defined(NT_UP)\n#define MI_SET_PAGE_DIRTY(PPTE,VA,PFNHELD)\n#else\n#define MI_SET_PAGE_DIRTY(PPTE,VA,PFNHELD) \\\n    if ((PPTE)->u.Hard.Dirty == 1) { \\\n        MiSetDirtyBit ((VA),(PPTE),(PFNHELD)); \\\n    }\n#endif\n#endif\n'''
+          if 'MI_RESERVED_BITS_CANONICAL(VirtualAddress)' not in s:
+              s = s.replace('\n#endif /* _MI386_ */' if '#endif /* _MI386_ */' in s else '\n#endif\n', additions + ('\n#endif /* _MI386_ */' if '#endif /* _MI386_ */' in s else '\n#endif\n'), 1)
+          write(p, s)
+
+          # X86 feature bits are architectural WRK definitions.
+          p = 'ntoskrnl/inc/i386.h'; s = read(p)
+          if 'KF_GLOBAL_32BIT_EXECUTE' not in s:
+              marker = '#define CR0_PG  0x80000000'
+              insert = '#define KF_DTS              0x00020000\n#define KF_NOEXECUTE        0x20000000\n#define KF_GLOBAL_32BIT_EXECUTE 0x40000000\n#define KF_GLOBAL_32BIT_NOEXECUTE 0x80000000\n\n'
+              assert marker in s
+              s = s.replace(marker, insert + marker, 1)
+          write(p, s)
+
+          # KEXECUTE_OPTIONS and execute-option union required by WRK v1.2 mmfault.
+          p = 'ntoskrnl/inc/ke.h'; s = read(p)
+          if 'typedef struct _KEXECUTE_OPTIONS' not in s:
+              marker = 'typedef struct _KPROCESS {\n'
+              typedef = '''typedef struct _KEXECUTE_OPTIONS {\n    UCHAR ExecuteDisable : 1;\n    UCHAR ExecuteEnable : 1;\n    UCHAR DisableThunkEmulation : 1;\n    UCHAR Permanent : 1;\n    UCHAR ExecuteDispatchEnable : 1;\n    UCHAR ImageDispatchEnable : 1;\n    UCHAR Spare : 2;\n} KEXECUTE_OPTIONS, *PKEXECUTE_OPTIONS;\n\n'''
+              assert marker in s
+              s = s.replace(marker, typedef + marker, 1)
+          if 'union {\n        KEXECUTE_OPTIONS Flags;' not in s:
+              old = '    UCHAR IdealNode;\n    UCHAR Spare;\n\n#if !defined(_X86_)'
+              new = '    UCHAR IdealNode;\n    BOOLEAN Visited;\n    union {\n        KEXECUTE_OPTIONS Flags;\n        UCHAR ExecuteOptions;\n    };\n\n#if !defined(_X86_)'
+              assert old in s
+              s = s.replace(old, new, 1)
+          s = s.replace('    SCHAR ThreadQuantum;\n', '    SCHAR QuantumReset;\n', 1)
+          if 'KeZeroSinglePage (' not in s:
+              guard = '\n#endif\n'
+              pos = s.rfind(guard)
+              assert pos >= 0
+              s = s[:pos] + '\nVOID\nKeZeroSinglePage (\n    IN PVOID PageBase\n    );\n' + s[pos:]
+          write(p, s)
+
+          # MM public/private declarations used by the active WRK SP1 mmfault/mapcache paths.
+          p = 'ntoskrnl/inc/mm.h'; s = read(p)
+          if 'MmGetExecuteOptions (' not in s:
+              pos = s.rfind('\n#endif\n'); assert pos >= 0
+              decl = '''\nNTSTATUS\nMmGetExecuteOptions (\n    IN PULONG ExecuteOptions\n    );\n\nVOID\nMmGetImageInformation (\n    OUT PSECTION_IMAGE_INFORMATION ImageInformation\n    );\n'''
+              s = s[:pos] + decl + s[pos:]
+          s = re.sub(r'(MmCopyToCachedPage\s*\(\s*\n(?:.|\n)*?IN SIZE_T CountInBytes,\s*\n)\s*IN BOOLEAN DontZero', r'\1    IN LOGICAL ExposeZeroPageOk', s, count=1)
+          write(p, s)
+
+          # ExRaiseStatus is non-returning in WRK v1.2.
+          p = 'ntoskrnl/inc/ex.h'; s = read(p)
+          s = re.sub(r'(?<!DECLSPEC_NORETURN\n)(\bVOID\nNTAPI\nExRaiseStatus\s*\()', 'DECLSPEC_NORETURN\n\\1', s, count=1)
+          write(p, s)
+
+          # Native dynamic-memory synchronization is the push-lock interface already exposed by mi.h.
+          p = 'ntoskrnl/mm/dynmem.c'; s = read(p)
+          s = s.replace('KGUARDED_MUTEX MmDynamicMemoryMutex;\n\n', '')
+          s = s.replace('KeAcquireGuardedMutex (&MmDynamicMemoryMutex);', 'MI_LOCK_DYNAMIC_MEMORY_EXCLUSIVE();')
+          s = s.replace('KeReleaseGuardedMutex (&MmDynamicMemoryMutex);', 'MI_UNLOCK_DYNAMIC_MEMORY_EXCLUSIVE();')
+          write(p, s)
+          p = 'ntoskrnl/mm/mirror.c'; s = read(p)
+          s = s.replace('KeAcquireGuardedMutex (&MmDynamicMemoryMutex);', 'MI_LOCK_DYNAMIC_MEMORY_EXCLUSIVE();')
+          s = s.replace('KeReleaseGuardedMutex (&MmDynamicMemoryMutex);', 'MI_UNLOCK_DYNAMIC_MEMORY_EXCLUSIVE();')
+          write(p, s)
+
+          # Native storage for the already-defined push lock and WRK x86 paging-file counter.
+          p = 'ntoskrnl/mm/miglobal.c'; s = read(p)
+          if 'EX_PUSH_LOCK MmDynamicMemoryLock;' not in s:
+              s = s.replace('LOGICAL MmDynamicPfn;\n', 'LOGICAL MmDynamicPfn;\nEX_PUSH_LOCK MmDynamicMemoryLock;\n', 1)
+          if 'MmTotalPagesForPagingFile' not in s:
+              s = s.replace('ULONG MmLargePageMinimum;\n', 'ULONG MmLargePageMinimum;\nULONG MmTotalPagesForPagingFile = 0;\n', 1)
+          write(p, s)
+
+          # Mirror interface definitions verified against SP1/WRK semantics.
+          p = 'ntoskrnl/mm/mi.h'; s = read(p)
+          if '#define MM_MIRRORING_ENABLED' not in s:
+              marker = 'extern PFN_NUMBER MmHiberPages;\n'
+              defs = '''extern ULONG MmMirroring;\n#define MM_MIRRORING_ENABLED 0x1\n#define MM_MIRRORING_VERIFYING 0x2\nextern PRTL_BITMAP MiMirrorBitMap;\nextern PRTL_BITMAP MiMirrorBitMap2;\nextern LOGICAL MiMirroringActive;\nextern PFN_NUMBER MmTotalPagesForPagingFile;\n\n'''
+              assert marker in s
+              s = s.replace(marker, marker + '\n' + defs, 1)
+          write(p, s)
+
+          # Initialize the native dynamic-memory push lock where the MM mutexes are initialized.
+          p = 'ntoskrnl/mm/mminit.c'; s = read(p)
+          if 'MI_INITIALIZE_DYNAMIC_MEMORY_LOCK();' not in s:
+              needle = 'KeInitializeGuardedMutex (&MmSectionBasedMutex);'
+              assert needle in s
+              s = s.replace(needle, needle + '\n        MI_INITIALIZE_DYNAMIC_MEMORY_LOCK();', 1)
+          write(p, s)
+
+          # Remove the stale generic MI_IS_PHYSICAL_ADDRESS stub so x86 can supply the WRK implementation.
+          p = 'ntoskrnl/inc/wrk_msvc_compat.h'; s = read(p)
+          s = re.sub(r'#ifndef MI_IS_PHYSICAL_ADDRESS\n#define MI_IS_PHYSICAL_ADDRESS\(_Address\) \(FALSE\)\n#endif\n?', '', s, count=1)
+          write(p, s)
+
+          # Commit all source changes and remove this one-shot workflow.
+          subprocess.run(['git','config','user.name','github-actions[bot]'], check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'], check=True)
+          subprocess.run(['git','add','ntoskrnl','.github/workflows/apply-wrk-sp1-mm-fixes.yml'], check=True)
+          subprocess.run(['git','rm','-f','.github/workflows/apply-wrk-sp1-mm-fixes.yml'], check=True)
+          subprocess.run(['git','commit','-m','mm: apply WRK v1.2 x86 MM fixes'], check=True)
+          subprocess.run(['git','push','origin','HEAD:main'], check=True)

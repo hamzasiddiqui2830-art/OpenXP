@@ -1393,7 +1393,7 @@ MmForceSectionClosed (
 
 NTSTATUS
 MmGetFileNameForSection (
-    IN PSECTION SectionObject,
+    IN PVOID SectionObject,
     OUT POBJECT_NAME_INFORMATION *FileNameInfo
     );
 

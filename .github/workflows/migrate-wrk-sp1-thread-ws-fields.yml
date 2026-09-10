@@ -1,0 +1,96 @@
+name: restore WRK SP1 working-set thread fields
+
+on:
+  push:
+    paths:
+      - '.github/workflows/migrate-wrk-sp1-thread-ws-fields.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore WRK v1.2 ETHREAD working-set ownership flags
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("ntoskrnl/inc/ps.h")
+          text = path.read_text(encoding="utf-8")
+
+          old_create_union = """        struct {
+            unsigned NestedFaultCount : 2;
+            unsigned ApcNeeded : 1;
+        };
+"""
+          if text.count(old_create_union) == 1:
+              text = text.replace(
+                  old_create_union,
+                  """        struct {
+            unsigned NestedFaultCount : 2;
+            unsigned ApcNeeded : 1;
+        };
+""",
+                  1,
+              )
+          elif text.count("unsigned ApcNeeded : 1;") != 1:
+              raise SystemExit("unexpected CreateTime/ApcNeeded definition")
+
+          old_flags = """            BOOLEAN LpcReceivedMsgIdValid : 1;
+            BOOLEAN LpcExitThreadCalled   : 1;
+            BOOLEAN AddressSpaceOwner     : 1;
+        };
+"""
+          new_flags = """            BOOLEAN LpcReceivedMsgIdValid : 1;
+            BOOLEAN LpcExitThreadCalled   : 1;
+            BOOLEAN AddressSpaceOwner     : 1;
+            BOOLEAN OwnsProcessWorkingSetExclusive  : 1;
+            BOOLEAN OwnsProcessWorkingSetShared     : 1;
+            BOOLEAN OwnsSystemWorkingSetExclusive   : 1;
+            BOOLEAN OwnsSystemWorkingSetShared      : 1;
+            BOOLEAN OwnsSessionWorkingSetExclusive  : 1;
+            BOOLEAN OwnsSessionWorkingSetShared     : 1;
+
+            #define PS_SAME_THREAD_FLAGS_OWNS_A_WORKING_SET 0x000001F8UL
+
+            BOOLEAN ApcNeeded                       : 1;
+        };
+"""
+
+          if text.count(old_flags) == 1:
+              text = text.replace(old_flags, new_flags, 1)
+          elif text.count("BOOLEAN OwnsProcessWorkingSetExclusive  : 1;") != 1:
+              raise SystemExit("expected exactly one legacy SameThreadApcFlags block")
+
+          path.write_text(text, encoding="utf-8", newline="")
+
+      - name: Verify WRK SP1 thread ownership fields
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(grep -cF 'BOOLEAN OwnsProcessWorkingSetExclusive  : 1;' ntoskrnl/inc/ps.h)" -eq 1
+          test "$(grep -cF 'BOOLEAN OwnsProcessWorkingSetShared     : 1;' ntoskrnl/inc/ps.h)" -eq 1
+          test "$(grep -cF 'BOOLEAN OwnsSystemWorkingSetExclusive   : 1;' ntoskrnl/inc/ps.h)" -eq 1
+          test "$(grep -cF 'BOOLEAN OwnsSystemWorkingSetShared      : 1;' ntoskrnl/inc/ps.h)" -eq 1
+          test "$(grep -cF 'BOOLEAN OwnsSessionWorkingSetExclusive  : 1;' ntoskrnl/inc/ps.h)" -eq 1
+          test "$(grep -cF 'BOOLEAN OwnsSessionWorkingSetShared     : 1;' ntoskrnl/inc/ps.h)" -eq 1
+          grep -nF '#define PS_SAME_THREAD_FLAGS_OWNS_A_WORKING_SET 0x000001F8UL' ntoskrnl/inc/ps.h
+          test "$(grep -cF 'BOOLEAN ApcNeeded                       : 1;' ntoskrnl/inc/ps.h)" -eq 1
+          test "$(grep -cF 'unsigned ApcNeeded : 1;' ntoskrnl/inc/ps.h)" -eq 1
+
+      - name: Commit migration and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "OpenXP automation"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/workflows/migrate-wrk-sp1-thread-ws-fields.yml
+          git add -A
+          git commit -m "mm: restore WRK SP1 working-set ownership fields"
+          git push

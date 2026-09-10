@@ -39,6 +39,14 @@ jobs:
                   '    ULONG   SpareFields0[4];\n',
                   '''    LONG MmPageFaultCount;\n    LONG MmCopyOnWriteCount;\n    LONG MmTransitionCount;\n    LONG MmCacheTransitionCount;\n    LONG MmDemandZeroCount;\n    LONG MmPageReadCount;\n    LONG MmPageReadIoCount;\n    LONG MmCacheReadCount;\n    LONG MmCacheIoCount;\n    LONG MmDirtyPagesWriteCount;\n    LONG MmDirtyWriteIoCount;\n    LONG MmMappedPagesWriteCount;\n    LONG MmMappedWriteIoCount;\n    ULONG SpareFields0[1];\n''')
 
+          # SP1 keeps the 16-byte NPX save-area alignment after the new MM accounting block.
+          p = Path('ntoskrnl/inc/i386.h')
+          s = p.read_text()
+          old = '    volatile ULONGLONG IsrTime;\n'
+          new = '    volatile ULONGLONG IsrTime;\n    ULONGLONG SpareField1;\n'
+          if old in s and new not in s:
+              p.write_text(s.replace(old, new, 1))
+
           replace('ntoskrnl/mm/mi.h',
                   '        KeFlushProcessTb ();\n',
                   '        KeFlushProcessTb (AllProcessors);\n')
@@ -52,7 +60,6 @@ jobs:
           compat = Path('ntoskrnl/inc/wrk_msvc_compat.h')
           s = compat.read_text()
           old = '''#ifndef KeFlushProcessTb\n#define KeFlushProcessTb() KeFlushProcessTb(FALSE)\n#endif\n'''
-          # Keep the compatibility macro only until the source-level mi.h fix is in place.
           if old in s:
               s = s.replace(old, '', 1)
           compat.write_text(s)

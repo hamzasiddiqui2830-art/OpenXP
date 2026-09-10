@@ -1638,7 +1638,7 @@ Environment:
 
     if ((PoolType & BASE_POOL_TYPE_MASK) == PagedPool) {
         LocalNoAccessPte.u.Long = MM_KERNEL_NOACCESS_PTE;
-        MiDeleteSystemPagableVm (PointerPte,
+        MiDeleteSystemPageableVm (PointerPte,
                                  1,
                                  LocalNoAccessPte,
                                  (PoolType & SESSION_POOL_MASK) ? TRUE : FALSE,
@@ -1978,7 +1978,7 @@ Environment:
 --*/
 
 {
-    PKTHREAD CurrentThread;
+    PETHREAD CurrentThread;
     KIRQL OldIrql;
     MMPTE PteContents;
     MMPTE NewPteContents;

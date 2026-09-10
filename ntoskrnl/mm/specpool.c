@@ -1636,17 +1636,16 @@ Environment:
     (PointerPte + 1)->u.Long = 0;
     ResidentAvailCharge = 0;
 
-    if ((PoolType & BASE_POOL_TYPE_MASK) == PagedPool) {
-        LocalNoAccessPte.u.Long = MM_KERNEL_NOACCESS_PTE;
-        MiDeleteSystemPageableVm (PointerPte,
-                                 1,
-                                 LocalNoAccessPte,
-                                 (PoolType & SESSION_POOL_MASK) ? TRUE : FALSE,
-                                 NULL);
-        PointerPte->u.List.NextEntry = MM_EMPTY_PTE_LIST;
-        InterlockedDecrement (&MiSpecialPagesPagable);
-        LOCK_PFN (OldIrql);
-    }
+   if ((PoolType & BASE_POOL_TYPE_MASK) == PagedPool) {
+    LocalNoAccessPte.u.Long = MM_KERNEL_NOACCESS_PTE;
+    MiDeleteSystemPageableVm (PointerPte,
+                              1,
+                              LocalNoAccessPte.u.Long,
+                              NULL);
+    PointerPte->u.List.NextEntry = MM_EMPTY_PTE_LIST;
+    InterlockedDecrement (&MiSpecialPagesPageable);
+    LOCK_PFN (OldIrql);
+}
     else {
 
         PageFrameIndex = MI_GET_PAGE_FRAME_FROM_PTE (PointerPte);

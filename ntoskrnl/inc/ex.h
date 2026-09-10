@@ -3960,6 +3960,7 @@ ExRaiseException (
 // Raise status from kernel mode.
 //
 
+DECLSPEC_NORETURN
 NTKERNELAPI
 VOID
 NTAPI

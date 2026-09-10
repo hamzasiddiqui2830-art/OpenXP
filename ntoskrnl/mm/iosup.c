@@ -160,6 +160,21 @@ MiVerifyLockedPageCharges (
     );
 #endif
 
+PVOID
+MmLockPageableDataSection (
+    IN PVOID AddressWithinSection
+    );
+
+PMDL
+MmAllocatePagesForMdlEx (
+    IN PHYSICAL_ADDRESS LowAddress,
+    IN PHYSICAL_ADDRESS HighAddress,
+    IN PHYSICAL_ADDRESS SkipBytes,
+    IN SIZE_T TotalBytes,
+    IN MEMORY_CACHING_TYPE CacheType,
+    IN ULONG Flags
+    );
+
 VOID
 MmLockPagableSectionByHandle (
     __in PVOID ImageSectionHandle

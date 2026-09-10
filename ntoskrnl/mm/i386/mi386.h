@@ -380,4 +380,32 @@ extern PMMPTE MiInitialSystemPageDirectory;
                        (MmProtectToPteMask[(PPTE)->u.Trans.Protection]) | \
                        MiDetermineUserGlobalPteMask((PMMPTE)PPTE));
 
+
+
+/* WRK v1.2/SP1 x86 MM primitives. */
+#ifndef MI_SET_PTE_IN_WORKING_SET
+#define MI_SET_PTE_IN_WORKING_SET(PTE, WORKING_SET_INDEX) ((void)0)
+#endif
+#ifndef MI_SET_GLOBAL_STATE
+#define MI_SET_GLOBAL_STATE(PTE, STATE) ((PTE).u.Hard.Global = (STATE))
+#endif
+#ifndef MI_DISABLE_LARGE_PTE_CACHING
+#define MI_DISABLE_LARGE_PTE_CACHING(PTE) MI_DISABLE_CACHING(PTE)
+#endif
+#ifndef MI_SET_LARGE_PTE_WRITE_COMBINE
+#define MI_SET_LARGE_PTE_WRITE_COMBINE(PTE) MI_SET_PTE_WRITE_COMBINE(PTE)
+#endif
+#ifndef MI_PREPARE_FOR_NONCACHED
+#define MI_PREPARE_FOR_NONCACHED(CacheAttribute) ((void)(CacheAttribute))
+#endif
+#ifndef MI_NO_FAULT_FOUND
+#define MI_NO_FAULT_FOUND(FAULTSTATUS, PPTE, VA, PFNHELD) \\
+    if (MI_FAULT_STATUS_INDICATES_WRITE(FAULTSTATUS) && ((PPTE)->u.Hard.Dirty == 0)) { \\
+        MiSetDirtyBit((VA), (PPTE), (PFNHELD)); \\
+    }
+#endif
+#ifndef MI_BARRIER_SYNCHRONIZE
+#define MI_BARRIER_SYNCHRONIZE(TimeStamp) do { (void)(TimeStamp); KeMemoryBarrier(); } while (0)
+#endif
+
 #endif /* _MI386_ */

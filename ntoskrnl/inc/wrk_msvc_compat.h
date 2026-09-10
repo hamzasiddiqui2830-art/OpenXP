@@ -213,9 +213,6 @@ NTSTATUS MmCheckSystemImage(IN HANDLE ImageFileHandle);
 #define WRK_MM_LOCK_PAGEABLE_SECTION_BY_HANDLE_DECLARED
 VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
 #endif
-#ifndef MmUnlockPageableImageSection
-#define MmUnlockPageableImageSection MmUnlockPagableImageSection
-#endif
 #ifndef QuantumReset
 #define QuantumReset Spare4
 #endif

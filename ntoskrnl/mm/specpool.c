@@ -1208,7 +1208,7 @@ restart:
             VmSupport = &MmSystemCacheWs;
         }
 
-        LOCK_WORKING_SET (VmSupport);
+        LOCK_WORKING_SET (CurrentThread, VmSupport);
 
         //
         // As this page is now allocated, add it to the system working set to
@@ -1238,8 +1238,8 @@ restart:
             MiGrowWsleHash (VmSupport);
         }
 
-        UNLOCK_WORKING_SET (VmSupport);
-
+        UNLOCK_WORKING_SET (CurrentThread, VmSupport);
+       
         if (TossPage == TRUE) {
 
             // 
@@ -2031,7 +2031,7 @@ Environment:
     if ((PointerPte + 1)->u.Soft.PageFileHigh == MI_SPECIAL_POOL_PTE_PAGABLE) {
         Pagable = TRUE;
         SystemWsLocked = TRUE;
-        LOCK_WORKING_SET (VmSupport);
+        LOCK_WORKING_SET (CurrentThread, VmSupport);
     }
     else {
         Pagable = FALSE;
@@ -2081,7 +2081,7 @@ retry1:
 
             ASSERT (SystemWsLocked == TRUE);
 
-            UNLOCK_WORKING_SET (VmSupport);
+            LOCK_WORKING_SET (CurrentThread, VmSupport);
         }
         else {
 
@@ -2122,7 +2122,7 @@ retry1:
 
     if ((ProtectionMask >= MM_NOCACHE) || (ProtectionMask == MM_WRITECOPY) || (ProtectionMask == MM_EXECUTE_WRITECOPY)) {
         if (SystemWsLocked == TRUE) {
-            UNLOCK_WORKING_SET (VmSupport);
+            LOCK_WORKING_SET (CurrentThread, VmSupport);
         }
         return FALSE;
     }
@@ -2206,7 +2206,7 @@ retry2:
         PointerPte->u.Soft.Protection = ProtectionMask;
     }
 
-    UNLOCK_WORKING_SET (VmSupport);
+    LOCK_WORKING_SET (CurrentThread, VmSupport);
 
     return TRUE;
 }

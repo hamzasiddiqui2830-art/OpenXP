@@ -15,11 +15,6 @@ Abstract:
 
     This module is specifically tailored for the X86.
 
-Author:
-
-    Lou Perazzoli (loup) 6-Jan-1990
-
-Revision History:
 
 --*/
 
@@ -380,7 +375,28 @@ extern PMMPTE MiInitialSystemPageDirectory;
                        (MmProtectToPteMask[(PPTE)->u.Trans.Protection]) | \
                        MiDetermineUserGlobalPteMask((PMMPTE)PPTE));
 
+#define MI_MAKE_TRANSITION_KERNELPTE_VALID(OUTPTE,PPTE) \
+    ASSERT (((PPTE)->u.Hard.Valid == 0) && \
+            ((PPTE)->u.Trans.Prototype == 0) && \
+            ((PPTE)->u.Trans.Transition == 1)); \
+    (OUTPTE).u.Long = MmProtectToPteMask[(PPTE)->u.Trans.Protection] | MM_PTE_VALID_MASK; \
+    ASSERT (((PPTE) < (PMMPTE)PDE_BASE) || ((PPTE) > (PMMPTE)PDE_TOP)); \
+    (OUTPTE).u.Long |= ((PPTE)->u.Hard.PageFrameNumber << PAGE_SHIFT); \
+    (OUTPTE).u.Long |= MI_PTE_OWNER_KERNEL; \
+    ASSERT ((((PMMPTE)PPTE) >= MiGetPteAddress(MM_KSEG0_BASE)) && \
+            ((((PMMPTE)PPTE) >= MiGetPteAddress(MM_SYSTEM_SPACE_START)) || \
+             (((PMMPTE)PPTE) < MiGetPteAddress(MM_KSEG2_BASE)))); \
+    (OUTPTE).u.Hard.Global = 1; \
+    (OUTPTE).u.Hard.Accessed = 1
 
+#define MI_MAKE_TRANSITION_PROTOPTE_VALID(OUTPTE,PPTE) \
+    ASSERT (((PPTE)->u.Hard.Valid == 0) && \
+            ((PPTE)->u.Trans.Prototype == 0) && \
+            ((PPTE)->u.Trans.Transition == 1)); \
+    (OUTPTE).u.Long = MmProtectToPteMask[(PPTE)->u.Trans.Protection] | MM_PTE_VALID_MASK; \
+    (OUTPTE).u.Long |= ((PPTE)->u.Hard.PageFrameNumber << PAGE_SHIFT); \
+    (OUTPTE).u.Hard.Global = 1; \
+    (OUTPTE).u.Hard.Accessed = 1
 
 /* WRK v1.2/SP1 x86 MM primitives. */
 #ifndef MI_SET_PTE_IN_WORKING_SET

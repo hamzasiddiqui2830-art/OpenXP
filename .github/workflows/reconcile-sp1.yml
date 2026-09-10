@@ -16,18 +16,17 @@ jobs:
         run: |
           from pathlib import Path
 
-          def read(path):
-              return Path(path).read_text()
-
-          def replace(path, old, new):
+          def replace(path, old, new, expected=1):
               p = Path(path)
               s = p.read_text()
-              if new in s:
-                  return
               count = s.count(old)
-              if count != 1:
-                  raise SystemExit(f'{path}: expected one exact match, found {count}')
-              p.write_text(s.replace(old, new, 1))
+              if count == 0:
+                  if new in s:
+                      return
+                  raise SystemExit(f'{path}: exact source text not found')
+              if count != expected:
+                  raise SystemExit(f'{path}: expected {expected} exact match(es), found {count}')
+              p.write_text(s.replace(old, new, expected))
 
           replace('ntoskrnl/inc/ps.h',
                   '    KGUARDED_MUTEX WorkingSetMutex;\n',
@@ -45,30 +44,31 @@ jobs:
                   '    ULONG   SpareFields0[4];\n',
                   '''    LONG MmPageFaultCount;\n    LONG MmCopyOnWriteCount;\n    LONG MmTransitionCount;\n    LONG MmCacheTransitionCount;\n    LONG MmDemandZeroCount;\n    LONG MmPageReadCount;\n    LONG MmPageReadIoCount;\n    LONG MmCacheReadCount;\n    LONG MmCacheIoCount;\n    LONG MmDirtyPagesWriteCount;\n    LONG MmDirtyWriteIoCount;\n    LONG MmMappedPagesWriteCount;\n    LONG MmMappedWriteIoCount;\n    ULONG SpareFields0[1];\n''')
 
-          # SP1 keeps the NPX alignment field after IsrTime.
           replace('ntoskrnl/inc/i386.h',
                   '    volatile ULONGLONG IsrTime;\n',
                   '    volatile ULONGLONG IsrTime;\n    ULONGLONG SpareField1;\n')
 
-          # WRK v1.2/SP1 KeFlushProcessTb has no AllProcessors parameter.
-          # The target processor set is derived from the current process.
+          # WRK v1.2 / SP1 uses the zero-argument KeFlushProcessTb form.
+          # Do not carry the SP0 AllProcessors parameter into the SP1 MM layer.
           replace('ntoskrnl/mm/mi.h',
                   '        KeFlushProcessTb (AllProcessors);\n',
                   '        KeFlushProcessTb ();\n')
 
-          # Move the public/private declaration and NT_UP inline definition to
-          # the WRK v1.2/SP1 zero-argument form.
           ke = Path('ntoskrnl/inc/ke.h')
           s = ke.read_text()
           old = 'KeFlushProcessTb (\n    IN BOOLEAN AllProcessors\n    )'
+          new = 'KeFlushProcessTb (\n    VOID\n    )'
           count = s.count(old)
-          if count != 2:
-              raise SystemExit(f'ntoskrnl/inc/ke.h: expected two SP0 KeFlushProcessTb signatures, found {count}')
-          s = s.replace(old, 'KeFlushProcessTb (\n    VOID\n    )')
-          ke.write_text(s)
+          if count:
+              if count != 2:
+                  raise SystemExit(f'ntoskrnl/inc/ke.h: expected two SP0 KeFlushProcessTb signatures, found {count}')
+              s = s.replace(old, new, 2)
+              ke.write_text(s)
+          elif s.count(new) != 2:
+              raise SystemExit('ntoskrnl/inc/ke.h: SP1 zero-argument KeFlushProcessTb form not present')
 
-          # The compatibility macro was only masking the SP0/SP1 signature
-          # mismatch. Once ke.h is SP1-shaped it must not rewrite the call.
+          # Remove the temporary compatibility shim; SP1 now has the native
+          # zero-argument declaration and callers should bind to it directly.
           compat = Path('ntoskrnl/inc/wrk_msvc_compat.h')
           s = compat.read_text()
           old = '''#ifndef WRK_KE_FLUSH_PROCESS_TB_ZERO_ARG_COMPAT\n#define WRK_KE_FLUSH_PROCESS_TB_ZERO_ARG_COMPAT\n#define KeFlushProcessTb() KeFlushProcessTb(FALSE)\n#endif\n'''

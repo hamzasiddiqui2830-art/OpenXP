@@ -405,7 +405,7 @@ ViInjectResourceFailure (
     );
 
 VOID
-ViTrimAllSystemPagableMemory (
+ViTrimAllSystemPageableMemory (
     ULONG TrimType
     );
 
@@ -702,7 +702,7 @@ ViFaultTracesLog (
 #pragma alloc_text(PAGEVRFY,ViLocateVerifierEntry)
 #pragma alloc_text(PAGEVRFY,ViPostPoolAllocation)
 #pragma alloc_text(PAGEVRFY,ViInjectResourceFailure)
-#pragma alloc_text(PAGEVRFY,ViTrimAllSystemPagableMemory)
+#pragma alloc_text(PAGEVRFY,ViTrimAllSystemPageableMemory)
 #pragma alloc_text(PAGEVRFY,ViInitializeEntry)
 #pragma alloc_text(PAGEVRFY,ViGrowPoolAllocation)
 #pragma alloc_text(PAGEVRFY,KfSanityCheckRaiseIrql)
@@ -3125,7 +3125,7 @@ KfSanityCheckLowerIrql (
 ULONG ViTrimSpaces = VI_TRIM_KERNEL;
 
 VOID
-ViTrimAllSystemPagableMemory (
+ViTrimAllSystemPageableMemory (
     ULONG TrimType
     )
 {
@@ -3156,21 +3156,21 @@ ViTrimAllSystemPagableMemory (
         }
 
         if (TrimType & VI_TRIM_KERNEL) {
-            if (MiTrimAllSystemPagableMemory (MI_SYSTEM_GLOBAL,
+            if (MiTrimAllSystemPageableMemory (MI_SYSTEM_GLOBAL,
                                               PurgeTransition) == TRUE) {
                 MmVerifierData.Trims += 1;
             }
         }
 
         if (TrimType & VI_TRIM_USER) {
-            if (MiTrimAllSystemPagableMemory (MI_USER_LOCAL,
+            if (MiTrimAllSystemPageableMemory (MI_USER_LOCAL,
                                               PurgeTransition) == TRUE) {
                 MmVerifierData.UserTrims += 1;
             }
         }
 
         if (TrimType & VI_TRIM_SESSION) {
-            if (MiTrimAllSystemPagableMemory (MI_SESSION_LOCAL,
+            if (MiTrimAllSystemPageableMemory (MI_SESSION_LOCAL,
                                               PurgeTransition) == TRUE) {
                 MmVerifierData.SessionTrims += 1;
             }
@@ -3206,7 +3206,7 @@ VerifierKeAcquireSpinLock (
 
     if (MmVerifierData.Level & DRIVER_VERIFIER_FORCE_IRQL_CHECKING) {
         if (CurrentIrql < DISPATCH_LEVEL) {
-            ViTrimAllSystemPagableMemory (0);
+            ViTrimAllSystemPageableMemory (0);
         }
     }
 
@@ -3426,7 +3426,7 @@ VerifierKfAcquireSpinLock (
 
     if (MmVerifierData.Level & DRIVER_VERIFIER_FORCE_IRQL_CHECKING) {
         if (CurrentIrql < DISPATCH_LEVEL) {
-            ViTrimAllSystemPagableMemory (0);
+            ViTrimAllSystemPageableMemory (0);
         }
     }
 
@@ -3540,7 +3540,7 @@ VerifierKeAcquireQueuedSpinLock (
 
     if (MmVerifierData.Level & DRIVER_VERIFIER_FORCE_IRQL_CHECKING) {
         if (CurrentIrql < DISPATCH_LEVEL) {
-            ViTrimAllSystemPagableMemory (0);
+            ViTrimAllSystemPageableMemory (0);
         }
     }
 
@@ -3633,7 +3633,7 @@ VerifierKfRaiseIrql (
 
     if (MmVerifierData.Level & DRIVER_VERIFIER_FORCE_IRQL_CHECKING) {
         if ((CurrentIrql < DISPATCH_LEVEL) && (NewIrql >= DISPATCH_LEVEL)) {
-            ViTrimAllSystemPagableMemory (0);
+            ViTrimAllSystemPageableMemory (0);
         }
     }
 
@@ -3672,7 +3672,7 @@ VerifierKeRaiseIrqlToDpcLevel (
 
     if (MmVerifierData.Level & DRIVER_VERIFIER_FORCE_IRQL_CHECKING) {
         if (CurrentIrql < DISPATCH_LEVEL) {
-            ViTrimAllSystemPagableMemory (0);
+            ViTrimAllSystemPageableMemory (0);
         }
     }
 
@@ -3807,13 +3807,13 @@ VerifierExAcquireFastMutex (
         (MmVerifierData.Level & DRIVER_VERIFIER_FORCE_IRQL_CHECKING)) {
 
         if (FastMutex == &MmSystemWsLock) {
-            ViTrimAllSystemPagableMemory (VI_TRIM_KERNEL);
+            ViTrimAllSystemPageableMemory (VI_TRIM_KERNEL);
         }
         else if (PsGetCurrentProcess()->Vm.Flags.SessionLeader == 0) {
             if (MiIsAddressValid (MmSessionSpace, FALSE)) {
 
                 if (FastMutex == &MmSessionSpace->GlobalVirtualAddress->WsLock) {
-                    ViTrimAllSystemPagableMemory (VI_TRIM_SESSION);
+                    ViTrimAllSystemPageableMemory (VI_TRIM_SESSION);
                 }
             }
         }
@@ -3966,7 +3966,7 @@ VerifierKeRaiseIrql (
 
     if (MmVerifierData.Level & DRIVER_VERIFIER_FORCE_IRQL_CHECKING) {
         if ((*OldIrql < DISPATCH_LEVEL) && (NewIrql >= DISPATCH_LEVEL)) {
-            ViTrimAllSystemPagableMemory (0);
+            ViTrimAllSystemPageableMemory (0);
         }
     }
 
@@ -4028,7 +4028,7 @@ VerifierSynchronizeExecution (
 
     if (MmVerifierData.Level & DRIVER_VERIFIER_FORCE_IRQL_CHECKING) {
         if ((OldIrql < DISPATCH_LEVEL) && (Interrupt->SynchronizeIrql >= DISPATCH_LEVEL)) {
-            ViTrimAllSystemPagableMemory (0);
+            ViTrimAllSystemPageableMemory (0);
         }
     }
 
@@ -4515,7 +4515,7 @@ Environment:
     MmLargePageDriverBufferLength = (ULONG)-1;
 
     //
-    // If no default is specified, then special pool, pagable code/data
+    // If no default is specified, then special pool, pageable code/data
     // flushing and pool leak detection are enabled.
     //
 
@@ -5326,7 +5326,7 @@ ViInsertVerifierEntry (
 
 Routine Description:
 
-    Nonpagable wrapper to insert a new verifier entry.
+    Nonpageable wrapper to insert a new verifier entry.
 
     Note that the system load mutant or the verifier load spinlock is sufficient
     for readers to access the list.  This is because the insertion path

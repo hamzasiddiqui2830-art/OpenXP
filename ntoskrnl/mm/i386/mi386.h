@@ -160,7 +160,6 @@ typedef struct _MMPTE_LIST { ULONG Valid : 1; ULONG Prototype : 1; ULONG Protect
 typedef struct _MMPTE_HARDWARE { ULONG Valid : 1; ULONG Write : 1; ULONG Owner : 1; ULONG WriteThrough : 1; ULONG CacheDisable : 1; ULONG Accessed : 1; ULONG Dirty : 1; ULONG LargePage : 1; ULONG Global : 1; ULONG CopyOnWrite : 1; ULONG Prototype : 1; ULONG reserved : 1; ULONG PageFrameNumber : 20; } MMPTE_HARDWARE, *PMMPTE_HARDWARE;
 typedef struct _MMPTE_LARGEPAGE { ULONG Valid : 1; ULONG Write : 1; ULONG Owner : 1; ULONG WriteThrough : 1; ULONG CacheDisable : 1; ULONG Accessed : 1; ULONG Dirty : 1; ULONG LargePage : 1; ULONG Global : 1; ULONG CopyOnWrite : 1; ULONG Prototype : 1; ULONG reserved : 1; ULONG PageFrameNumber : 20; } MMPTE_LARGEPAGE, *PMMPTE_LARGEPAGE;
 #else
-/* PAE definitions retained from the existing header. */
 typedef struct _MMPTE_SOFTWARE { ULONGLONG Valid : 1; ULONGLONG Prototype : 1; ULONGLONG Protection : 5; ULONGLONG Transition : 1; ULONGLONG Reserved0 : 3; ULONGLONG UsedPageTableEntries : PTE_PER_PAGE_BITS; ULONGLONG Reserved : 16 - PTE_PER_PAGE_BITS; ULONGLONG PageFileLow : 4; ULONGLONG PageFileHigh : 32; } MMPTE_SOFTWARE;
 typedef struct _MMPTE_TRANSITION { ULONGLONG Valid : 1; ULONGLONG Prototype : 1; ULONGLONG Protection : 5; ULONGLONG Transition : 1; ULONGLONG Reserved0 : 3; ULONGLONG PageFrameNumber : 26 - PAGE_SHIFT; ULONGLONG Reserved : 24; } MMPTE_TRANSITION;
 typedef struct _MMPTE_PROTOTYPE { ULONGLONG Valid : 1; ULONGLONG Prototype : 1; ULONGLONG ReadOnly : 1; ULONGLONG Reserved : 9; ULONGLONG ProtoAddress : 52; } MMPTE_PROTOTYPE;
@@ -194,10 +193,6 @@ typedef MMPTE *PMMPTE;
 #else
 #define InterlockedCompareExchangePte(_PointerPte, _NewContents, _OldContents) InterlockedCompareExchange64 ((PLONGLONG)(_PointerPte), (LONGLONG)(_NewContents), (LONGLONG)(_OldContents))
 #define InterlockedExchangePte(_PointerPte, _NewContents) InterlockedExchange64 ((PLONGLONG)(_PointerPte), (LONGLONG)(_NewContents))
-#endif
-
-#if !defined(KeFlushProcessTb)
-#define KeFlushProcessTb() KeFlushEntireTb(FALSE, FALSE)
 #endif
 
 FORCEINLINE
@@ -265,43 +260,6 @@ MiCompareTbFlushTimeStamp (
 #define MI_SET_PTE_CLEAN(PTE) ((PTE).u.Long &= ~HARDWARE_PTE_DIRTY_MASK)
 #define MiIsPteOnPdeBoundary(PTE) ((((ULONG_PTR)(PTE)) & (PAGE_SIZE - 1)) == 0)
 
-#ifndef HARDWARE_PTE_VALID_MASK
-#define HARDWARE_PTE_VALID_MASK MM_PTE_VALID_MASK
-#endif
-#ifndef HARDWARE_PTE_WRITE_MASK
-#define HARDWARE_PTE_WRITE_MASK MM_PTE_WRITE_MASK
-#endif
-#ifndef HARDWARE_PTE_OWNER_MASK
-#define HARDWARE_PTE_OWNER_MASK MM_PTE_OWNER_MASK
-#endif
-#ifndef HARDWARE_PTE_WRITE_THROUGH_MASK
-#define HARDWARE_PTE_WRITE_THROUGH_MASK MM_PTE_WRITE_THROUGH_MASK
-#endif
-#ifndef HARDWARE_PTE_CACHE_DISABLE_MASK
-#define HARDWARE_PTE_CACHE_DISABLE_MASK MM_PTE_CACHE_DISABLE_MASK
-#endif
-#ifndef HARDWARE_PTE_ACCESS_MASK
-#define HARDWARE_PTE_ACCESS_MASK MM_PTE_ACCESS_MASK
-#endif
-#ifndef HARDWARE_PTE_DIRTY_MASK
-#define HARDWARE_PTE_DIRTY_MASK MM_PTE_DIRTY_MASK
-#endif
-#ifndef HARDWARE_PTE_LARGE_PAGE_MASK
-#define HARDWARE_PTE_LARGE_PAGE_MASK MM_PTE_LARGE_PAGE_MASK
-#endif
-#ifndef HARDWARE_PTE_GLOBAL_MASK
-#define HARDWARE_PTE_GLOBAL_MASK MM_PTE_GLOBAL_MASK
-#endif
-#ifndef HARDWARE_PTE_COPY_ON_WRITE_MASK
-#define HARDWARE_PTE_COPY_ON_WRITE_MASK MM_PTE_COPY_ON_WRITE_MASK
-#endif
-#ifndef HARDWARE_PTE_PROTOTYPE_MASK
-#define HARDWARE_PTE_PROTOTYPE_MASK MM_PTE_PROTOTYPE_MASK
-#endif
-#ifndef HARDWARE_PTE_TRANSITION_MASK
-#define HARDWARE_PTE_TRANSITION_MASK MM_PTE_TRANSITION_MASK
-#endif
-
 #define MM_PTE_VALID_MASK         0x1
 #if defined(NT_UP)
 #define MM_PTE_WRITE_MASK         0x2
@@ -347,7 +305,6 @@ MiCompareTbFlushTimeStamp (
 #define MI_GET_PREVIOUS_COLOR(COLOR) (0)
 #define MI_GET_SECONDARY_COLOR(PAGE,PFN) ((PAGE) & MmSecondaryColorMask)
 #define MI_GET_COLOR_FROM_SECONDARY(SECONDARY_COLOR) (0)
-#define MI_GET_PAGE_COLOR_FROM_PTE(PTEADDRESS) ((ULONG)((MI_SYSTEM_PAGE_COLOR++) & MmSecondaryColorMask))
 
 #define MiZeroMemoryPte(Destination, Length) RtlZeroMemory((Destination), (Length) * sizeof(MMPTE))
 
@@ -379,8 +336,19 @@ MiCompareTbFlushTimeStamp (
 #define MI_GET_PROTECTION_FROM_SOFT_PTE(PTE) ((ULONG)((PTE)->u.Soft.Protection))
 #define MI_GET_PROTECTION_FROM_TRANSITION_PTE(PTE) ((ULONG)((PTE)->u.Trans.Protection))
 
+#ifndef WORKING_SET_LIST
+#define WORKING_SET_LIST MmWorkingSetList
+#endif
+#ifndef MmWsle
+#define MmWsle (MmWorkingSetList->Wsle)
+#endif
+
+#ifndef MM_MAXIMUM_WORKING_SET
+#define MM_MAXIMUM_WORKING_SET (((ULONG_PTR)(HYPER_SPACE)) >> PAGE_SHIFT)
+#endif
+
 extern PMMPTE MiFirstReservedZeroingPte;
 extern PMMPTE MiLargePageHyperPte;
 extern PMMPTE MiInitialSystemPageDirectory;
 
-#endif // _MI386_
+#endif /* _MI386_ */

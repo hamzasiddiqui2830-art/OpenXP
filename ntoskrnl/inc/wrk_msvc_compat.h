@@ -232,6 +232,12 @@ NTSTATUS MmCheckSystemImage(IN HANDLE ImageFileHandle);
 VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
 #endif
 
+/* WRK SP1 uses the modern spelling in MM sources; OpenXP's exported SP0
+ * declaration retains the historical "Pagable" spelling. */
+#ifndef MmUnlockPageableImageSection
+#define MmUnlockPageableImageSection MmUnlockPagableImageSection
+#endif
+
 #ifndef QuantumReset
 #define QuantumReset Spare4
 #endif

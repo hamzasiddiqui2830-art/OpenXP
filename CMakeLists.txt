@@ -4,6 +4,14 @@
 
 cmake_minimum_required(VERSION 3.15)
 
+# CMake 4.4 introduced CMP0194, which changes how MSVC is classified for
+# the ASM language. This project intentionally uses MSVC's cl.exe to assemble
+# the legacy .asm sources, so retain the pre-4.4 behavior when the policy is
+# available. Older CMake versions simply ignore this block.
+if(POLICY CMP0194)
+    cmake_policy(SET CMP0194 OLD)
+endif()
+
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     message(FATAL_ERROR "In-source builds are not allowed. Please create a separate build directory.")
 endif()

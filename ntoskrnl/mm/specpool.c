@@ -1577,7 +1577,7 @@ Environment:
     AllocationBase->TickCount = CurrentTime.LowPart;
 
     AllocationBase->NumberOfBytesRequested = NumberOfBytesRequested;
-    AllocationBase->Pagable = (ULONG)PoolType;
+    AllocationBase->Pageable = (ULONG)PoolType;
     AllocationBase->VirtualAddress = P;
     AllocationBase->Thread = PsGetCurrentThread ();
 

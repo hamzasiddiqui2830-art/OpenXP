@@ -2468,7 +2468,7 @@ Return Value:
             NumberOfPages -= 1;
         }
 
-        MiFlushPteList (&PteFlushList, TRUE);
+        MiFlushPteList (&PteFlushList);
     }
 }
 

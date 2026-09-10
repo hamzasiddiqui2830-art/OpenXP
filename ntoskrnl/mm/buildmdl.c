@@ -698,7 +698,7 @@ Environment:
     //
 
     if (((SPFN_NUMBER)MdlPages > (SPFN_NUMBER)(MmAvailablePages - MM_HIGH_LIMIT)) ||
-        (MI_NONPAGEABLE_MEMORY_AVAILABLE() <= (SPFN_NUMBER)MdlPages)) {
+        (MI_NONPAGABLE_MEMORY_AVAILABLE() <= (SPFN_NUMBER)MdlPages)) {
 
         UNLOCK_PFN (OldIrql);
 

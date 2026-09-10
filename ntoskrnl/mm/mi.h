@@ -2215,7 +2215,7 @@ extern LONG MiDelayPageFaults;
 
 //++
 // PFN_NUMBER
-// MI_NONPAGEABLE_MEMORY_AVAILABLE(
+// MI_NONPAGABLE_MEMORY_AVAILABLE(
 //    VOID
 //    );
 //
@@ -2237,7 +2237,7 @@ extern LONG MiDelayPageFaults;
 //    N.B.  This is a signed quantity and can be negative.
 //
 //--
-#define MI_NONPAGEABLE_MEMORY_AVAILABLE()                                    \
+#define MI_NONPAGABLE_MEMORY_AVAILABLE()                                    \
         ((SPFN_NUMBER)                                                      \
             (MmResidentAvailablePages -                                     \
              MmSystemLockPagesCount))
@@ -2564,7 +2564,7 @@ Environment:
 
     InterlockedIncrementSizeT (&MmSystemLockPagesCount);
 
-    if ((MI_NONPAGEABLE_MEMORY_AVAILABLE() <= 0) && (Force == FALSE)) {
+    if ((MI_NONPAGABLE_MEMORY_AVAILABLE() <= 0) && (Force == FALSE)) {
         InterlockedDecrementSizeT (&MmSystemLockPagesCount);
         if (ChargedCommit == TRUE) {
             MiReturnCommitment (1);

@@ -335,7 +335,7 @@ RetryPrivatePageAllocations:
         MiLockPagedAddress ((PVOID)((PCHAR) CloneProtos + i));
     }
 
-    if (MI_NONPAGEABLE_MEMORY_AVAILABLE() < 100) {
+    if (MI_NONPAGABLE_MEMORY_AVAILABLE() < 100) {
         ExFreePool (CloneProtos);
         PsReturnProcessNonPagedPoolQuota (CurrentProcess, sizeof(MMCLONE_HEADER));
         PsReturnProcessPagedPoolQuota (CurrentProcess,

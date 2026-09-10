@@ -351,4 +351,33 @@ extern PMMPTE MiFirstReservedZeroingPte;
 extern PMMPTE MiLargePageHyperPte;
 extern PMMPTE MiInitialSystemPageDirectory;
 
+
+
+// WRK v1.2 prototype-PTE and COW PTE primitives.
+#define MiProtoAddressForPte(proto_va) \
+   ((((((ULONG)proto_va - MmProtopte_Base) >> 1) & (ULONG)0x000000FE) | \
+    (((((ULONG)proto_va - MmProtopte_Base) << 2) & (ULONG)0xfffff800))) | \
+    MM_PTE_PROTOTYPE_MASK)
+
+#define MiProtoAddressForKernelPte(proto_va) MiProtoAddressForPte(proto_va)
+
+#define MI_MAKE_VALID_PTE_WRITE_COPY(PPTE) \
+    if ((PPTE)->u.Hard.Write == 1) { \
+        (PPTE)->u.Hard.CopyOnWrite = 1; \
+        (PPTE)->u.Hard.Write = 0; \
+    }
+
+#define MI_MAKE_PROTECT_WRITE_COPY(PTE) \
+    if ((PTE).u.Soft.Protection & MM_PROTECTION_WRITE_MASK) { \
+        (PTE).u.Long |= MM_PROTECTION_COPY_MASK << MM_PROTECT_FIELD_SHIFT; \
+    }
+
+#define MI_MAKE_TRANSITION_PTE_VALID(OUTPTE,PPTE) \
+    ASSERT (((PPTE)->u.Hard.Valid == 0) && \
+            ((PPTE)->u.Trans.Prototype == 0) && \
+            ((PPTE)->u.Trans.Transition == 1)); \
+    (OUTPTE).u.Long = (((PPTE)->u.Long & ~0xFFF) | \
+                       (MmProtectToPteMask[(PPTE)->u.Trans.Protection]) | \
+                       MiDetermineUserGlobalPteMask((PMMPTE)PPTE));
+
 #endif /* _MI386_ */

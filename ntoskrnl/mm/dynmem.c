@@ -1361,7 +1361,7 @@ retry:
     }
 
     if (PteFlushList.Count != 0) {
-        MiFlushPteList (&PteFlushList, TRUE);
+        MiFlushPteList (&PteFlushList);
     }
 
 #if DBG

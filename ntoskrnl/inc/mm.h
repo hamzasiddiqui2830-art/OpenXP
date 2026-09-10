@@ -2568,4 +2568,22 @@ MmPerfVadTreeWalk (
     PEPROCESS Process
     );
 
+
+// WRK v1.2/SP1 MM flush flags.
+#ifndef MM_FLUSH_ACQUIRE_FILE
+#define MM_FLUSH_ACQUIRE_FILE       0x1
+#endif
+#ifndef MM_FLUSH_FAIL_COLLISIONS
+#define MM_FLUSH_FAIL_COLLISIONS    0x2
+#endif
+#ifndef MM_FLUSH_IN_PARALLEL
+#define MM_FLUSH_IN_PARALLEL        0x4
+#endif
+#ifndef MM_FLUSH_ASYNCHRONOUS
+#define MM_FLUSH_ASYNCHRONOUS       0x8
+#endif
+#ifndef MM_FLUSH_SEG_DEREF
+#define MM_FLUSH_SEG_DEREF          0x80000000
+#endif
+
 #endif  // MM

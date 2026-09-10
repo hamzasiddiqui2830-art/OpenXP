@@ -2853,7 +2853,7 @@ Environment:
                          &PteFlushList,
                          OldIrql);
             
-            MiFlushPteList (&PteFlushList, FALSE);
+            MiFlushPteList (&PteFlushList);
     
             UNLOCK_PFN (OldIrql);
         }

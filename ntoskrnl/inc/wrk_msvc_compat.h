@@ -26,10 +26,6 @@
 #include "../mm/i386/mi386.h"
 #undef MiCompareTbFlushTimeStamp
 
-#ifndef WRK_KE_FLUSH_PROCESS_TB_ZERO_ARG_COMPAT
-#define WRK_KE_FLUSH_PROCESS_TB_ZERO_ARG_COMPAT
-#define KeFlushProcessTb() KeFlushProcessTb(FALSE)
-#endif
 
 #ifndef HARDWARE_PTE_DIRTY_MASK
 #define HARDWARE_PTE_DIRTY_MASK MM_PTE_DIRTY_MASK

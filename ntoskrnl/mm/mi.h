@@ -1384,7 +1384,7 @@ extern ULONG MiFlushType[MI_TB_FLUSH_TYPE_MAX];
 
 #define MI_FLUSH_PROCESS_TB(AllProcessors)                              \
         ASSERT (AllProcessors == FALSE);                                \
-        KeFlushProcessTb (AllProcessors);
+        KeFlushProcessTb ();
 
 #define MI_FLUSH_CURRENT_TB()                                           \
         KeFlushCurrentTb ();

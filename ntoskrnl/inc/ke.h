@@ -3125,7 +3125,7 @@ KeFlushEntireTb (
 FORCEINLINE
 VOID
 KeFlushProcessTb (
-    IN BOOLEAN AllProcessors
+    VOID
     )
 
 {
@@ -3189,7 +3189,7 @@ KeFlushSingleTb (
 
 VOID
 KeFlushProcessTb (
-    IN BOOLEAN AllProcessors
+    VOID
     );
 
 #else

@@ -47,13 +47,6 @@
 } while (0)
 #endif
 
-/*
- * The x86 WRK sources use a small set of SP1 MM helpers which are absent
- * from OpenXP's older x86 private headers. Keep these definitions here,
- * but do not include mi.h: this header is force-included for every NTOS
- * translation unit and including the MM private header here changes the
- * declaration/include order of unrelated modules.
- */
 #ifndef Writable
 #define Writable Write
 #endif
@@ -90,8 +83,6 @@
 #ifndef MiGetSubsectionAddress
 #define MiGetSubsectionAddress(lpte) (((lpte)->u.Long & 0x80000000) ? ((PSUBSECTION)((PCHAR)MmSubsectionBase + ((((lpte)->u.Long & 0x7ffff800) >> 4) | (((lpte)->u.Long << 2) & 0x78)))) : ((PSUBSECTION)((PCHAR)MmNonPagedPoolEnd - (((((lpte)->u.Long) >> 11) << 7) | (((lpte)->u.Long << 2) & 0x78)))))
 #endif
-
-/* x86 MM private symbols referenced by the WRK SP1 source set. */
 extern PVOID MiSystemCacheStartExtra;
 extern PVOID MiSystemCacheEndExtra;
 extern BOOLEAN MiWriteCombiningPtes;
@@ -122,7 +113,6 @@ extern ULONG MiDetermineUserGlobalPteMask(IN PMMPTE PointerPte);
 #ifndef COMPLUS_PACKAGE_INVALID
 #define COMPLUS_PACKAGE_INVALID ((ULONG)-1)
 #endif
-
 #ifndef _WRK_COMPLUS_PACKAGE_ROUTINES_DECLARED
 #define _WRK_COMPLUS_PACKAGE_ROUTINES_DECLARED
 NTSTATUS ExpReadComPlusPackage(VOID);
@@ -137,37 +127,21 @@ NTSTATUS ExpUpdateComPlusPackage(IN ULONG ComPlusPackageStatus);
 
 #ifndef _WRK_CM_HASH_TABLE_ENTRIES_DEFINED
 #define _WRK_CM_HASH_TABLE_ENTRIES_DEFINED
-typedef struct _CM_KEY_HASH_TABLE_ENTRY {
-    EX_PUSH_LOCK Lock;
-    PKTHREAD Owner;
-    PCM_KEY_HASH Entry;
-} CM_KEY_HASH_TABLE_ENTRY, *PCM_KEY_HASH_TABLE_ENTRY;
-typedef struct _CM_NAME_HASH_TABLE_ENTRY {
-    EX_PUSH_LOCK Lock;
-    PCM_NAME_HASH Entry;
-} CM_NAME_HASH_TABLE_ENTRY, *PCM_NAME_HASH_TABLE_ENTRY;
+typedef struct _CM_KEY_HASH_TABLE_ENTRY { EX_PUSH_LOCK Lock; PKTHREAD Owner; PCM_KEY_HASH Entry; } CM_KEY_HASH_TABLE_ENTRY, *PCM_KEY_HASH_TABLE_ENTRY;
+typedef struct _CM_NAME_HASH_TABLE_ENTRY { EX_PUSH_LOCK Lock; PCM_NAME_HASH Entry; } CM_NAME_HASH_TABLE_ENTRY, *PCM_NAME_HASH_TABLE_ENTRY;
 #endif
 
 #ifndef _WRK_EXP_WATCH_EXPIRATION_DATA_WORK_DECLARED
 #define _WRK_EXP_WATCH_EXPIRATION_DATA_WORK_DECLARED
 static VOID ExpWatchExpirationDataWork(IN PVOID Context);
 #endif
-
 #ifndef ProbeForWriteUlongAligned32
-#define ProbeForWriteUlongAligned32(_Address) \
-    ProbeForWriteSmallStructure((PVOID)(_Address), sizeof(ULONG), sizeof(ULONG))
+#define ProbeForWriteUlongAligned32(_Address) ProbeForWriteSmallStructure((PVOID)(_Address), sizeof(ULONG), sizeof(ULONG))
 #endif
-
 #ifndef _WRK_EX_RUNDOWN_REF_CACHE_AWARE_DEFINED
 #define _WRK_EX_RUNDOWN_REF_CACHE_AWARE_DEFINED
-typedef struct _EX_RUNDOWN_REF_CACHE_AWARE {
-    PEX_RUNDOWN_REF RunRefs;
-    PVOID PoolToFree;
-    ULONG RunRefSize;
-    ULONG Number;
-} EX_RUNDOWN_REF_CACHE_AWARE, *PEX_RUNDOWN_REF_CACHE_AWARE;
+typedef struct _EX_RUNDOWN_REF_CACHE_AWARE { PEX_RUNDOWN_REF RunRefs; PVOID PoolToFree; ULONG RunRefSize; ULONG Number; } EX_RUNDOWN_REF_CACHE_AWARE, *PEX_RUNDOWN_REF_CACHE_AWARE;
 #endif
-
 #ifndef _WRK_EX_RUNDOWN_CACHE_AWARE_API_DECLARED
 #define _WRK_EX_RUNDOWN_CACHE_AWARE_API_DECLARED
 PEX_RUNDOWN_REF_CACHE_AWARE ExAllocateCacheAwareRundownProtection(IN POOL_TYPE PoolType, IN ULONG PoolTag);
@@ -175,7 +149,6 @@ SIZE_T ExSizeOfRundownProtectionCacheAware(VOID);
 VOID ExInitializeRundownProtectionCacheAware(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCacheAware, IN SIZE_T Size);
 VOID ExFreeCacheAwareRundownProtection(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCacheAware);
 #endif
-
 #ifndef MAX_PAGE_FILES
 #define MAX_PAGE_FILES 16
 #endif
@@ -213,12 +186,7 @@ VOID ExFreeCacheAwareRundownProtection(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCach
 #define MI_SET_PFN_DELETED(_Pfn) ((_Pfn)->PteAddress = (PMMPTE)((ULONG_PTR)(_Pfn)->PteAddress | 1))
 #endif
 #ifndef MI_MAKE_VALID_PTE_TRANSITION
-#define MI_MAKE_VALID_PTE_TRANSITION(_Pte, _Protect) do { \
-    (_Pte).u.Soft.Transition = 1; \
-    (_Pte).u.Soft.Valid = 0; \
-    (_Pte).u.Soft.Prototype = 0; \
-    (_Pte).u.Soft.Protection = (_Protect); \
-} while (0)
+#define MI_MAKE_VALID_PTE_TRANSITION(_Pte, _Protect) do { (_Pte).u.Soft.Transition = 1; (_Pte).u.Soft.Valid = 0; (_Pte).u.Soft.Prototype = 0; (_Pte).u.Soft.Protection = (_Protect); } while (0)
 #endif
 #ifndef MI_CAPTURE_DIRTY_BIT_TO_PFN
 #define MI_CAPTURE_DIRTY_BIT_TO_PFN(_PointerPte, _Pfn) ((void)0)
@@ -226,7 +194,6 @@ VOID ExFreeCacheAwareRundownProtection(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCach
 #ifndef MI_IS_PHYSICAL_ADDRESS
 #define MI_IS_PHYSICAL_ADDRESS(_Address) (FALSE)
 #endif
-
 #if defined(_X86_)
 #ifndef SecondaryColorMask
 #define SecondaryColorMask PageColor
@@ -235,7 +202,6 @@ VOID ExFreeCacheAwareRundownProtection(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCach
 #define NodeShiftedColor PageColor
 #endif
 #endif
-
 #ifndef OwnsSystemWorkingSetExclusive
 #define OwnsSystemWorkingSetExclusive MemoryMaker
 #endif
@@ -254,17 +220,9 @@ VOID ExFreeCacheAwareRundownProtection(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCach
 #ifndef OwnsProcessWorkingSetShared
 #define OwnsProcessWorkingSetShared KeyedEventInUse
 #endif
-
 #ifndef KeLoopTbFlushTimeStampUnlocked
-static __inline VOID
-KeLoopTbFlushTimeStampUnlocked(VOID)
-{
-    while (KeReadTbFlushTimeStamp() & 1) {
-        YieldProcessor();
-    }
-}
+static __inline VOID KeLoopTbFlushTimeStampUnlocked(VOID) { while (KeReadTbFlushTimeStamp() & 1) { YieldProcessor(); } }
 #endif
-
 #ifndef WRK_MM_CHECK_SYSTEM_IMAGE_DECLARED
 #define WRK_MM_CHECK_SYSTEM_IMAGE_DECLARED
 NTSTATUS MmCheckSystemImage(IN HANDLE ImageFileHandle);
@@ -273,18 +231,15 @@ NTSTATUS MmCheckSystemImage(IN HANDLE ImageFileHandle);
 #define WRK_MM_LOCK_PAGEABLE_SECTION_BY_HANDLE_DECLARED
 VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
 #endif
-
 #ifndef MmUnlockPageableImageSection
 #define MmUnlockPageableImageSection MmUnlockPagableImageSection
 #endif
-
 #ifndef QuantumReset
 #define QuantumReset Spare4
 #endif
 #ifndef Hand
 #define Hand Size
 #endif
-
 #ifndef OBJ_VALID_PRIVATE_ATTRIBUTES
 #define OBJ_VALID_PRIVATE_ATTRIBUTES 0x00010000L
 #endif
@@ -294,18 +249,40 @@ VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
 #ifndef OBJ_KERNEL_EXCLUSIVE
 #define OBJ_KERNEL_EXCLUSIVE 0x00010000L
 #endif
-
 #ifndef ProbeAndReadUnicodeStringEx
-FORCEINLINE
-VOID
-ProbeAndReadUnicodeStringEx(
-    OUT PUNICODE_STRING Destination,
-    IN PUNICODE_STRING Source
-    )
-{
-    ProbeForRead(Source, sizeof(UNICODE_STRING), sizeof(ULONG));
-    *Destination = *Source;
+FORCEINLINE VOID ProbeAndReadUnicodeStringEx(OUT PUNICODE_STRING Destination, IN PUNICODE_STRING Source) { ProbeForRead(Source, sizeof(UNICODE_STRING), sizeof(ULONG)); *Destination = *Source; }
+#endif
+
+/* debugsup.c is WRK v1.2 source: restore its one-argument working-set API
+ * against OpenXP's current EX_PUSH_LOCK MMSUPPORT without changing other MM
+ * translation units. This block is enabled only for that source file. */
+#if defined(WRK_MSVC_DEBUGSUP_LEGACY_WS) && defined(_MSC_VER) && defined(_X86_)
+static __inline BOOLEAN WrkMsvcWsOwned(PMMSUPPORT WsInfo) {
+    PETHREAD Thread = PsGetCurrentThread();
+    if (WsInfo == &MmSystemCacheWs) return (Thread->OwnsSystemWorkingSetExclusive != 0) || (Thread->OwnsSystemWorkingSetShared != 0);
+    if (WsInfo->Flags.SessionSpace != 0) return (Thread->OwnsSessionWorkingSetExclusive != 0) || (Thread->OwnsSessionWorkingSetShared != 0);
+    return (Thread->ApcState.Process == (PKPROCESS)PsGetCurrentProcess()) && ((Thread->OwnsProcessWorkingSetExclusive != 0) || (Thread->OwnsProcessWorkingSetShared != 0));
 }
+static __inline PKTHREAD WrkMsvcWsOwner(PEX_PUSH_LOCK Lock) {
+    PMMSUPPORT WsInfo = CONTAINING_RECORD(Lock, MMSUPPORT, WorkingSetMutex);
+    return WrkMsvcWsOwned(WsInfo) ? &PsGetCurrentThread()->Tcb : NULL;
+}
+#ifdef LOCK_WORKING_SET
+#undef LOCK_WORKING_SET
+#endif
+#define LOCK_WORKING_SET(WSINFO) do { PETHREAD _Thread = PsGetCurrentThread(); KeEnterGuardedRegionThread (&_Thread->Tcb); ExAcquirePushLockExclusive (&(WSINFO)->WorkingSetMutex); if ((WSINFO) == &MmSystemCacheWs) { _Thread->OwnsSystemWorkingSetExclusive = 1; } else if ((WSINFO)->Flags.SessionSpace != 0) { _Thread->OwnsSessionWorkingSetExclusive = 1; } else { _Thread->OwnsProcessWorkingSetExclusive = 1; } } while (0)
+#ifdef UNLOCK_WORKING_SET
+#undef UNLOCK_WORKING_SET
+#endif
+#define UNLOCK_WORKING_SET(WSINFO) do { PETHREAD _Thread = PsGetCurrentThread(); ASSERT (WrkMsvcWsOwned (WSINFO)); if ((WSINFO) == &MmSystemCacheWs) { _Thread->OwnsSystemWorkingSetExclusive = 0; } else if ((WSINFO)->Flags.SessionSpace != 0) { _Thread->OwnsSessionWorkingSetExclusive = 0; } else { _Thread->OwnsProcessWorkingSetExclusive = 0; } ExReleasePushLockExclusive (&(WSINFO)->WorkingSetMutex); KeLeaveGuardedRegionThread (&_Thread->Tcb); } while (0)
+#ifdef MM_WS_LOCK_ASSERT
+#undef MM_WS_LOCK_ASSERT
+#endif
+#define MM_WS_LOCK_ASSERT(WSINFO) ASSERT (WrkMsvcWsOwned (WSINFO))
+#ifdef KeGetOwnerGuardedMutex
+#undef KeGetOwnerGuardedMutex
+#endif
+#define KeGetOwnerGuardedMutex(LOCK) WrkMsvcWsOwner(LOCK)
 #endif
 
 #endif /* _WRK_MSVC_COMPAT_H_ */

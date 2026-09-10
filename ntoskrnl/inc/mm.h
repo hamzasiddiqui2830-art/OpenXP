@@ -553,6 +553,11 @@ MmFreeIndependentPages (
     IN SIZE_T NumberOfBytes
     );
 
+LOGICAL
+MmTrimAllSystemPageableMemory (
+    IN LOGICAL PurgeTransition
+    );
+
 //
 // Shutdown routine - flushes dirty pages, etc for system shutdown.
 //

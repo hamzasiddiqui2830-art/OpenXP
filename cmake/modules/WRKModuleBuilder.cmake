@@ -48,9 +48,6 @@ function(add_wrk_module MODULE_NAME)
                SOURCE_FILE_NORMALIZED MATCHES "(^|/)(i386|amd64|ia64|arm|arm64)(/|$)")
                 continue()
             endif()
-            # uob.c and tob.c are the original WRK Object Manager user/test
-            # programs. They are not kernel implementation units and contain
-            # user-mode entry points and intentionally obsolete test APIs.
             if(MODULE_NAME STREQUAL "ob" AND
                SOURCE_FILE_NORMALIZED MATCHES "(^|/)(uob|tob)\\.c$")
                 continue()
@@ -134,6 +131,12 @@ function(add_wrk_module MODULE_NAME)
             target_compile_options(${ARG_TARGET_NAME} PRIVATE /Gz)
             if(MODULE_NAME STREQUAL "rtl" OR MODULE_NAME STREQUAL "se")
                 target_compile_options(${ARG_TARGET_NAME} PRIVATE /wd4101)
+            endif()
+
+            if(MODULE_NAME STREQUAL "mm")
+                set_source_files_properties(
+                    ${CMAKE_SOURCE_DIR}/ntoskrnl/mm/debugsup.c
+                    PROPERTIES COMPILE_OPTIONS "/FI${CMAKE_SOURCE_DIR}/ntoskrnl/inc/wrk_debugsup_msvc_compat.h")
             endif()
         endif()
 

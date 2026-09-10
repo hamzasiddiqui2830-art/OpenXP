@@ -55,25 +55,12 @@ function(add_wrk_module MODULE_NAME)
                SOURCE_FILE_NORMALIZED MATCHES "(^|/)(uob|tob)\\.c$")
                 continue()
             endif()
-            # ct*.c files in the WRK security directory are test programs or
-            # test-only routines, not kernel Security implementation units.
+            # The Security directory contains a large set of legacy test and
+            # user-mode programs whose names begin with ct, t, or u. They are
+            # not kernel Security implementation units and depend on obsolete
+            # test-only headers/APIs. Exclude them from the kernel target.
             if(MODULE_NAME STREQUAL "se" AND
-               SOURCE_FILE_NORMALIZED MATCHES "(^|/)ct[^/]*\\.c$")
-                continue()
-            endif()
-            # dumpuser.c is an old LAN Manager/OS2 user-mode account database
-            # utility. It depends on os2.h and DOS/Net APIs and must not be
-            # compiled into the kernel Security library.
-            if(MODULE_NAME STREQUAL "se" AND
-               SOURCE_FILE_NORMALIZED MATCHES "(^|/)dumpuser\\.c$")
-                continue()
-            endif()
-            # t*.c files in the WRK security directory are legacy security
-            # test programs/support sources. They are not kernel Security
-            # implementation units and depend on obsolete test-only headers,
-            # user-mode entry points, and test-only APIs.
-            if(MODULE_NAME STREQUAL "se" AND
-               SOURCE_FILE_NORMALIZED MATCHES "(^|/)t[^/]*\\.c$")
+               SOURCE_FILE_NORMALIZED MATCHES "(^|/)(ct|t|u)[^/]*\\.c$")
                 continue()
             endif()
             if(MODULE_NAME STREQUAL "rtl" AND

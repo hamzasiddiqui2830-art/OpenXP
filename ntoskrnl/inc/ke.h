@@ -11,12 +11,6 @@ Abstract:
 
     This module contains the public (external) header file for the kernel.
 
-Author:
-
-    David N. Cutler (davec) 27-Feb-1989
-
-Revision History:
-
 --*/
 
 #ifndef _KE_
@@ -1765,6 +1759,11 @@ KeSetPriorityThread (                               // ntddk wdm nthal ntifs
                                                     // ntddk wdm nthal ntifs
 
 // end_ntosp
+
+VOID
+KeSetPriorityZeroPageThread (
+    __in KPRIORITY Priority
+    );
 
 ULONG
 KeSuspendThread (

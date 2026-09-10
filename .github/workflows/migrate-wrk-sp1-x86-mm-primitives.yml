@@ -1,0 +1,30 @@
+name: migrate WRK SP1 x86 MM primitives
+
+on:
+  push:
+    paths:
+      - '.github/migrate-wrk-sp1-x86-mm-primitives.py'
+      - '.github/workflows/migrate-wrk-sp1-x86-mm-primitives.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore WRK SP1 x86 MM primitives
+        run: python3 .github/migrate-wrk-sp1-x86-mm-primitives.py
+      - name: Commit migration and remove temporary workflow
+        run: |
+          set -euo pipefail
+          git config user.name 'OpenXP automation'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ntoskrnl
+          git commit -m 'mm: restore WRK v1.2 SP1 x86 MM primitives'
+          git rm -f .github/workflows/migrate-wrk-sp1-x86-mm-primitives.yml .github/migrate-wrk-sp1-x86-mm-primitives.py
+          git commit -m 'ci: remove completed x86 MM migration'
+          git push

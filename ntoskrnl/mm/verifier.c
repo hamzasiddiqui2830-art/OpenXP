@@ -11,14 +11,11 @@ Abstract:
     This module contains the routines to verify the system kernel, HAL and
     drivers.
 
-Author:
-
-    Landy Wang (landyw) 3-Sep-1998
-
 Revision History:
 
 --*/
 #include "mi.h"
+#include "../ke/ki.h"
 
 #define THUNKED_API
 

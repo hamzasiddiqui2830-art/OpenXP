@@ -190,6 +190,156 @@ MiCompareTbFlushTimeStamp (
     return TRUE;
 }
 
+/*
+ * The WRK x86 paging-address interface.  These definitions are part of the
+ * architecture contract consumed by mi.h and the MM implementation; keeping
+ * only the PTE/PDE constants is insufficient because the generic MM sources
+ * call these helpers directly.
+ */
+#if !defined(_X86PAE_)
+
+#ifndef PTE_BASE
+#define PTE_BASE 0xC0000000
+#endif
+#ifndef PTE_TOP
+#define PTE_TOP  0xC03FFFFF
+#endif
+#ifndef PDE_BASE
+#define PDE_BASE 0xC0300000
+#endif
+#ifndef PDE_TOP
+#define PDE_TOP  0xC0300FFF
+#endif
+
+#define MiGetPteAddress(va) \
+    ((PMMPTE)(((((ULONG)(va)) >> 12) << 2) + PTE_BASE))
+
+#define MiGetPdeAddress(va) \
+    ((PMMPTE)(((((ULONG)(va)) >> 22) << 2) + PDE_BASE))
+
+#define MiGetPteOffset(va) ((((ULONG)(va)) << 10) >> 22)
+#define MiGetPdeOffset(va) (((ULONG)(va)) >> 22)
+#define MiGetPteIndex(va) MiGetPteOffset(va)
+#define MiGetPdeIndex(va) MiGetPdeOffset(va)
+
+#define MiGetVirtualAddressMappedByPte(PTE) \
+    ((PVOID)((((ULONG)(PTE) - PTE_BASE) << 10)))
+
+#define MiGetVirtualAddressMappedByPde(PDE) \
+    ((PVOID)((((ULONG)(PDE) - PDE_BASE) << 20)))
+
+#define MiPteToAddress(PTE) MiGetVirtualAddressMappedByPte(PTE)
+#define MiPdeToAddress(PDE) MiGetVirtualAddressMappedByPde(PDE)
+
+#define MI_IS_PAGE_TABLE_OR_HYPER_ADDRESS(VA) \
+    ((PVOID)(VA) >= (PVOID)PTE_BASE && (PVOID)(VA) <= (PVOID)HYPER_SPACE_END)
+
+#define MI_IS_PAGE_DIRECTORY_ADDRESS(VA) \
+    ((PVOID)(VA) >= (PVOID)PDE_BASE && (PVOID)(VA) <= (PVOID)PDE_TOP)
+
+#define MI_CONVERT_PHYSICAL_TO_PFN(Va) \
+    ((PFN_NUMBER)(MiGetPdeAddress(Va)->u.Hard.PageFrameNumber) + (MiGetPteOffset((ULONG)Va)))
+
+#endif /* !_X86PAE_ */
+
+/* WRK x86 PTE masks and software protection encoding. */
+#ifndef MM_PTE_VALID_MASK
+#define MM_PTE_VALID_MASK         0x1
+#endif
+#if defined(NT_UP)
+#ifndef MM_PTE_WRITE_MASK
+#define MM_PTE_WRITE_MASK         0x2
+#endif
+#else
+#ifndef MM_PTE_WRITE_MASK
+#define MM_PTE_WRITE_MASK         0x800
+#endif
+#endif
+#ifndef MM_PTE_OWNER_MASK
+#define MM_PTE_OWNER_MASK         0x4
+#endif
+#ifndef MM_PTE_WRITE_THROUGH_MASK
+#define MM_PTE_WRITE_THROUGH_MASK 0x8
+#endif
+#ifndef MM_PTE_CACHE_DISABLE_MASK
+#define MM_PTE_CACHE_DISABLE_MASK 0x10
+#endif
+#ifndef MM_PTE_ACCESS_MASK
+#define MM_PTE_ACCESS_MASK        0x20
+#endif
+#if defined(NT_UP)
+#ifndef MM_PTE_DIRTY_MASK
+#define MM_PTE_DIRTY_MASK         0x40
+#endif
+#else
+#ifndef MM_PTE_DIRTY_MASK
+#define MM_PTE_DIRTY_MASK         0x42
+#endif
+#endif
+#ifndef MM_PTE_LARGE_PAGE_MASK
+#define MM_PTE_LARGE_PAGE_MASK    0x80
+#endif
+#ifndef MM_PTE_GLOBAL_MASK
+#define MM_PTE_GLOBAL_MASK        0x100
+#endif
+#ifndef MM_PTE_COPY_ON_WRITE_MASK
+#define MM_PTE_COPY_ON_WRITE_MASK 0x200
+#endif
+#ifndef MM_PTE_PROTOTYPE_MASK
+#define MM_PTE_PROTOTYPE_MASK     0x400
+#endif
+#ifndef MM_PTE_TRANSITION_MASK
+#define MM_PTE_TRANSITION_MASK    0x800
+#endif
+#ifndef MM_PTE_NOACCESS
+#define MM_PTE_NOACCESS          0x0
+#define MM_PTE_READONLY          0x0
+#define MM_PTE_READWRITE         MM_PTE_WRITE_MASK
+#define MM_PTE_WRITECOPY         0x200
+#define MM_PTE_EXECUTE           0x0
+#define MM_PTE_EXECUTE_READ      0x0
+#define MM_PTE_EXECUTE_READWRITE MM_PTE_WRITE_MASK
+#define MM_PTE_EXECUTE_WRITECOPY 0x200
+#define MM_PTE_NOCACHE           0x010
+#define MM_PTE_WRITECOMBINE      0x010
+#define MM_PTE_GUARD             0x0
+#define MM_PTE_CACHE             0x0
+#endif
+#ifndef MM_PROTECT_FIELD_SHIFT
+#define MM_PROTECT_FIELD_SHIFT 5
+#endif
+#ifndef MI_MAXIMUM_PTE_WORKING_SET_INDEX
+#define MI_MAXIMUM_PTE_WORKING_SET_INDEX 0
+#endif
+#ifndef MM_ZERO_PTE
+#define MM_ZERO_PTE 0
+#endif
+#ifndef MM_ZERO_KERNEL_PTE
+#define MM_ZERO_KERNEL_PTE 0
+#endif
+#ifndef MM_DEMAND_ZERO_WRITE_PTE
+#define MM_DEMAND_ZERO_WRITE_PTE (MM_READWRITE << MM_PROTECT_FIELD_SHIFT)
+#endif
+#ifndef MM_KERNEL_DEMAND_ZERO_PTE
+#define MM_KERNEL_DEMAND_ZERO_PTE (MM_READWRITE << MM_PROTECT_FIELD_SHIFT)
+#endif
+#ifndef MM_KERNEL_NOACCESS_PTE
+#define MM_KERNEL_NOACCESS_PTE (MM_NOACCESS << MM_PROTECT_FIELD_SHIFT)
+#endif
+#ifndef MM_STACK_ALIGNMENT
+#define MM_STACK_ALIGNMENT 0
+#endif
+#ifndef MM_STACK_OFFSET
+#define MM_STACK_OFFSET 0
+#endif
+
+#define MI_GET_PREVIOUS_COLOR(COLOR) (0)
+#define MI_GET_SECONDARY_COLOR(PAGE,PFN) ((PAGE) & MmSecondaryColorMask)
+#define MI_GET_COLOR_FROM_SECONDARY(SECONDARY_COLOR) (0)
+
+#define MiZeroMemoryPte(Destination, Length) \
+    RtlZeroMemory ((Destination), (Length) * sizeof (MMPTE))
+
 #define MI_GET_PAGE_FRAME_FROM_PTE(PTE) ((ULONG)((PTE)->u.Hard.PageFrameNumber))
 #define MI_GET_PAGE_FRAME_FROM_TRANSITION_PTE(PTE) ((ULONG)((PTE)->u.Trans.PageFrameNumber))
 #define MI_GET_PROTECTION_FROM_SOFT_PTE(PTE) ((ULONG)((PTE)->u.Soft.Protection))

@@ -1283,7 +1283,20 @@ typedef struct _KPRCB {
 // Spare fields.
 //
 
-    ULONG   SpareFields0[4];
+    LONG MmPageFaultCount;
+    LONG MmCopyOnWriteCount;
+    LONG MmTransitionCount;
+    LONG MmCacheTransitionCount;
+    LONG MmDemandZeroCount;
+    LONG MmPageReadCount;
+    LONG MmPageReadIoCount;
+    LONG MmCacheReadCount;
+    LONG MmCacheIoCount;
+    LONG MmDirtyPagesWriteCount;
+    LONG MmDirtyWriteIoCount;
+    LONG MmMappedPagesWriteCount;
+    LONG MmMappedWriteIoCount;
+    ULONG SpareFields0[1];
 
 //
 // Processor information.

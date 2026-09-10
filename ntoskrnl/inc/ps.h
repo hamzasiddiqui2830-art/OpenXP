@@ -85,7 +85,7 @@ typedef struct _MMSUPPORT {
     WSLE_NUMBER EstimatedAvailable;
     WSLE_NUMBER WorkingSetSize;
 
-    KGUARDED_MUTEX WorkingSetMutex;
+    EX_PUSH_LOCK WorkingSetMutex;
 
 } MMSUPPORT, *PMMSUPPORT;
 
@@ -806,6 +806,7 @@ typedef struct _ETHREAD {
 
     BOOLEAN ForwardClusterOnly;
     BOOLEAN DisablePageFaultClustering;
+    UCHAR ActiveFaultCount;
 
 #if defined (PERF_DATA)
     ULONG PerformanceCountLow;

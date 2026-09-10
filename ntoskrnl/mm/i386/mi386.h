@@ -152,7 +152,7 @@ extern ULONG MmSecondaryColorMask;
 #if !defined (_X86PAE_)
 
 typedef struct _MMPTE_SOFTWARE { ULONG Valid : 1; ULONG PageFileLow : 4; ULONG Protection : 5; ULONG Prototype : 1; ULONG Transition : 1; ULONG PageFileHigh : 20; } MMPTE_SOFTWARE;
-typedef struct _MMPTE_TRANSITION { ULONG Valid : 1; ULONG Prototype : 1; ULONG Protection : 5; ULONG Transition : 1; ULONG Reserved0 : 3; ULONG PageFrameNumber : 20 - PAGE_SHIFT; ULONG Reserved : 11; } MMPTE_TRANSITION;
+typedef struct _MMPTE_TRANSITION { ULONG Valid : 1; ULONG Write : 1; ULONG Owner : 1; ULONG WriteThrough : 1; ULONG CacheDisable : 1; ULONG Protection : 5; ULONG Prototype : 1; ULONG Transition : 1; ULONG PageFrameNumber : 20; } MMPTE_TRANSITION;
 typedef struct _MMPTE_PROTOTYPE { ULONG Valid : 1; ULONG Prototype : 1; ULONG ReadOnly : 1; ULONG Reserved : 9; ULONG ProtoAddress : 20; } MMPTE_PROTOTYPE;
 typedef struct _MMPTE_SUBSECTION { ULONG Valid : 1; ULONG Prototype : 1; ULONG Protection : 5; ULONG WhichPool : 1; ULONG Reserved : 4; ULONG SubsectionAddress : 20; } MMPTE_SUBSECTION;
 typedef struct _MMPTE_LIST { ULONG Valid : 1; ULONG Prototype : 1; ULONG Protection : 5; ULONG Transition : 1; ULONG OneEntry : 1; ULONG filler : 3; ULONG NextEntry : 20; } MMPTE_LIST;

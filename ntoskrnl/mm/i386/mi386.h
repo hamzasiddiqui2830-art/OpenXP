@@ -428,9 +428,17 @@ extern PMMPTE MiInitialSystemPageDirectory;
 #ifndef MI_SET_PTE_IN_WORKING_SET
 #define MI_SET_PTE_IN_WORKING_SET(PTE, WORKING_SET_INDEX) ((void)0)
 #endif
+#define MI_GET_WORKING_SET_FROM_PTE(PTE)  0
 #ifndef MI_SET_GLOBAL_STATE
 #define MI_SET_GLOBAL_STATE(PTE, STATE) ((PTE).u.Hard.Global = (STATE))
 #endif
+#define MI_ENABLE_CACHING(PTE) \
+            {                                                                \
+                ((PTE).u.Hard.CacheDisable = 0);                             \
+                ((PTE).u.Hard.WriteThrough = 0);                             \
+            }
+
+
 #ifndef MI_DISABLE_LARGE_PTE_CACHING
 #define MI_DISABLE_LARGE_PTE_CACHING(PTE) MI_DISABLE_CACHING(PTE)
 #endif

@@ -11,10 +11,6 @@ function(add_wrk_module MODULE_NAME)
     set(multiValueArgs SOURCES HEADERS DEPENDS)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    if(NOT ARG_SOURCE_DIR)
-        set(ARG_SOURCE_DIR ${CMAKE_SOURCE_DIR}/ntoskrnl/${MODULE_NAME})
-    endif()
-
     if(NOT ARG_TARGET_NAME)
         set(ARG_TARGET_NAME ntos_${MODULE_NAME})
     endif()
@@ -37,28 +33,6 @@ function(add_wrk_module MODULE_NAME)
         endif()
         set(ARG_OUTPUT_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME})
     endif()
-
-    if(NOT ARG_SOURCES)
-        file(GLOB_RECURSE MODULE_C_SOURCES CONFIGURE_DEPENDS "${ARG_SOURCE_DIR}/*.c")
-        set(MODULE_C_SOURCES_FILTERED "")
-        foreach(SOURCE_FILE IN LISTS MODULE_C_SOURCES)
-            file(TO_CMAKE_PATH "${SOURCE_FILE}" SOURCE_FILE_NORMALIZED)
-            if(SOURCE_FILE_NORMALIZED MATCHES "(^|/)tests?(/|$)" OR
-               SOURCE_FILE_NORMALIZED MATCHES "(^|/)BUILD(/|$)" OR
-               SOURCE_FILE_NORMALIZED MATCHES "(^|/)(i386|amd64|ia64|arm|arm64)(/|$)")
-                continue()
-            endif()
-            if(MODULE_NAME STREQUAL "ob" AND
-               SOURCE_FILE_NORMALIZED MATCHES "(^|/)(uob|tob)\\.c$")
-                continue()
-            endif()
-            if(MODULE_NAME STREQUAL "rtl" AND
-               SOURCE_FILE_NORMALIZED MATCHES "(^|/)(generr|heapdbg|heapdll|heapleak|heaplowf)\\.c$")
-                continue()
-            endif()
-            list(APPEND MODULE_C_SOURCES_FILTERED "${SOURCE_FILE}")
-        endforeach()
-        set(MODULE_C_SOURCES ${MODULE_C_SOURCES_FILTERED})
 
         if(WRK_ARCH_NAME STREQUAL "x86")
             file(GLOB ARCH_SPECIFIC_SOURCES CONFIGURE_DEPENDS "${ARG_SOURCE_DIR}/i386/*.c")

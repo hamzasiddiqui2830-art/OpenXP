@@ -252,7 +252,40 @@ set(EX_KERNEL_SOURCES
 
 add_wrk_module(ex TARGET_NAME ntos_ex SOURCE_DIR ${EX_SOURCE_DIR} SOURCES ${EX_KERNEL_SOURCES})
 
-set(NTOS_MODULES ob se mm ke ps io cache lpc dbgk raw fstub fsrtl wmi perf init)
+# Security is intentionally an explicit source manifest. The directory also
+# contains legacy user-mode/test programs that must never enter ntos_se.
+set(SE_KERNEL_SOURCES
+    ${NTOSKRNL_SOURCE_DIR}/accessck.c
+    ${NTOSKRNL_SOURCE_DIR}/capture.c
+    ${NTOSKRNL_SOURCE_DIR}/privileg.c
+    ${NTOSKRNL_SOURCE_DIR}/rmlogon.c
+    ${NTOSKRNL_SOURCE_DIR}/rmmain.c
+    ${NTOSKRNL_SOURCE_DIR}/rmvars.c
+    ${NTOSKRNL_SOURCE_DIR}/seassign.c
+    ${NTOSKRNL_SOURCE_DIR}/seaudit.c
+    ${NTOSKRNL_SOURCE_DIR}/sepaudit.c
+    ${NTOSKRNL_SOURCE_DIR}/seclient.c
+    ${NTOSKRNL_SOURCE_DIR}/seglobal.c
+    ${NTOSKRNL_SOURCE_DIR}/seinit.c
+    ${NTOSKRNL_SOURCE_DIR}/semethod.c
+    ${NTOSKRNL_SOURCE_DIR}/sep.c
+    ${NTOSKRNL_SOURCE_DIR}/subject.c
+    ${NTOSKRNL_SOURCE_DIR}/seastate.c
+    ${NTOSKRNL_SOURCE_DIR}/token.c
+    ${NTOSKRNL_SOURCE_DIR}/tokenadj.c
+    ${NTOSKRNL_SOURCE_DIR}/tokendup.c
+    ${NTOSKRNL_SOURCE_DIR}/tokenopn.c
+    ${NTOSKRNL_SOURCE_DIR}/tokenqry.c
+    ${NTOSKRNL_SOURCE_DIR}/tokenset.c
+    ${NTOSKRNL_SOURCE_DIR}/adtlog.c
+    ${NTOSKRNL_SOURCE_DIR}/adtinit.c
+    ${NTOSKRNL_SOURCE_DIR}/adtvars.c
+    ${NTOSKRNL_SOURCE_DIR}/adtutil.c
+    ${NTOSKRNL_SOURCE_DIR}/rmaudit.c
+)
+add_wrk_module(se TARGET_NAME ntos_se SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/se SOURCES ${SE_KERNEL_SOURCES})
+
+set(NTOS_MODULES ob mm ke ps io cache lpc dbgk raw fstub fsrtl wmi perf init)
 foreach(MODULE IN LISTS NTOS_MODULES)
     add_wrk_module(${MODULE} SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/${MODULE})
 endforeach()
@@ -274,6 +307,7 @@ set(NTOS_MODULE_LIBS ntosrtl ntosconfig ntos_ex)
 foreach(MODULE IN LISTS NTOS_MODULES)
     list(APPEND NTOS_MODULE_LIBS ntos_${MODULE})
 endforeach()
+list(APPEND NTOS_MODULE_LIBS ntos_se)
 if(WRK_ARCH_NAME MATCHES "arm|arm64")
     if(ENABLE_HAL_ARM)
         list(APPEND NTOS_MODULE_LIBS halarm)

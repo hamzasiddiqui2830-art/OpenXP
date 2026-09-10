@@ -53,6 +53,13 @@ extern ULONG NtGlobalFlag;
 typedef CCHAR KPROCESSOR_MODE;
 typedef enum _MODE { KernelMode, UserMode, MaximumMode } MODE;
 
+typedef struct _KERNEL_STACK_SEGMENT {
+    ULONG_PTR StackLimit;
+    ULONG_PTR KernelStack;
+    ULONG_PTR InitialStack;
+    ULONG_PTR ActualLimit;
+} KERNEL_STACK_SEGMENT, *PKERNEL_STACK_SEGMENT;
+
 struct _KAPC;
 typedef VOID (*PKNORMAL_ROUTINE)(IN PVOID NormalContext, IN PVOID SystemArgument1, IN PVOID SystemArgument2);
 typedef VOID (*PKKERNEL_ROUTINE)(IN struct _KAPC *Apc, IN OUT PKNORMAL_ROUTINE *NormalRoutine, IN OUT PVOID *NormalContext, IN OUT PVOID *SystemArgument1, IN OUT PVOID *SystemArgument2);

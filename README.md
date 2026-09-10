@@ -1,4 +1,4 @@
-# OpenXP SP0
+# OpenXP SP0 with partial code matching WRK v1.2 SP1
 
 OpenXP - SP0 A free and open-source operating system compatible with Windows applications and drivers.
 

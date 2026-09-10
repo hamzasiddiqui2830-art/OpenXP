@@ -54,6 +54,7 @@ typedef CCHAR KPROCESSOR_MODE;
 typedef enum _MODE { KernelMode, UserMode, MaximumMode } MODE;
 
 typedef struct _KERNEL_STACK_SEGMENT {
+    ULONG_PTR StackBase;
     ULONG_PTR StackLimit;
     ULONG_PTR KernelStack;
     ULONG_PTR InitialStack;

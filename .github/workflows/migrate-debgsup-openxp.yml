@@ -29,14 +29,11 @@ jobs:
           def write(path, text):
               Path(path).write_text(text, encoding="utf-8", newline="")
 
-          # debugsup.c is WRK v1.2 / SP1-derived source. Keep its semantics,
-          # but adapt the working-set lock operations to OpenXP's native
-          # push-lock/ownership implementation.
           debugsup = "ntoskrnl/mm/debugsup.c"
           text = read(debugsup)
 
-          old = "if (KeGetOwnerGuardedMutex (&Ws->WorkingSetMutex) == KeGetCurrentThread ()) {"
-          new = (
+          owner_old = "if (KeGetOwnerGuardedMutex (&Ws->WorkingSetMutex) == KeGetCurrentThread ()) {"
+          owner_new = (
               "if ((Ws == &MmSystemCacheWs &&\n"
               "     ((Thread->OwnsSystemWorkingSetExclusive != 0) ||\n"
               "      (Thread->OwnsSystemWorkingSetShared != 0))) ||\n"
@@ -47,29 +44,28 @@ jobs:
               "     ((Thread->OwnsProcessWorkingSetExclusive != 0) ||\n"
               "      (Thread->OwnsProcessWorkingSetShared != 0)))) {"
           )
-          if text.count(old) != 1:
-              raise SystemExit("expected exactly one legacy working-set owner check")
-          text = text.replace(old, new)
+          if text.count(owner_old) == 1:
+              text = text.replace(owner_old, owner_new, 1)
+          elif text.count(owner_new) != 1:
+              raise SystemExit("expected one legacy or already-migrated working-set owner check")
 
           lock_old = "LOCK_WORKING_SET (Ws);"
           lock_new = "LOCK_WORKING_SET (Thread, Ws);"
-          if text.count(lock_old) != 1:
-              raise SystemExit("expected exactly one legacy LOCK_WORKING_SET call")
-          text = text.replace(lock_old, lock_new)
+          if text.count(lock_old) == 1:
+              text = text.replace(lock_old, lock_new, 1)
+          elif text.count(lock_new) != 1:
+              raise SystemExit("expected exactly one legacy or already-migrated LOCK_WORKING_SET call")
 
           unlock_old = "UNLOCK_WORKING_SET (Ws);"
           unlock_new = "UNLOCK_WORKING_SET (Thread, Ws);"
-          if text.count(unlock_old) != 3:
-              raise SystemExit("expected exactly three legacy UNLOCK_WORKING_SET calls")
-          text = text.replace(unlock_old, unlock_new)
+          if text.count(unlock_old) == 3:
+              text = text.replace(unlock_old, unlock_new)
+          elif text.count(unlock_new) != 3:
+              raise SystemExit("expected exactly three legacy or already-migrated UNLOCK_WORKING_SET calls")
           write(debugsup, text)
 
-          # Remove temporary compatibility that papered over the WRK/OpenXP
-          # working-set model mismatch. The real KTHREAD ownership fields are
-          # used by the native OpenXP macros instead.
           compat_path = "ntoskrnl/inc/wrk_msvc_compat.h"
           ctext = read(compat_path)
-
           block_start = ctext.find("/* debugsup.c is WRK v1.2 source:")
           if block_start >= 0:
               block_end = ctext.find("#endif\n\n#endif /* _WRK_MSVC_COMPAT_H_ */", block_start)
@@ -86,12 +82,10 @@ jobs:
               r"#ifndef OwnsProcessWorkingSetShared\n#define OwnsProcessWorkingSetShared KeyedEventInUse\n#endif\n"
           )
           ctext, removed = ownership_aliases.subn("", ctext, count=1)
-          if removed != 1:
-              raise SystemExit("working-set ownership compatibility aliases were not found")
+          if removed == 0 and "OwnsSystemWorkingSetExclusive MemoryMaker" in ctext:
+              raise SystemExit("working-set ownership compatibility aliases were not removed")
           write(compat_path, ctext)
 
-          # Remove the source-specific /FI workaround. Compatibility belongs in
-          # the actual OpenXP source now, not in a compiler-only overlay.
           builder_path = "cmake/modules/WRKModuleBuilder.cmake"
           btext = read(builder_path)
           pattern = re.compile(
@@ -102,29 +96,29 @@ jobs:
               r"\s*endif\(\)\n"
           )
           btext, removed = pattern.subn("\n", btext, count=1)
-          if removed != 1:
-              raise SystemExit("debugsup CMake force-include block was not found exactly once")
+          if removed == 0 and "wrk_debugsup_msvc_compat.h" in btext:
+              raise SystemExit("debugsup CMake force-include block was not removed")
           write(builder_path, btext)
 
           compat_header = Path("ntoskrnl/inc/wrk_debugsup_msvc_compat.h")
           if compat_header.exists():
               compat_header.unlink()
 
-      - name: Verify migration before commit
+      - name: Verify source migration
         shell: bash
         run: |
           set -euo pipefail
-          grep -nF 'LOCK_WORKING_SET (Ws);' ntoskrnl/mm/debugsup.c && exit 1 || true
-          grep -nF 'UNLOCK_WORKING_SET (Ws);' ntoskrnl/mm/debugsup.c && exit 1 || true
-          grep -nF 'KeGetOwnerGuardedMutex (&Ws->WorkingSetMutex)' ntoskrnl/mm/debugsup.c && exit 1 || true
+          ! grep -nF 'LOCK_WORKING_SET (Ws);' ntoskrnl/mm/debugsup.c
+          ! grep -nF 'UNLOCK_WORKING_SET (Ws);' ntoskrnl/mm/debugsup.c
+          ! grep -nF 'KeGetOwnerGuardedMutex (&Ws->WorkingSetMutex)' ntoskrnl/mm/debugsup.c
+          test "$(grep -cF 'LOCK_WORKING_SET (Thread, Ws);' ntoskrnl/mm/debugsup.c)" -eq 1
+          test "$(grep -cF 'UNLOCK_WORKING_SET (Thread, Ws);' ntoskrnl/mm/debugsup.c)" -eq 3
           grep -nF 'OwnsSystemWorkingSetExclusive' ntoskrnl/mm/debugsup.c
-          grep -nF 'LOCK_WORKING_SET (Thread, Ws);' ntoskrnl/mm/debugsup.c
-          grep -nF 'UNLOCK_WORKING_SET (Thread, Ws);' ntoskrnl/mm/debugsup.c
           test ! -e ntoskrnl/inc/wrk_debugsup_msvc_compat.h
           ! grep -nF 'wrk_debugsup_msvc_compat.h' cmake/modules/WRKModuleBuilder.cmake
           ! grep -nF '#define OwnsSystemWorkingSetExclusive MemoryMaker' ntoskrnl/inc/wrk_msvc_compat.h
 
-      - name: Commit native OpenXP migration and remove this temporary workflow
+      - name: Commit migration and remove temporary workflow
         shell: bash
         run: |
           set -euo pipefail

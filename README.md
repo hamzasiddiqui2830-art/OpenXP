@@ -1,5 +1,5 @@
 # OpenXP 
-Incremnt 1
+Increment 2
 OpenXP SP0
 A free and open source operating system compatible with Windows applications and drivers.
 

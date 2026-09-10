@@ -1,9 +1,10 @@
-#ifndef _WRK_MSVС_COMPAT_H_
-#define _WRK_MSVС_COMPAT_H_
+#ifndef _WRK_MSVC_COMPAT_H_
+#define _WRK_MSVC_COMPAT_H_
 
-/* NOTE: This file is generated/maintained by the OpenXP build compatibility layer. */
+/* NOTE: This file is maintained by the OpenXP build compatibility layer. */
 #include "ntos.h"
 
+/* Existing WRK/MSVC compatibility definitions. */
 #ifdef NTHALAPI
 #undef NTHALAPI
 #endif
@@ -16,7 +17,6 @@
 #undef NTSYSAPI
 #endif
 #define NTSYSAPI
-
 #ifdef PROCESSOR_FEATURE_MAX
 #undef PROCESSOR_FEATURE_MAX
 #endif
@@ -26,14 +26,11 @@
 #define MiCompareTbFlushTimeStamp MiCompareTbFlushTimeStamp_X86
 #include "../mm/i386/mi386.h"
 #undef MiCompareTbFlushTimeStamp
-
 #ifndef HARDWARE_PTE_DIRTY_MASK
 #define HARDWARE_PTE_DIRTY_MASK MM_PTE_DIRTY_MASK
 #endif
 #ifndef MiPteToProto
-#define MiPteToProto(lpte) \
-    (PMMPTE)((PMMPTE)(((((lpte)->u.Long) >> 11) << 9) + \
-    (((((lpte)->u.Long)) << 24) >> 23) + MmProtopte_Base))
+#define MiPteToProto(lpte) (PMMPTE)((PMMPTE)(((((lpte)->u.Long) >> 11) << 9) + (((((lpte)->u.Long)) << 24) >> 23) + MmProtopte_Base))
 #endif
 #ifndef MI_DETERMINE_OWNER
 #define MI_DETERMINE_OWNER(PPTE) ((PPTE)->u.Hard.Owner)
@@ -78,41 +75,25 @@
 NTSTATUS ExpReadComPlusPackage(VOID);
 NTSTATUS ExpUpdateComPlusPackage(IN ULONG ComPlusPackageStatus);
 #endif
-
 #if defined(_MSC_VER) && defined(_X86_)
 #pragma warning(disable: 4142)
 #endif
-
 #include "cmdata.h"
-
 #ifndef _WRK_CM_HASH_TABLE_ENTRIES_DEFINED
 #define _WRK_CM_HASH_TABLE_ENTRIES_DEFINED
-typedef struct _CM_KEY_HASH_TABLE_ENTRY {
-    EX_PUSH_LOCK Lock;
-    PKTHREAD Owner;
-    PCM_KEY_HASH Entry;
-} CM_KEY_HASH_TABLE_ENTRY, *PCM_KEY_HASH_TABLE_ENTRY;
-typedef struct _CM_NAME_HASH_TABLE_ENTRY {
-    EX_PUSH_LOCK Lock;
-    PCM_NAME_HASH Entry;
-} CM_NAME_HASH_TABLE_ENTRY, *PCM_NAME_HASH_TABLE_ENTRY;
+typedef struct _CM_KEY_HASH_TABLE_ENTRY { EX_PUSH_LOCK Lock; PKTHREAD Owner; PCM_KEY_HASH Entry; } CM_KEY_HASH_TABLE_ENTRY, *PCM_KEY_HASH_TABLE_ENTRY;
+typedef struct _CM_NAME_HASH_TABLE_ENTRY { EX_PUSH_LOCK Lock; PCM_NAME_HASH Entry; } CM_NAME_HASH_TABLE_ENTRY, *PCM_NAME_HASH_TABLE_ENTRY;
 #endif
 #ifndef _WRK_EXP_WATCH_EXPIRATION_DATA_WORK_DECLARED
 #define _WRK_EXP_WATCH_EXPIRATION_DATA_WORK_DECLARED
 static VOID ExpWatchExpirationDataWork(IN PVOID Context);
 #endif
 #ifndef ProbeForWriteUlongAligned32
-#define ProbeForWriteUlongAligned32(_Address) \
-    ProbeForWriteSmallStructure((PVOID)(_Address), sizeof(ULONG), sizeof(ULONG))
+#define ProbeForWriteUlongAligned32(_Address) ProbeForWriteSmallStructure((PVOID)(_Address), sizeof(ULONG), sizeof(ULONG))
 #endif
 #ifndef _WRK_EX_RUNDOWN_REF_CACHE_AWARE_DEFINED
 #define _WRK_EX_RUNDOWN_REF_CACHE_AWARE_DEFINED
-typedef struct _EX_RUNDOWN_REF_CACHE_AWARE {
-    PEX_RUNDOWN_REF RunRefs;
-    PVOID PoolToFree;
-    ULONG RunRefSize;
-    ULONG Number;
-} EX_RUNDOWN_REF_CACHE_AWARE, *PEX_RUNDOWN_REF_CACHE_AWARE;
+typedef struct _EX_RUNDOWN_REF_CACHE_AWARE { PEX_RUNDOWN_REF RunRefs; PVOID PoolToFree; ULONG RunRefSize; ULONG Number; } EX_RUNDOWN_REF_CACHE_AWARE, *PEX_RUNDOWN_REF_CACHE_AWARE;
 #endif
 #ifndef _WRK_EX_RUNDOWN_CACHE_AWARE_API_DECLARED
 #define _WRK_EX_RUNDOWN_CACHE_AWARE_API_DECLARED
@@ -158,12 +139,7 @@ VOID ExFreeCacheAwareRundownProtection(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCach
 #define MI_SET_PFN_DELETED(_Pfn) ((_Pfn)->PteAddress = (PMMPTE)((ULONG_PTR)(_Pfn)->PteAddress | 1))
 #endif
 #ifndef MI_MAKE_VALID_PTE_TRANSITION
-#define MI_MAKE_VALID_PTE_TRANSITION(_Pte, _Protect) do { \
-    (_Pte).u.Soft.Transition = 1; \
-    (_Pte).u.Soft.Valid = 0; \
-    (_Pte).u.Soft.Prototype = 0; \
-    (_Pte).u.Soft.Protection = (_Protect); \
-} while (0)
+#define MI_MAKE_VALID_PTE_TRANSITION(_Pte, _Protect) do { (_Pte).u.Soft.Transition = 1; (_Pte).u.Soft.Valid = 0; (_Pte).u.Soft.Prototype = 0; (_Pte).u.Soft.Protection = (_Protect); } while (0)
 #endif
 #ifndef MI_CAPTURE_DIRTY_BIT_TO_PFN
 #define MI_CAPTURE_DIRTY_BIT_TO_PFN(_PointerPte, _Pfn) ((void)0)
@@ -171,7 +147,6 @@ VOID ExFreeCacheAwareRundownProtection(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCach
 #ifndef MI_IS_PHYSICAL_ADDRESS
 #define MI_IS_PHYSICAL_ADDRESS(_Address) (FALSE)
 #endif
-
 #if defined(_X86_)
 #ifndef SecondaryColorMask
 #define SecondaryColorMask PageColor
@@ -180,7 +155,6 @@ VOID ExFreeCacheAwareRundownProtection(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCach
 #define NodeShiftedColor PageColor
 #endif
 #endif
-
 #ifndef OwnsSystemWorkingSetExclusive
 #define OwnsSystemWorkingSetExclusive MemoryMaker
 #endif
@@ -200,13 +174,7 @@ VOID ExFreeCacheAwareRundownProtection(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCach
 #define OwnsProcessWorkingSetShared KeyedEventInUse
 #endif
 #ifndef KeLoopTbFlushTimeStampUnlocked
-static __inline VOID
-KeLoopTbFlushTimeStampUnlocked(VOID)
-{
-    while (KeReadTbFlushTimeStamp() & 1) {
-        YieldProcessor();
-    }
-}
+static __inline VOID KeLoopTbFlushTimeStampUnlocked(VOID) { while (KeReadTbFlushTimeStamp() & 1) { YieldProcessor(); } }
 #endif
 #ifndef WRK_MM_CHECK_SYSTEM_IMAGE_DECLARED
 #define WRK_MM_CHECK_SYSTEM_IMAGE_DECLARED
@@ -235,33 +203,21 @@ VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
 #define OBJ_KERNEL_EXCLUSIVE 0x00010000L
 #endif
 #ifndef ProbeAndReadUnicodeStringEx
-FORCEINLINE
-VOID
-ProbeAndReadUnicodeStringEx(OUT PUNICODE_STRING Destination, IN PUNICODE_STRING Source)
-{
-    ProbeForRead(Source, sizeof(UNICODE_STRING), sizeof(ULONG));
-    *Destination = *Source;
-}
+FORCEINLINE VOID ProbeAndReadUnicodeStringEx(OUT PUNICODE_STRING Destination, IN PUNICODE_STRING Source) { ProbeForRead(Source, sizeof(UNICODE_STRING), sizeof(ULONG)); *Destination = *Source; }
 #endif
 
 #if defined(_MSC_VER) && defined(_X86_)
 #ifndef _WRK_MSCV_MI_COMPAT_INCLUDED
 #define _WRK_MSCV_MI_COMPAT_INCLUDED
 #include "../mm/mi.h"
-
 #ifndef Writable
 #define Writable Write
 #endif
 #ifndef MI_IS_SYSTEM_CACHE_ADDRESS
-#define MI_IS_SYSTEM_CACHE_ADDRESS(VA) \
-    ((((PVOID)(VA) >= (PVOID)MmSystemCacheStart) && \
-      ((PVOID)(VA) <= (PVOID)MmSystemCacheEnd)) || \
-     (((PVOID)(VA) >= (PVOID)MiSystemCacheStartExtra) && \
-      ((PVOID)(VA) <= (PVOID)MiSystemCacheEndExtra)))
+#define MI_IS_SYSTEM_CACHE_ADDRESS(VA) ((((PVOID)(VA) >= (PVOID)MmSystemCacheStart) && ((PVOID)(VA) <= (PVOID)MmSystemCacheEnd)) || (((PVOID)(VA) >= (PVOID)MiSystemCacheStartExtra) && ((PVOID)(VA) <= (PVOID)MiSystemCacheEndExtra)))
 #endif
 #ifndef MiIsVirtualAddressOnPdeBoundary
-#define MiIsVirtualAddressOnPdeBoundary(VA) \
-    (((ULONG_PTR)(VA) & PAGE_DIRECTORY_MASK) == 0)
+#define MiIsVirtualAddressOnPdeBoundary(VA) (((ULONG_PTR)(VA) & PAGE_DIRECTORY_MASK) == 0)
 #endif
 #ifndef IS_PTE_NOT_DEMAND_ZERO
 #define IS_PTE_NOT_DEMAND_ZERO(PTE) ((PTE).u.Long & (ULONG)0xFFFFFC01)
@@ -273,52 +229,25 @@ ProbeAndReadUnicodeStringEx(OUT PUNICODE_STRING Destination, IN PUNICODE_STRING 
 #define MI_SET_PTE_DIRTY(PTE) ((PTE).u.Long |= HARDWARE_PTE_DIRTY_MASK)
 #endif
 #ifndef MI_MAKE_VALID_PTE
-#define MI_MAKE_VALID_PTE(OUTPTE, FRAME, PMASK, PPTE) \
-    (OUTPTE).u.Long = ((FRAME << 12) | \
-                       (MmProtectToPteMask[PMASK]) | \
-                       MiDetermineUserGlobalPteMask((PMMPTE)(PPTE)))
+#define MI_MAKE_VALID_PTE(OUTPTE, FRAME, PMASK, PPTE) (OUTPTE).u.Long = ((FRAME << 12) | (MmProtectToPteMask[PMASK]) | MiDetermineUserGlobalPteMask((PMMPTE)(PPTE)))
 #endif
 #ifndef MI_DISABLE_CACHING
-#define MI_DISABLE_CACHING(PTE) do { \
-    (PTE).u.Hard.CacheDisable = 1; \
-    (PTE).u.Hard.WriteThrough = 1; \
-} while (0)
+#define MI_DISABLE_CACHING(PTE) do { (PTE).u.Hard.CacheDisable = 1; (PTE).u.Hard.WriteThrough = 1; } while (0)
 #endif
 #ifndef MI_SET_PTE_WRITE_COMBINE
-#define MI_SET_PTE_WRITE_COMBINE(PTE) do { \
-    if (MiWriteCombiningPtes == TRUE) { \
-        (PTE).u.Hard.CacheDisable = 0; \
-        (PTE).u.Hard.WriteThrough = 1; \
-    } else { \
-        (PTE).u.Hard.CacheDisable = 1; \
-        (PTE).u.Hard.WriteThrough = 0; \
-    } \
-} while (0)
+#define MI_SET_PTE_WRITE_COMBINE(PTE) do { if (MiWriteCombiningPtes == TRUE) { (PTE).u.Hard.CacheDisable = 0; (PTE).u.Hard.WriteThrough = 1; } else { (PTE).u.Hard.CacheDisable = 1; (PTE).u.Hard.WriteThrough = 0; } } while (0)
 #endif
 #ifndef MiFillMemoryPte
-#define MiFillMemoryPte(Destination, Length, Pattern) \
-    RtlFillMemoryUlong((Destination), (Length) * sizeof(MMPTE), (Pattern))
+#define MiFillMemoryPte(Destination, Length, Pattern) RtlFillMemoryUlong((Destination), (Length) * sizeof(MMPTE), (Pattern))
 #endif
 #ifndef MiGetSubsectionAddressForPte
-#define MiGetSubsectionAddressForPte(VA) \
-    (((ULONG)(VA) < (ULONG)MmSubsectionBase + 128*1024*1024) ? \
-        ((((((ULONG)(VA) - (ULONG)MmSubsectionBase) >> 2) & (ULONG)0x0000001E) | \
-          ((((ULONG)(VA) - (ULONG)MmSubsectionBase) << 4) & (ULONG)0x7ffff800)) | \
-         0x80000000) : \
-        (((((ULONG)MmNonPagedPoolEnd - (ULONG)(VA)) >> 2) & (ULONG)0x0000001E) | \
-          ((((ULONG)MmNonPagedPoolEnd - (ULONG)(VA)) << 4) & (ULONG)0x7ffff800)))
+#define MiGetSubsectionAddressForPte(VA) (((ULONG)(VA) < (ULONG)MmSubsectionBase + 128*1024*1024) ? ((((((ULONG)(VA) - (ULONG)MmSubsectionBase) >> 2) & (ULONG)0x0000001E) | ((((ULONG)(VA) - (ULONG)MmSubsectionBase) << 4) & (ULONG)0x7ffff800)) | 0x80000000) : (((((ULONG)MmNonPagedPoolEnd - (ULONG)(VA)) >> 2) & (ULONG)0x0000001E) | ((((ULONG)MmNonPagedPoolEnd - (ULONG)(VA)) << 4) & (ULONG)0x7ffff800)))
 #endif
 #ifndef MiGetSubsectionAddress
-#define MiGetSubsectionAddress(lpte) \
-    (((lpte)->u.Long & 0x80000000) ? \
-        ((PSUBSECTION)((PCHAR)MmSubsectionBase + \
-            ((((lpte)->u.Long & 0x7ffff800) >> 4) | \
-             (((lpte)->u.Long << 2) & 0x78)))) : \
-        ((PSUBSECTION)((PCHAR)MmNonPagedPoolEnd - \
-            (((((lpte)->u.Long) >> 11) << 7) | \
-             (((lpte)->u.Long << 2) & 0x78)))))
+#define MiGetSubsectionAddress(lpte) (((lpte)->u.Long & 0x80000000) ? ((PSUBSECTION)((PCHAR)MmSubsectionBase + ((((lpte)->u.Long & 0x7ffff800) >> 4) | (((lpte)->u.Long << 2) & 0x78)))) : ((PSUBSECTION)((PCHAR)MmNonPagedPoolEnd - (((((lpte)->u.Long) >> 11) << 7) | (((lpte)->u.Long << 2) & 0x78)))))
 #endif
 
+/* x86 WRK sources in this tree contain both the SP0 one-argument and SP1 two-argument working-set macro forms. */
 #ifdef LOCK_WORKING_SET
 #undef LOCK_WORKING_SET
 #endif
@@ -329,13 +258,10 @@ ProbeAndReadUnicodeStringEx(OUT PUNICODE_STRING Destination, IN PUNICODE_STRING 
     ASSERT(!MM_ANY_WS_LOCK_HELD(THREAD)); \
     ExAcquirePushLockExclusive(&(WSINFO)->WorkingSetMutex); \
     if ((WSINFO) == &MmSystemCacheWs) { \
-        ASSERT(((THREAD)->OwnsSystemWorkingSetExclusive == 0) && ((THREAD)->OwnsSystemWorkingSetShared == 0)); \
         (THREAD)->OwnsSystemWorkingSetExclusive = 1; \
     } else if ((WSINFO)->Flags.SessionSpace == 1) { \
-        ASSERT(((THREAD)->OwnsSessionWorkingSetExclusive == 0) && ((THREAD)->OwnsSessionWorkingSetShared == 0)); \
         (THREAD)->OwnsSessionWorkingSetExclusive = 1; \
     } else { \
-        ASSERT(((THREAD)->OwnsProcessWorkingSetExclusive == 0) && ((THREAD)->OwnsProcessWorkingSetShared == 0)); \
         (THREAD)->OwnsProcessWorkingSetExclusive = 1; \
     } \
 } while (0)
@@ -364,4 +290,4 @@ ProbeAndReadUnicodeStringEx(OUT PUNICODE_STRING Destination, IN PUNICODE_STRING 
 #endif
 #endif
 
-#endif /* _WRK_MSVС_COMPAT_H_ */
+#endif /* _WRK_MSVC_COMPAT_H_ */

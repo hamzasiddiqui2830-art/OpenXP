@@ -21,6 +21,7 @@ This program is free software: you can redistribute it and/or modify it under th
 
 ### Prerequisites
 
+- Visual Studio 2022 or later (for Windows builds)
 - GCC 15 or later (for Linux builds)
 - CMake 3.20 or later
 - Python 3.x

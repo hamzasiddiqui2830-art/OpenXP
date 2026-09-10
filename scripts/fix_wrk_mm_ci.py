@@ -5,8 +5,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def edit(relpath, transform):
-    # This compatibility script is deliberately restricted to the active
-    # kernel tree. ntos-old is reference material and must never be changed.
     if not relpath.startswith("ntoskrnl/"):
         raise RuntimeError(f"refusing to edit non-active source: {relpath}")
     path = ROOT / relpath
@@ -19,11 +17,16 @@ def edit(relpath, transform):
         print(f"unchanged {relpath}")
 
 
+def insert_before_final_guard(text, block):
+    pos = text.rfind("#endif")
+    if pos < 0:
+        raise RuntimeError("cannot safely patch header: final #endif not found")
+    return text[:pos].rstrip() + "\n\n" + block.rstrip() + "\n\n" + text[pos:]
+
+
 def edit_mi386(text):
-    # The previous compatibility patch put the WRK definitions under an
-    # unrelated MM_SESSION_SPACE_DEFAULT guard. On this tree that symbol is
-    # already defined, so the block is skipped. Move the definitions into the
-    # real _MI386_ guard and make every primitive independently guarded.
+    # Remove the old aggregate guard, if present. It incorrectly suppresses
+    # WRK definitions when MM_SESSION_SPACE_DEFAULT is already defined.
     bad = re.search(
         r"\n#ifndef MM_SESSION_SPACE_DEFAULT\n"
         r"#define MM_SESSION_SPACE_DEFAULT.*?\n#endif\n\n"
@@ -137,24 +140,6 @@ extern PVOID MmHyperSpaceEnd;
 
     if "#ifndef MI_CHECK_PAGE_ALIGNMENT" not in text:
         text = text.replace(marker, definitions + "\n" + marker, 1)
-    else:
-        for symbol in (
-            "MI_MAXIMUM_PAGEFILE_SIZE",
-            "MI_WRITE_INVALID_PTE_WITHOUT_WS",
-            "MI_GET_NEXT_COLOR",
-            "MI_GET_MODIFIED_PAGE_BY_COLOR",
-            "MI_GET_MODIFIED_PAGE_ANY_COLOR",
-            "MI_SET_PAGING_FILE_INFO",
-            "MI_IS_PAGE_TABLE_ADDRESS",
-            "MI_IS_KERNEL_PAGE_TABLE_ADDRESS",
-            "MI_IS_WRITE_COMBINE_ENABLED",
-            "MI_BARRIER_STAMP_ZEROED_PAGE",
-            "MI_MAKE_TRANSITION_KERNELPTE_VALID",
-            "MI_MAKE_TRANSITION_PROTOPTE_VALID",
-        ):
-            if symbol not in text:
-                text = text.replace(marker, definitions + "\n" + marker, 1)
-                break
     return text
 
 
@@ -176,8 +161,6 @@ def edit_ntosdef(text):
 
 
 def edit_ps(text):
-    # INITIAL_PEB is an internal NTOS hand-off structure, not the user-mode
-    # PEB ABI. Reuse its existing SpareBool byte so its size/layout is stable.
     text = text.replace(
         "BOOLEAN SpareBool;                  //\n    HANDLE Mutant;",
         "BOOLEAN ImageUsesLargePages;        //\n    HANDLE Mutant;",
@@ -200,25 +183,20 @@ PsMapSystemDll (
 
 
 def edit_mm_h(text):
-    if "MmGrowKernelStackEx (" not in text:
-        marker = "#ifdef ALLOC_PRAGMA"
-        block = '''NTSTATUS
+    if "MmGrowKernelStackEx (" in text:
+        return text
+    block = '''NTSTATUS
 MmGrowKernelStackEx (
     __in PVOID CurrentStack,
     __in SIZE_T CommitSize
-    );
-
-'''
-        if marker not in text:
-            raise RuntimeError("ALLOC_PRAGMA marker not found in mm.h")
-        text = text.replace(marker, block + marker, 1)
-    return text
+    );'''
+    # mm.h has a normal _MM_ include guard but no ALLOC_PRAGMA section.
+    # Put the prototype immediately before the guard's final #endif.
+    return insert_before_final_guard(text, block)
 
 
 def edit_procsup(text):
-    # The missing KERNEL_STACK_SEGMENT typedef makes the compiler lose the
-    # declaration grammar in this region. Keep the actual WRK implementation
-    # in place and only add the needed forward declaration for the helper.
+    # Keep the implementation in procsup.c; this is only a declaration aid.
     needle = "VOID\nMiOutPageSingleKernelStack ("
     if needle in text:
         pos = text.find(needle)
@@ -237,8 +215,6 @@ MiOutPageSingleKernelStack (
 
 
 def edit_pfsup(text):
-    # Active ntoskrnl uses the WRK v1.2 one-PFN locked-page-charge helpers.
-    # Remove only the obsolete SP0 diagnostic CallerId arguments.
     text = re.sub(
         r"MI_ADD_LOCKED_PAGE_CHARGE\s*\(\s*([^,()]+)\s*,\s*TRUE\s*,\s*\d+\s*\)",
         r"MI_ADD_LOCKED_PAGE_CHARGE(\1)",

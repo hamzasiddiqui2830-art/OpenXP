@@ -807,6 +807,7 @@ typedef struct _ETHREAD {
     BOOLEAN ForwardClusterOnly;
     BOOLEAN DisablePageFaultClustering;
     UCHAR ActiveFaultCount;
+    UCHAR ActiveFaultCount;
 
 #if defined (PERF_DATA)
     ULONG PerformanceCountLow;

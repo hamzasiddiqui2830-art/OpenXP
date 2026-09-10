@@ -263,33 +263,33 @@ add_wrk_module(ex TARGET_NAME ntos_ex SOURCE_DIR ${EX_SOURCE_DIR} SOURCES ${EX_K
 # Security is intentionally an explicit source manifest. The directory also
 # contains legacy user-mode/test programs that must never enter ntos_se.
 set(SE_KERNEL_SOURCES
-    ${NTOSKRNL_SOURCE_DIR}/accessck.c
-    ${NTOSKRNL_SOURCE_DIR}/capture.c
-    ${NTOSKRNL_SOURCE_DIR}/privileg.c
-    ${NTOSKRNL_SOURCE_DIR}/rmlogon.c
-    ${NTOSKRNL_SOURCE_DIR}/rmmain.c
-    ${NTOSKRNL_SOURCE_DIR}/rmvars.c
-    ${NTOSKRNL_SOURCE_DIR}/seassign.c
-    ${NTOSKRNL_SOURCE_DIR}/seaudit.c
-    ${NTOSKRNL_SOURCE_DIR}/sepaudit.c
-    ${NTOSKRNL_SOURCE_DIR}/seclient.c
-    ${NTOSKRNL_SOURCE_DIR}/seglobal.c
-    ${NTOSKRNL_SOURCE_DIR}/seinit.c
-    ${NTOSKRNL_SOURCE_DIR}/semethod.c
-    ${NTOSKRNL_SOURCE_DIR}/sep.c
-    ${NTOSKRNL_SOURCE_DIR}/subject.c
-    ${NTOSKRNL_SOURCE_DIR}/seastate.c
-    ${NTOSKRNL_SOURCE_DIR}/token.c
-    ${NTOSKRNL_SOURCE_DIR}/tokenadj.c
-    ${NTOSKRNL_SOURCE_DIR}/tokendup.c
-    ${NTOSKRNL_SOURCE_DIR}/tokenopn.c
-    ${NTOSKRNL_SOURCE_DIR}/tokenqry.c
-    ${NTOSKRNL_SOURCE_DIR}/tokenset.c
-    ${NTOSKRNL_SOURCE_DIR}/adtlog.c
-    ${NTOSKRNL_SOURCE_DIR}/adtinit.c
-    ${NTOSKRNL_SOURCE_DIR}/adtvars.c
-    ${NTOSKRNL_SOURCE_DIR}/adtutil.c
-    ${NTOSKRNL_SOURCE_DIR}/rmaudit.c
+    ${NTOSKRNL_SOURCE_DIR}/se/accessck.c
+    ${NTOSKRNL_SOURCE_DIR}/se/capture.c
+    ${NTOSKRNL_SOURCE_DIR}/se/privileg.c
+    ${NTOSKRNL_SOURCE_DIR}/se/rmlogon.c
+    ${NTOSKRNL_SOURCE_DIR}/se/rmmain.c
+    ${NTOSKRNL_SOURCE_DIR}/se/rmvars.c
+    ${NTOSKRNL_SOURCE_DIR}/se/seassign.c
+    ${NTOSKRNL_SOURCE_DIR}/se/seaudit.c
+    ${NTOSKRNL_SOURCE_DIR}/se/sepaudit.c
+    ${NTOSKRNL_SOURCE_DIR}/se/seclient.c
+    ${NTOSKRNL_SOURCE_DIR}/se/seglobal.c
+    ${NTOSKRNL_SOURCE_DIR}/se/seinit.c
+    ${NTOSKRNL_SOURCE_DIR}/se/semethod.c
+    ${NTOSKRNL_SOURCE_DIR}/se/sep.c
+    ${NTOSKRNL_SOURCE_DIR}/se/subject.c
+    ${NTOSKRNL_SOURCE_DIR}/se/seastate.c
+    ${NTOSKRNL_SOURCE_DIR}/se/token.c
+    ${NTOSKRNL_SOURCE_DIR}/se/tokenadj.c
+    ${NTOSKRNL_SOURCE_DIR}/se/tokendup.c
+    ${NTOSKRNL_SOURCE_DIR}/se/tokenopn.c
+    ${NTOSKRNL_SOURCE_DIR}/se/tokenqry.c
+    ${NTOSKRNL_SOURCE_DIR}/se/tokenset.c
+    ${NTOSKRNL_SOURCE_DIR}/se/adtlog.c
+    ${NTOSKRNL_SOURCE_DIR}/se/adtinit.c
+    ${NTOSKRNL_SOURCE_DIR}/se/adtvars.c
+    ${NTOSKRNL_SOURCE_DIR}/se/adtutil.c
+    ${NTOSKRNL_SOURCE_DIR}/se/rmaudit.c
 )
 add_wrk_module(se TARGET_NAME ntos_se SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/se SOURCES ${SE_KERNEL_SOURCES})
 

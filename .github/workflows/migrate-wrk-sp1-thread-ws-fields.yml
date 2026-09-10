@@ -1,6 +1,6 @@
 name: restore WRK SP1 working-set thread fields
 
-on:
+"on":
   push:
     paths:
       - '.github/workflows/migrate-wrk-sp1-thread-ws-fields.yml'
@@ -17,8 +17,9 @@ jobs:
           fetch-depth: 0
 
       - name: Restore WRK SP1 ETHREAD working-set ownership flags
-        shell: python
+        shell: bash
         run: |
+          python3 - <<'PY'
           from pathlib import Path
 
           path = Path("ntoskrnl/inc/ps.h")
@@ -33,7 +34,7 @@ jobs:
             BOOLEAN OwnsSessionWorkingSetExclusive : 1;
             BOOLEAN OwnsSessionWorkingSetShared : 1;
         };
-"""
+          """
 
           if text.count(marker) == 1 and "OwnsProcessWorkingSetExclusive" not in text:
               text = text.replace(marker, replacement, 1)
@@ -41,6 +42,7 @@ jobs:
               raise SystemExit("unexpected ETHREAD working-set ownership field state")
 
           path.write_text(text, encoding="utf-8", newline="")
+          PY
 
       - name: Verify fields
         shell: bash

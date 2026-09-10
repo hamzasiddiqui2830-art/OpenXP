@@ -396,7 +396,11 @@ extern PMMPTE MiInitialSystemPageDirectory;
 #define MI_SET_LARGE_PTE_WRITE_COMBINE(PTE) MI_SET_PTE_WRITE_COMBINE(PTE)
 #endif
 #ifndef MI_PREPARE_FOR_NONCACHED
-#define MI_PREPARE_FOR_NONCACHED(CacheAttribute) ((void)(CacheAttribute))
+#define MI_PREPARE_FOR_NONCACHED(_CacheAttribute) \
+    if (_CacheAttribute != MiCached) { \
+        MI_FLUSH_ENTIRE_TB (0x20); \
+        KeInvalidateAllCaches (); \
+    }
 #endif
 #ifndef MI_NO_FAULT_FOUND
 #define MI_NO_FAULT_FOUND(FAULTSTATUS, PPTE, VA, PFNHELD) \\

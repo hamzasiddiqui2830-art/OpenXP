@@ -1,6 +1,6 @@
 name: restore WRK SP1 working-set thread fields
 
-"on":
+on:
   push:
     paths:
       - '.github/workflows/migrate-wrk-sp1-thread-ws-fields.yml'
@@ -22,11 +22,13 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          path = Path("ntoskrnl/inc/ps.h")
-          text = path.read_text(encoding="utf-8")
+          path = Path('ntoskrnl/inc/ps.h')
+          text = path.read_text(encoding='utf-8')
 
-          marker = "            BOOLEAN AddressSpaceOwner     : 1;\n        };\n"
-          replacement = """            BOOLEAN AddressSpaceOwner     : 1;
+          marker = '''            BOOLEAN AddressSpaceOwner     : 1;
+        };
+'''
+          replacement = '''            BOOLEAN AddressSpaceOwner     : 1;
             BOOLEAN OwnsProcessWorkingSetExclusive : 1;
             BOOLEAN OwnsProcessWorkingSetShared : 1;
             BOOLEAN OwnsSystemWorkingSetExclusive : 1;
@@ -34,14 +36,14 @@ jobs:
             BOOLEAN OwnsSessionWorkingSetExclusive : 1;
             BOOLEAN OwnsSessionWorkingSetShared : 1;
         };
-          """
+'''
 
-          if text.count(marker) == 1 and "OwnsProcessWorkingSetExclusive" not in text:
+          if text.count(marker) == 1 and 'OwnsProcessWorkingSetExclusive' not in text:
               text = text.replace(marker, replacement, 1)
-          elif text.count("OwnsProcessWorkingSetExclusive") != 1:
-              raise SystemExit("unexpected ETHREAD working-set ownership field state")
+          elif text.count('OwnsProcessWorkingSetExclusive') != 1:
+              raise SystemExit('unexpected ETHREAD working-set ownership field state')
 
-          path.write_text(text, encoding="utf-8", newline="")
+          path.write_text(text, encoding='utf-8', newline='')
           PY
 
       - name: Verify fields
@@ -62,10 +64,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name "OpenXP automation"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name 'OpenXP automation'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add ntoskrnl/inc/ps.h
-          git commit -m "mm: restore WRK SP1 working-set ownership fields"
+          git commit -m 'mm: restore WRK SP1 working-set ownership fields'
           git rm -f .github/workflows/migrate-wrk-sp1-thread-ws-fields.yml
-          git commit -m "ci: remove completed SP1 thread field migration"
+          git commit -m 'ci: remove completed SP1 thread field migration'
           git push

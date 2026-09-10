@@ -126,7 +126,6 @@ NTSTATUS ExpUpdateComPlusPackage(IN ULONG ComPlusPackageStatus);
 #include "cmdata.h"
 
 #ifndef _WRK_CM_HASH_TABLE_ENTRIES_DEFINED
-#define _WRK_CM_HASH_TABLE_ENTRIES_DEFINED
 typedef struct _CM_KEY_HASH_TABLE_ENTRY { EX_PUSH_LOCK Lock; PKTHREAD Owner; PCM_KEY_HASH Entry; } CM_KEY_HASH_TABLE_ENTRY, *PCM_KEY_HASH_TABLE_ENTRY;
 typedef struct _CM_NAME_HASH_TABLE_ENTRY { EX_PUSH_LOCK Lock; PCM_NAME_HASH Entry; } CM_NAME_HASH_TABLE_ENTRY, *PCM_NAME_HASH_TABLE_ENTRY;
 #endif
@@ -139,7 +138,6 @@ static VOID ExpWatchExpirationDataWork(IN PVOID Context);
 #define ProbeForWriteUlongAligned32(_Address) ProbeForWriteSmallStructure((PVOID)(_Address), sizeof(ULONG), sizeof(ULONG))
 #endif
 #ifndef _WRK_EX_RUNDOWN_REF_CACHE_AWARE_DEFINED
-#define _WRK_EX_RUNDOWN_REF_CACHE_AWARE_DEFINED
 typedef struct _EX_RUNDOWN_REF_CACHE_AWARE { PEX_RUNDOWN_REF RunRefs; PVOID PoolToFree; ULONG RunRefSize; ULONG Number; } EX_RUNDOWN_REF_CACHE_AWARE, *PEX_RUNDOWN_REF_CACHE_AWARE;
 #endif
 #ifndef _WRK_EX_RUNDOWN_CACHE_AWARE_API_DECLARED
@@ -213,24 +211,13 @@ NTSTATUS MmCheckSystemImage(IN HANDLE ImageFileHandle);
 #define WRK_MM_LOCK_PAGEABLE_SECTION_BY_HANDLE_DECLARED
 VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
 #endif
+#ifndef WRK_MM_UNLOCK_PAGEABLE_IMAGE_SECTION_DECLARED
+#define WRK_MM_UNLOCK_PAGEABLE_IMAGE_SECTION_DECLARED
+VOID MmUnlockPageableImageSection(IN PVOID ImageSectionHandle);
+#endif
 #ifndef QuantumReset
 #define QuantumReset Spare4
 #endif
 #ifndef Hand
 #define Hand Size
 #endif
-#ifndef OBJ_VALID_PRIVATE_ATTRIBUTES
-#define OBJ_VALID_PRIVATE_ATTRIBUTES 0x00010000L
-#endif
-#ifndef OBJ_ALL_VALID_ATTRIBUTES
-#define OBJ_ALL_VALID_ATTRIBUTES (OBJ_VALID_PRIVATE_ATTRIBUTES | OBJ_VALID_ATTRIBUTES)
-#endif
-#ifndef OBJ_KERNEL_EXCLUSIVE
-#define OBJ_KERNEL_EXCLUSIVE 0x00010000L
-#endif
-#ifndef ProbeAndReadUnicodeStringEx
-FORCEINLINE VOID ProbeAndReadUnicodeStringEx(OUT PUNICODE_STRING Destination, IN PUNICODE_STRING Source) { ProbeForRead(Source, sizeof(UNICODE_STRING), sizeof(ULONG)); *Destination = *Source; }
-#endif
-
-
-#endif /* _WRK_MSVC_COMPAT_H_ */

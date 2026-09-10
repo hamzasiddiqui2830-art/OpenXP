@@ -1,5 +1,4 @@
 # OpenXP WOW64 Subsystem CMake Configuration
-# Implements Windows 7-style WOW64 architecture
 
 cmake_minimum_required(VERSION 3.15)
 

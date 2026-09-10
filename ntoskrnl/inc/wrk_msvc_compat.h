@@ -1,6 +1,7 @@
-#ifndef _WRK_MSVC_COMPAT_H_
-#define _WRK_MSVC_COMPAT_H_
+#ifndef _WRK_MSVС_COMPAT_H_
+#define _WRK_MSVС_COMPAT_H_
 
+/* NOTE: This file is generated/maintained by the OpenXP build compatibility layer. */
 #include "ntos.h"
 
 #ifdef NTHALAPI
@@ -29,17 +30,14 @@
 #ifndef HARDWARE_PTE_DIRTY_MASK
 #define HARDWARE_PTE_DIRTY_MASK MM_PTE_DIRTY_MASK
 #endif
-
 #ifndef MiPteToProto
 #define MiPteToProto(lpte) \
     (PMMPTE)((PMMPTE)(((((lpte)->u.Long) >> 11) << 9) + \
     (((((lpte)->u.Long)) << 24) >> 23) + MmProtopte_Base))
 #endif
-
 #ifndef MI_DETERMINE_OWNER
 #define MI_DETERMINE_OWNER(PPTE) ((PPTE)->u.Hard.Owner)
 #endif
-
 #ifndef MI_MAKE_TRANSITION_PTE
 #define MI_MAKE_TRANSITION_PTE(OUTPTE, PAGEFRAME, PROTECT, PPTE) do { \
     (OUTPTE).u.Trans.PageFrameNumber = (PAGEFRAME); \
@@ -75,7 +73,6 @@
 #ifndef COMPLUS_PACKAGE_INVALID
 #define COMPLUS_PACKAGE_INVALID ((ULONG)-1)
 #endif
-
 #ifndef _WRK_COMPLUS_PACKAGE_ROUTINES_DECLARED
 #define _WRK_COMPLUS_PACKAGE_ROUTINES_DECLARED
 NTSTATUS ExpReadComPlusPackage(VOID);
@@ -100,17 +97,14 @@ typedef struct _CM_NAME_HASH_TABLE_ENTRY {
     PCM_NAME_HASH Entry;
 } CM_NAME_HASH_TABLE_ENTRY, *PCM_NAME_HASH_TABLE_ENTRY;
 #endif
-
 #ifndef _WRK_EXP_WATCH_EXPIRATION_DATA_WORK_DECLARED
 #define _WRK_EXP_WATCH_EXPIRATION_DATA_WORK_DECLARED
 static VOID ExpWatchExpirationDataWork(IN PVOID Context);
 #endif
-
 #ifndef ProbeForWriteUlongAligned32
 #define ProbeForWriteUlongAligned32(_Address) \
     ProbeForWriteSmallStructure((PVOID)(_Address), sizeof(ULONG), sizeof(ULONG))
 #endif
-
 #ifndef _WRK_EX_RUNDOWN_REF_CACHE_AWARE_DEFINED
 #define _WRK_EX_RUNDOWN_REF_CACHE_AWARE_DEFINED
 typedef struct _EX_RUNDOWN_REF_CACHE_AWARE {
@@ -120,7 +114,6 @@ typedef struct _EX_RUNDOWN_REF_CACHE_AWARE {
     ULONG Number;
 } EX_RUNDOWN_REF_CACHE_AWARE, *PEX_RUNDOWN_REF_CACHE_AWARE;
 #endif
-
 #ifndef _WRK_EX_RUNDOWN_CACHE_AWARE_API_DECLARED
 #define _WRK_EX_RUNDOWN_CACHE_AWARE_API_DECLARED
 PEX_RUNDOWN_REF_CACHE_AWARE ExAllocateCacheAwareRundownProtection(IN POOL_TYPE PoolType, IN ULONG PoolTag);
@@ -128,7 +121,6 @@ SIZE_T ExSizeOfRundownProtectionCacheAware(VOID);
 VOID ExInitializeRundownProtectionCacheAware(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCacheAware, IN SIZE_T Size);
 VOID ExFreeCacheAwareRundownProtection(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCacheAware);
 #endif
-
 #ifndef MAX_PAGE_FILES
 #define MAX_PAGE_FILES 16
 #endif
@@ -207,7 +199,6 @@ VOID ExFreeCacheAwareRundownProtection(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCach
 #ifndef OwnsProcessWorkingSetShared
 #define OwnsProcessWorkingSetShared KeyedEventInUse
 #endif
-
 #ifndef KeLoopTbFlushTimeStampUnlocked
 static __inline VOID
 KeLoopTbFlushTimeStampUnlocked(VOID)
@@ -217,7 +208,6 @@ KeLoopTbFlushTimeStampUnlocked(VOID)
     }
 }
 #endif
-
 #ifndef WRK_MM_CHECK_SYSTEM_IMAGE_DECLARED
 #define WRK_MM_CHECK_SYSTEM_IMAGE_DECLARED
 NTSTATUS MmCheckSystemImage(IN HANDLE ImageFileHandle);
@@ -226,20 +216,15 @@ NTSTATUS MmCheckSystemImage(IN HANDLE ImageFileHandle);
 #define WRK_MM_LOCK_PAGEABLE_SECTION_BY_HANDLE_DECLARED
 VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
 #endif
-
-/* WRK SP1 uses the modern spelling in MM sources; OpenXP's exported SP0
- * declaration retains the historical "Pagable" spelling. */
 #ifndef MmUnlockPageableImageSection
 #define MmUnlockPageableImageSection MmUnlockPagableImageSection
 #endif
-
 #ifndef QuantumReset
 #define QuantumReset Spare4
 #endif
 #ifndef Hand
 #define Hand Size
 #endif
-
 #ifndef OBJ_VALID_PRIVATE_ATTRIBUTES
 #define OBJ_VALID_PRIVATE_ATTRIBUTES 0x00010000L
 #endif
@@ -249,38 +234,24 @@ VOID MmLockPageableSectionByHandle(IN PVOID ImageSectionHandle);
 #ifndef OBJ_KERNEL_EXCLUSIVE
 #define OBJ_KERNEL_EXCLUSIVE 0x00010000L
 #endif
-
 #ifndef ProbeAndReadUnicodeStringEx
 FORCEINLINE
 VOID
-ProbeAndReadUnicodeStringEx(
-    OUT PUNICODE_STRING Destination,
-    IN PUNICODE_STRING Source
-    )
+ProbeAndReadUnicodeStringEx(OUT PUNICODE_STRING Destination, IN PUNICODE_STRING Source)
 {
     ProbeForRead(Source, sizeof(UNICODE_STRING), sizeof(ULONG));
     *Destination = *Source;
 }
 #endif
 
-/*
- * The CMake/MSVC build force-includes this file before each WRK translation
- * unit.  The MM sources themselves include mi.h later, so pull it in here as
- * well and install the small x86 compatibility layer below after mi.h has
- * defined the generic MM synchronization macros.  This keeps the compatibility
- * fixes centralized instead of making individual MM source files depend on
- * compiler-specific shims.
- */
 #if defined(_MSC_VER) && defined(_X86_)
 #ifndef _WRK_MSCV_MI_COMPAT_INCLUDED
 #define _WRK_MSCV_MI_COMPAT_INCLUDED
 #include "../mm/mi.h"
 
-/* WRK source uses the newer PTE field spelling; OpenXP's x86 PTE uses Write. */
 #ifndef Writable
 #define Writable Write
 #endif
-
 #ifndef MI_IS_SYSTEM_CACHE_ADDRESS
 #define MI_IS_SYSTEM_CACHE_ADDRESS(VA) \
     ((((PVOID)(VA) >= (PVOID)MmSystemCacheStart) && \
@@ -288,41 +259,31 @@ ProbeAndReadUnicodeStringEx(
      (((PVOID)(VA) >= (PVOID)MiSystemCacheStartExtra) && \
       ((PVOID)(VA) <= (PVOID)MiSystemCacheEndExtra)))
 #endif
-
 #ifndef MiIsVirtualAddressOnPdeBoundary
 #define MiIsVirtualAddressOnPdeBoundary(VA) \
     (((ULONG_PTR)(VA) & PAGE_DIRECTORY_MASK) == 0)
 #endif
-
 #ifndef IS_PTE_NOT_DEMAND_ZERO
-#define IS_PTE_NOT_DEMAND_ZERO(PTE) \
-    ((PTE).u.Long & (ULONG)0xFFFFFC01)
+#define IS_PTE_NOT_DEMAND_ZERO(PTE) ((PTE).u.Long & (ULONG)0xFFFFFC01)
 #endif
-
 #ifndef MI_IS_PFN_DELETED
-#define MI_IS_PFN_DELETED(PPFN) \
-    ((ULONG_PTR)(PPFN)->PteAddress & 0x1)
+#define MI_IS_PFN_DELETED(PPFN) ((ULONG_PTR)(PPFN)->PteAddress & 0x1)
 #endif
-
 #ifndef MI_SET_PTE_DIRTY
-#define MI_SET_PTE_DIRTY(PTE) \
-    ((PTE).u.Long |= HARDWARE_PTE_DIRTY_MASK)
+#define MI_SET_PTE_DIRTY(PTE) ((PTE).u.Long |= HARDWARE_PTE_DIRTY_MASK)
 #endif
-
 #ifndef MI_MAKE_VALID_PTE
 #define MI_MAKE_VALID_PTE(OUTPTE, FRAME, PMASK, PPTE) \
     (OUTPTE).u.Long = ((FRAME << 12) | \
                        (MmProtectToPteMask[PMASK]) | \
                        MiDetermineUserGlobalPteMask((PMMPTE)(PPTE)))
 #endif
-
 #ifndef MI_DISABLE_CACHING
 #define MI_DISABLE_CACHING(PTE) do { \
     (PTE).u.Hard.CacheDisable = 1; \
     (PTE).u.Hard.WriteThrough = 1; \
 } while (0)
 #endif
-
 #ifndef MI_SET_PTE_WRITE_COMBINE
 #define MI_SET_PTE_WRITE_COMBINE(PTE) do { \
     if (MiWriteCombiningPtes == TRUE) { \
@@ -334,12 +295,10 @@ ProbeAndReadUnicodeStringEx(
     } \
 } while (0)
 #endif
-
 #ifndef MiFillMemoryPte
 #define MiFillMemoryPte(Destination, Length, Pattern) \
     RtlFillMemoryUlong((Destination), (Length) * sizeof(MMPTE), (Pattern))
 #endif
-
 #ifndef MiGetSubsectionAddressForPte
 #define MiGetSubsectionAddressForPte(VA) \
     (((ULONG)(VA) < (ULONG)MmSubsectionBase + 128*1024*1024) ? \
@@ -349,7 +308,6 @@ ProbeAndReadUnicodeStringEx(
         (((((ULONG)MmNonPagedPoolEnd - (ULONG)(VA)) >> 2) & (ULONG)0x0000001E) | \
           ((((ULONG)MmNonPagedPoolEnd - (ULONG)(VA)) << 4) & (ULONG)0x7ffff800)))
 #endif
-
 #ifndef MiGetSubsectionAddress
 #define MiGetSubsectionAddress(lpte) \
     (((lpte)->u.Long & 0x80000000) ? \
@@ -361,44 +319,33 @@ ProbeAndReadUnicodeStringEx(
              (((lpte)->u.Long << 2) & 0x78)))))
 #endif
 
-/*
- * mi.h's WRK SP1 form takes an explicit thread, while older MM sources still
- * call these with only the working-set structure.  Support both call forms.
- * KeEnter/LeaveGuardedRegionThread take PKTHREAD in OpenXP, not &THREAD->Tcb.
- */
 #ifdef LOCK_WORKING_SET
 #undef LOCK_WORKING_SET
 #endif
-#define WRK_LOCK_WORKING_SET_1(WSINFO) \
-    WRK_LOCK_WORKING_SET_2(PsGetCurrentThread(), (WSINFO))
+#define WRK_LOCK_WORKING_SET_1(WSINFO) WRK_LOCK_WORKING_SET_2(PsGetCurrentThread(), (WSINFO))
 #define WRK_LOCK_WORKING_SET_2(THREAD, WSINFO) do { \
     KeEnterGuardedRegionThread((PKTHREAD)(THREAD)); \
     ASSERT(MI_IS_SESSION_ADDRESS(WSINFO) == FALSE); \
     ASSERT(!MM_ANY_WS_LOCK_HELD(THREAD)); \
     ExAcquirePushLockExclusive(&(WSINFO)->WorkingSetMutex); \
     if ((WSINFO) == &MmSystemCacheWs) { \
-        ASSERT(((THREAD)->OwnsSystemWorkingSetExclusive == 0) && \
-               ((THREAD)->OwnsSystemWorkingSetShared == 0)); \
+        ASSERT(((THREAD)->OwnsSystemWorkingSetExclusive == 0) && ((THREAD)->OwnsSystemWorkingSetShared == 0)); \
         (THREAD)->OwnsSystemWorkingSetExclusive = 1; \
     } else if ((WSINFO)->Flags.SessionSpace == 1) { \
-        ASSERT(((THREAD)->OwnsSessionWorkingSetExclusive == 0) && \
-               ((THREAD)->OwnsSessionWorkingSetShared == 0)); \
+        ASSERT(((THREAD)->OwnsSessionWorkingSetExclusive == 0) && ((THREAD)->OwnsSessionWorkingSetShared == 0)); \
         (THREAD)->OwnsSessionWorkingSetExclusive = 1; \
     } else { \
-        ASSERT(((THREAD)->OwnsProcessWorkingSetExclusive == 0) && \
-               ((THREAD)->OwnsProcessWorkingSetShared == 0)); \
+        ASSERT(((THREAD)->OwnsProcessWorkingSetExclusive == 0) && ((THREAD)->OwnsProcessWorkingSetShared == 0)); \
         (THREAD)->OwnsProcessWorkingSetExclusive = 1; \
     } \
 } while (0)
 #define WRK_SELECT_LOCK_WORKING_SET(_1, _2, NAME, ...) NAME
-#define LOCK_WORKING_SET(...) \
-    WRK_SELECT_LOCK_WORKING_SET(__VA_ARGS__, WRK_LOCK_WORKING_SET_2, WRK_LOCK_WORKING_SET_1)(__VA_ARGS__)
+#define LOCK_WORKING_SET(...) WRK_SELECT_LOCK_WORKING_SET(__VA_ARGS__, WRK_LOCK_WORKING_SET_2, WRK_LOCK_WORKING_SET_1)(__VA_ARGS__)
 
 #ifdef UNLOCK_WORKING_SET
 #undef UNLOCK_WORKING_SET
 #endif
-#define WRK_UNLOCK_WORKING_SET_1(WSINFO) \
-    WRK_UNLOCK_WORKING_SET_2(PsGetCurrentThread(), (WSINFO))
+#define WRK_UNLOCK_WORKING_SET_1(WSINFO) WRK_UNLOCK_WORKING_SET_2(PsGetCurrentThread(), (WSINFO))
 #define WRK_UNLOCK_WORKING_SET_2(THREAD, WSINFO) do { \
     ASSERT(MI_IS_SESSION_ADDRESS(WSINFO) == FALSE); \
     MM_WS_LOCK_ASSERT(WSINFO); \
@@ -413,8 +360,7 @@ ProbeAndReadUnicodeStringEx(
     KeLeaveGuardedRegionThread((PKTHREAD)(THREAD)); \
 } while (0)
 #define WRK_SELECT_UNLOCK_WORKING_SET(_1, _2, NAME, ...) NAME
-#define UNLOCK_WORKING_SET(...) \
-    WRK_SELECT_UNLOCK_WORKING_SET(__VA_ARGS__, WRK_UNLOCK_WORKING_SET_2, WRK_UNLOCK_WORKING_SET_1)(__VA_ARGS__)
+#define UNLOCK_WORKING_SET(...) WRK_SELECT_UNLOCK_WORKING_SET(__VA_ARGS__, WRK_UNLOCK_WORKING_SET_2, WRK_UNLOCK_WORKING_SET_1)(__VA_ARGS__)
 #endif
 #endif
 

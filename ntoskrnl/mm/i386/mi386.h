@@ -130,6 +130,7 @@ typedef struct _MMCOLOR_TABLES {
 
 extern PMMCOLOR_TABLES MmFreePagesByColor[2];
 extern ULONG MmSecondaryColorMask;
+extern BOOLEAN MiWriteCombiningPtes;
 
 #define MI_PTE_OWNER_USER       1
 #define MI_PTE_OWNER_KERNEL     0

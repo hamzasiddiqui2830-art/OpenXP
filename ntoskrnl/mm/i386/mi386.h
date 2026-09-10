@@ -294,6 +294,23 @@ MiCompareTbFlushTimeStamp (
 #define MM_PTE_NOCACHE            0x010
 #define MM_PTE_WRITECOMBINE       0x010
 
+_forceinline
+LOGICAL
+MI_IS_WRITE_COMBINE_ENABLED (
+    IN PMMPTE PointerPte
+    )
+{
+    if (MiWriteCombiningPtes == TRUE) {
+        if ((PointerPte->u.Hard.CacheDisable == 0) &&
+            (PointerPte->u.Hard.WriteThrough == 1)) {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+#define MI_CHECK_PAGE_ALIGNMENT(PAGE,PPTE)
 #define MM_PTE_GUARD              0x0
 #define MM_PTE_CACHE              0x0
 #define MM_PROTECT_FIELD_SHIFT    5

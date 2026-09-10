@@ -26,25 +26,15 @@
 #include "../mm/i386/mi386.h"
 #undef MiCompareTbFlushTimeStamp
 
-/*
- * OpenXP's KeFlushProcessTb retains the SP0 BOOLEAN contract.  The WRK MM
- * macro calls the routine without an argument, so adapt only that zero-arg
- * spelling; calls which explicitly pass TRUE/FALSE remain untouched.
- */
 #ifndef WRK_KE_FLUSH_PROCESS_TB_ZERO_ARG_COMPAT
 #define WRK_KE_FLUSH_PROCESS_TB_ZERO_ARG_COMPAT
 #define KeFlushProcessTb() KeFlushProcessTb(FALSE)
 #endif
 
-/* WRK names the x86 dirty-bit mask through the HARDWARE_PTE interface. */
 #ifndef HARDWARE_PTE_DIRTY_MASK
 #define HARDWARE_PTE_DIRTY_MASK MM_PTE_DIRTY_MASK
 #endif
 
-/*
- * Prototype PTE addresses are encoded in the software PTE.  This is the
- * x86 WRK encoding; do not substitute the newer AMD64 representation.
- */
 #ifndef MiPteToProto
 #define MiPteToProto(lpte) \
     (PMMPTE)((PMMPTE)(((((lpte)->u.Long) >> 11) << 9) + \
@@ -64,7 +54,6 @@
     (OUTPTE).u.Trans.Owner = MI_DETERMINE_OWNER(PPTE); \
 } while (0)
 #endif
-
 #endif
 
 #if defined(_MSC_VER) && !defined(__cplusplus)

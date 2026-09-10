@@ -26,7 +26,6 @@
 #include "../mm/i386/mi386.h"
 #undef MiCompareTbFlushTimeStamp
 
-
 #ifndef HARDWARE_PTE_DIRTY_MASK
 #define HARDWARE_PTE_DIRTY_MASK MM_PTE_DIRTY_MASK
 #endif
@@ -264,4 +263,159 @@ ProbeAndReadUnicodeStringEx(
 }
 #endif
 
-#endif /* _WRK_MSVC_COMPAT_H_ */
+/*
+ * The CMake/MSVC build force-includes this file before each WRK translation
+ * unit.  The MM sources themselves include mi.h later, so pull it in here as
+ * well and install the small x86 compatibility layer below after mi.h has
+ * defined the generic MM synchronization macros.  This keeps the compatibility
+ * fixes centralized instead of making individual MM source files depend on
+ * compiler-specific shims.
+ */
+#if defined(_MSC_VER) && defined(_X86_)
+#ifndef _WRK_MSCV_MI_COMPAT_INCLUDED
+#define _WRK_MSCV_MI_COMPAT_INCLUDED
+#include "../mm/mi.h"
+
+/* WRK source uses the newer PTE field spelling; OpenXP's x86 PTE uses Write. */
+#ifndef Writable
+#define Writable Write
+#endif
+
+#ifndef MI_IS_SYSTEM_CACHE_ADDRESS
+#define MI_IS_SYSTEM_CACHE_ADDRESS(VA) \
+    ((((PVOID)(VA) >= (PVOID)MmSystemCacheStart) && \
+      ((PVOID)(VA) <= (PVOID)MmSystemCacheEnd)) || \
+     (((PVOID)(VA) >= (PVOID)MiSystemCacheStartExtra) && \
+      ((PVOID)(VA) <= (PVOID)MiSystemCacheEndExtra)))
+#endif
+
+#ifndef MiIsVirtualAddressOnPdeBoundary
+#define MiIsVirtualAddressOnPdeBoundary(VA) \
+    (((ULONG_PTR)(VA) & PAGE_DIRECTORY_MASK) == 0)
+#endif
+
+#ifndef IS_PTE_NOT_DEMAND_ZERO
+#define IS_PTE_NOT_DEMAND_ZERO(PTE) \
+    ((PTE).u.Long & (ULONG)0xFFFFFC01)
+#endif
+
+#ifndef MI_IS_PFN_DELETED
+#define MI_IS_PFN_DELETED(PPFN) \
+    ((ULONG_PTR)(PPFN)->PteAddress & 0x1)
+#endif
+
+#ifndef MI_SET_PTE_DIRTY
+#define MI_SET_PTE_DIRTY(PTE) \
+    ((PTE).u.Long |= HARDWARE_PTE_DIRTY_MASK)
+#endif
+
+#ifndef MI_MAKE_VALID_PTE
+#define MI_MAKE_VALID_PTE(OUTPTE, FRAME, PMASK, PPTE) \
+    (OUTPTE).u.Long = ((FRAME << 12) | \
+                       (MmProtectToPteMask[PMASK]) | \
+                       MiDetermineUserGlobalPteMask((PMMPTE)(PPTE)))
+#endif
+
+#ifndef MI_DISABLE_CACHING
+#define MI_DISABLE_CACHING(PTE) do { \
+    (PTE).u.Hard.CacheDisable = 1; \
+    (PTE).u.Hard.WriteThrough = 1; \
+} while (0)
+#endif
+
+#ifndef MI_SET_PTE_WRITE_COMBINE
+#define MI_SET_PTE_WRITE_COMBINE(PTE) do { \
+    if (MiWriteCombiningPtes == TRUE) { \
+        (PTE).u.Hard.CacheDisable = 0; \
+        (PTE).u.Hard.WriteThrough = 1; \
+    } else { \
+        (PTE).u.Hard.CacheDisable = 1; \
+        (PTE).u.Hard.WriteThrough = 0; \
+    } \
+} while (0)
+#endif
+
+#ifndef MiFillMemoryPte
+#define MiFillMemoryPte(Destination, Length, Pattern) \
+    RtlFillMemoryUlong((Destination), (Length) * sizeof(MMPTE), (Pattern))
+#endif
+
+#ifndef MiGetSubsectionAddressForPte
+#define MiGetSubsectionAddressForPte(VA) \
+    (((ULONG)(VA) < (ULONG)MmSubsectionBase + 128*1024*1024) ? \
+        ((((((ULONG)(VA) - (ULONG)MmSubsectionBase) >> 2) & (ULONG)0x0000001E) | \
+          ((((ULONG)(VA) - (ULONG)MmSubsectionBase) << 4) & (ULONG)0x7ffff800)) | \
+         0x80000000) : \
+        (((((ULONG)MmNonPagedPoolEnd - (ULONG)(VA)) >> 2) & (ULONG)0x0000001E) | \
+          ((((ULONG)MmNonPagedPoolEnd - (ULONG)(VA)) << 4) & (ULONG)0x7ffff800)))
+#endif
+
+#ifndef MiGetSubsectionAddress
+#define MiGetSubsectionAddress(lpte) \
+    (((lpte)->u.Long & 0x80000000) ? \
+        ((PSUBSECTION)((PCHAR)MmSubsectionBase + \
+            ((((lpte)->u.Long & 0x7ffff800) >> 4) | \
+             (((lpte)->u.Long << 2) & 0x78)))) : \
+        ((PSUBSECTION)((PCHAR)MmNonPagedPoolEnd - \
+            (((((lpte)->u.Long) >> 11) << 7) | \
+             (((lpte)->u.Long << 2) & 0x78)))))
+#endif
+
+/*
+ * mi.h's WRK SP1 form takes an explicit thread, while older MM sources still
+ * call these with only the working-set structure.  Support both call forms.
+ * KeEnter/LeaveGuardedRegionThread take PKTHREAD in OpenXP, not &THREAD->Tcb.
+ */
+#ifdef LOCK_WORKING_SET
+#undef LOCK_WORKING_SET
+#endif
+#define WRK_LOCK_WORKING_SET_1(WSINFO) \
+    WRK_LOCK_WORKING_SET_2(PsGetCurrentThread(), (WSINFO))
+#define WRK_LOCK_WORKING_SET_2(THREAD, WSINFO) do { \
+    KeEnterGuardedRegionThread((PKTHREAD)(THREAD)); \
+    ASSERT(MI_IS_SESSION_ADDRESS(WSINFO) == FALSE); \
+    ASSERT(!MM_ANY_WS_LOCK_HELD(THREAD)); \
+    ExAcquirePushLockExclusive(&(WSINFO)->WorkingSetMutex); \
+    if ((WSINFO) == &MmSystemCacheWs) { \
+        ASSERT(((THREAD)->OwnsSystemWorkingSetExclusive == 0) && \
+               ((THREAD)->OwnsSystemWorkingSetShared == 0)); \
+        (THREAD)->OwnsSystemWorkingSetExclusive = 1; \
+    } else if ((WSINFO)->Flags.SessionSpace == 1) { \
+        ASSERT(((THREAD)->OwnsSessionWorkingSetExclusive == 0) && \
+               ((THREAD)->OwnsSessionWorkingSetShared == 0)); \
+        (THREAD)->OwnsSessionWorkingSetExclusive = 1; \
+    } else { \
+        ASSERT(((THREAD)->OwnsProcessWorkingSetExclusive == 0) && \
+               ((THREAD)->OwnsProcessWorkingSetShared == 0)); \
+        (THREAD)->OwnsProcessWorkingSetExclusive = 1; \
+    } \
+} while (0)
+#define WRK_SELECT_LOCK_WORKING_SET(_1, _2, NAME, ...) NAME
+#define LOCK_WORKING_SET(...) \
+    WRK_SELECT_LOCK_WORKING_SET(__VA_ARGS__, WRK_LOCK_WORKING_SET_2, WRK_LOCK_WORKING_SET_1)(__VA_ARGS__)
+
+#ifdef UNLOCK_WORKING_SET
+#undef UNLOCK_WORKING_SET
+#endif
+#define WRK_UNLOCK_WORKING_SET_1(WSINFO) \
+    WRK_UNLOCK_WORKING_SET_2(PsGetCurrentThread(), (WSINFO))
+#define WRK_UNLOCK_WORKING_SET_2(THREAD, WSINFO) do { \
+    ASSERT(MI_IS_SESSION_ADDRESS(WSINFO) == FALSE); \
+    MM_WS_LOCK_ASSERT(WSINFO); \
+    if ((WSINFO) == &MmSystemCacheWs) { \
+        (THREAD)->OwnsSystemWorkingSetExclusive = 0; \
+    } else if ((WSINFO)->Flags.SessionSpace == 1) { \
+        (THREAD)->OwnsSessionWorkingSetExclusive = 0; \
+    } else { \
+        (THREAD)->OwnsProcessWorkingSetExclusive = 0; \
+    } \
+    ExReleasePushLockExclusive(&(WSINFO)->WorkingSetMutex); \
+    KeLeaveGuardedRegionThread((PKTHREAD)(THREAD)); \
+} while (0)
+#define WRK_SELECT_UNLOCK_WORKING_SET(_1, _2, NAME, ...) NAME
+#define UNLOCK_WORKING_SET(...) \
+    WRK_SELECT_UNLOCK_WORKING_SET(__VA_ARGS__, WRK_UNLOCK_WORKING_SET_2, WRK_UNLOCK_WORKING_SET_1)(__VA_ARGS__)
+#endif
+#endif
+
+#endif /* _WRK_MSVС_COMPAT_H_ */

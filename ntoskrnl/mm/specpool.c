@@ -1639,9 +1639,9 @@ Environment:
    if ((PoolType & BASE_POOL_TYPE_MASK) == PagedPool) {
     LocalNoAccessPte.u.Long = MM_KERNEL_NOACCESS_PTE;
     MiDeleteSystemPageableVm (PointerPte,
-                              1,
-                              LocalNoAccessPte.u.Long,
-                              NULL);
+                          1,
+                          0,
+                          NULL);
     PointerPte->u.List.NextEntry = MM_EMPTY_PTE_LIST;
     InterlockedDecrement (&MiSpecialPagesPageable);
     LOCK_PFN (OldIrql);

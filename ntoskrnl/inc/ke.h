@@ -3796,4 +3796,17 @@ KeZeroSinglePage (
     IN PVOID PageBase
     );
 
+#if defined(_AMD64_)
+
+VOID
+KeCopyPage (
+    IN PVOID Destination,
+    IN PVOID Source
+    );
+
+#else
+
+#define KeCopyPage(d,s) RtlCopyMemory((d),(s),PAGE_SIZE)
+
+#endif
 #endif // _KE_

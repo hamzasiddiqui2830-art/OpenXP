@@ -1978,6 +1978,7 @@ Environment:
 --*/
 
 {
+    PKTHREAD CurrentThread;
     KIRQL OldIrql;
     MMPTE PteContents;
     MMPTE NewPteContents;
@@ -1989,7 +1990,7 @@ Environment:
     LOGICAL Pagable;
     LOGICAL SystemWsLocked;
     PMMSUPPORT VmSupport;
-
+    CurrentThread = PsGetCurrentThread ();
 #if defined (_WIN64)
     if ((VirtualAddress >= MmSessionSpecialPoolStart) &&
         (VirtualAddress < MmSessionSpecialPoolEnd)) {

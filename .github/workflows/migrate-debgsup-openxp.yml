@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/migrate-debgsup-openxp.yml'
+      - 'migration-trigger.txt'
 
 permissions:
   contents: write
@@ -22,45 +23,59 @@ jobs:
           from pathlib import Path
           import re
 
-          debugsup = Path("ntoskrnl/mm/debugsup.c")
-          text = debugsup.read_text(encoding="utf-8")
+          def read(path):
+              return Path(path).read_text(encoding="utf-8")
+
+          def write(path, text):
+              Path(path).write_text(text, encoding="utf-8", newline="")
+
+          # debugsup.c is WRK v1.2 / SP1-derived source. Keep its semantics,
+          # but adapt the working-set lock operations to OpenXP's native
+          # push-lock/ownership implementation.
+          debugsup = "ntoskrnl/mm/debugsup.c"
+          text = read(debugsup)
 
           old = "if (KeGetOwnerGuardedMutex (&Ws->WorkingSetMutex) == KeGetCurrentThread ()) {"
-          new = """if ((Ws == &MmSystemCacheWs &&
-                       ((Thread->OwnsSystemWorkingSetExclusive != 0) ||
-                        (Thread->OwnsSystemWorkingSetShared != 0))) ||
-                      ((Ws)->Flags.SessionSpace == 1 &&
-                       ((Thread->OwnsSessionWorkingSetExclusive != 0) ||
-                        (Thread->OwnsSessionWorkingSetShared != 0))) ||
-                      ((Ws)->Flags.SessionSpace == 0 &&
-                       (Thread->ApcState.Process == (PKPROCESS)PsGetCurrentProcess ()) &&
-                       ((Thread->OwnsProcessWorkingSetExclusive != 0) ||
-                        (Thread->OwnsProcessWorkingSetShared != 0)))) {"""
-
+          new = (
+              "if ((Ws == &MmSystemCacheWs &&\n"
+              "     ((Thread->OwnsSystemWorkingSetExclusive != 0) ||\n"
+              "      (Thread->OwnsSystemWorkingSetShared != 0))) ||\n"
+              "    ((Ws)->Flags.SessionSpace == 1 &&\n"
+              "     ((Thread->OwnsSessionWorkingSetExclusive != 0) ||\n"
+              "      (Thread->OwnsSessionWorkingSetShared != 0))) ||\n"
+              "    ((Ws)->Flags.SessionSpace == 0 &&\n"
+              "     ((Thread->OwnsProcessWorkingSetExclusive != 0) ||\n"
+              "      (Thread->OwnsProcessWorkingSetShared != 0)))) {"
+          )
           if text.count(old) != 1:
               raise SystemExit("expected exactly one legacy working-set owner check")
           text = text.replace(old, new)
 
-          if text.count("LOCK_WORKING_SET (Ws);") != 1:
+          lock_old = "LOCK_WORKING_SET (Ws);"
+          lock_new = "LOCK_WORKING_SET (Thread, Ws);"
+          if text.count(lock_old) != 1:
               raise SystemExit("expected exactly one legacy LOCK_WORKING_SET call")
-          text = text.replace("LOCK_WORKING_SET (Ws);", "LOCK_WORKING_SET (Thread, Ws);")
+          text = text.replace(lock_old, lock_new)
 
-          unlock = "UNLOCK_WORKING_SET (Ws);"
-          if text.count(unlock) != 3:
+          unlock_old = "UNLOCK_WORKING_SET (Ws);"
+          unlock_new = "UNLOCK_WORKING_SET (Thread, Ws);"
+          if text.count(unlock_old) != 3:
               raise SystemExit("expected exactly three legacy UNLOCK_WORKING_SET calls")
-          text = text.replace(unlock, "UNLOCK_WORKING_SET (Thread, Ws);")
-          debugsup.write_text(text, encoding="utf-8", newline="")
+          text = text.replace(unlock_old, unlock_new)
+          write(debugsup, text)
 
-          compat = Path("ntoskrnl/inc/wrk_msvc_compat.h")
-          ctext = compat.read_text(encoding="utf-8")
+          # Remove temporary compatibility that papered over the WRK/OpenXP
+          # working-set model mismatch. The real KTHREAD ownership fields are
+          # used by the native OpenXP macros instead.
+          compat_path = "ntoskrnl/inc/wrk_msvc_compat.h"
+          ctext = read(compat_path)
 
           block_start = ctext.find("/* debugsup.c is WRK v1.2 source:")
-          if block_start < 0:
-              raise SystemExit("debugsup compatibility block was not found")
-          block_end = ctext.find("#endif\n\n#endif /* _WRK_MSVC_COMPAT_H_ */", block_start)
-          if block_end < 0:
-              raise SystemExit("debugsup compatibility block terminator was not found")
-          ctext = ctext[:block_start] + ctext[block_end + len("#endif\n"):]
+          if block_start >= 0:
+              block_end = ctext.find("#endif\n\n#endif /* _WRK_MSVC_COMPAT_H_ */", block_start)
+              if block_end < 0:
+                  raise SystemExit("debugsup compatibility block terminator was not found")
+              ctext = ctext[:block_start] + ctext[block_end + len("#endif\n"):]
 
           ownership_aliases = re.compile(
               r"#ifndef OwnsSystemWorkingSetExclusive\n#define OwnsSystemWorkingSetExclusive MemoryMaker\n#endif\n"
@@ -73,32 +88,50 @@ jobs:
           ctext, removed = ownership_aliases.subn("", ctext, count=1)
           if removed != 1:
               raise SystemExit("working-set ownership compatibility aliases were not found")
-          compat.write_text(ctext, encoding="utf-8", newline="")
+          write(compat_path, ctext)
 
-          builder = Path("cmake/modules/WRKModuleBuilder.cmake")
-          btext = builder.read_text(encoding="utf-8")
-          cmake_block = '''
-            if(MODULE_NAME STREQUAL "mm")
-                set_source_files_properties(
-                    ${CMAKE_SOURCE_DIR}/ntoskrnl/mm/debugsup.c
-                    PROPERTIES COMPILE_OPTIONS "/FI${CMAKE_SOURCE_DIR}/ntoskrnl/inc/wrk_debugsup_msvc_compat.h")
-            endif()
-'''
-          if btext.count(cmake_block) != 1:
+          # Remove the source-specific /FI workaround. Compatibility belongs in
+          # the actual OpenXP source now, not in a compiler-only overlay.
+          builder_path = "cmake/modules/WRKModuleBuilder.cmake"
+          btext = read(builder_path)
+          pattern = re.compile(
+              r"\n\s*if\(MODULE_NAME STREQUAL \"mm\"\)\n"
+              r"\s*set_source_files_properties\(\n"
+              r"\s*\$\{CMAKE_SOURCE_DIR\}/ntoskrnl/mm/debugsup\.c\n"
+              r"\s*PROPERTIES COMPILE_OPTIONS \"/FI\$\{CMAKE_SOURCE_DIR\}/ntoskrnl/inc/wrk_debugsup_msvc_compat\.h\"\)\n"
+              r"\s*endif\(\)\n"
+          )
+          btext, removed = pattern.subn("\n", btext, count=1)
+          if removed != 1:
               raise SystemExit("debugsup CMake force-include block was not found exactly once")
-          btext = btext.replace(cmake_block, "\n")
-          builder.write_text(btext, encoding="utf-8", newline="")
+          write(builder_path, btext)
 
           compat_header = Path("ntoskrnl/inc/wrk_debugsup_msvc_compat.h")
           if compat_header.exists():
               compat_header.unlink()
 
+      - name: Verify migration before commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -nF 'LOCK_WORKING_SET (Ws);' ntoskrnl/mm/debugsup.c && exit 1 || true
+          grep -nF 'UNLOCK_WORKING_SET (Ws);' ntoskrnl/mm/debugsup.c && exit 1 || true
+          grep -nF 'KeGetOwnerGuardedMutex (&Ws->WorkingSetMutex)' ntoskrnl/mm/debugsup.c && exit 1 || true
+          grep -nF 'OwnsSystemWorkingSetExclusive' ntoskrnl/mm/debugsup.c
+          grep -nF 'LOCK_WORKING_SET (Thread, Ws);' ntoskrnl/mm/debugsup.c
+          grep -nF 'UNLOCK_WORKING_SET (Thread, Ws);' ntoskrnl/mm/debugsup.c
+          test ! -e ntoskrnl/inc/wrk_debugsup_msvc_compat.h
+          ! grep -nF 'wrk_debugsup_msvc_compat.h' cmake/modules/WRKModuleBuilder.cmake
+          ! grep -nF '#define OwnsSystemWorkingSetExclusive MemoryMaker' ntoskrnl/inc/wrk_msvc_compat.h
+
       - name: Commit native OpenXP migration and remove this temporary workflow
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "OpenXP automation"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git rm -f .github/workflows/migrate-debgsup-openxp.yml
+          git rm -f migration-trigger.txt 2>/dev/null || true
           git add ntoskrnl/mm/debugsup.c ntoskrnl/inc/wrk_msvc_compat.h cmake/modules/WRKModuleBuilder.cmake ntoskrnl/inc/wrk_debugsup_msvc_compat.h
           git commit -m "mm: adapt debugsup to native OpenXP working-set locks"
           git push

@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 
 def read(path):
@@ -93,14 +94,18 @@ if '#define MiProtoAddressForPte(proto_va)' not in text:
     text = text[:pos] + i386_block + '\n' + text[pos:]
     write(i386, text)
 
-# The current OpenXP declaration is the WRK one-argument interface.
-dynmem = Path('ntoskrnl/mm/dynmem.c')
-text = read(dynmem)
-text = text.replace('MiFlushPteList (&PteFlushList, FALSE);', 'MiFlushPteList (&PteFlushList);')
-write(dynmem, text)
-
+# MiFlushPteList is the current one-argument interface. Update legacy calls
+# while preserving unrelated calls and old source under ntos-old.
 for path in Path('ntoskrnl/mm').rglob('*.c'):
-    if 'MiFlushPteList (&' in read(path) and ', FALSE)' in read(path):
+    text = read(path)
+    new = re.sub(r'(MiFlushPteList\s*\(\s*[^,;\n()]+)\s*,\s*(?:FALSE|TRUE)\s*\)', r'\1)', text)
+    if new != text:
+        write(path, new)
+
+# Verify no active two-argument call remains.
+for path in Path('ntoskrnl/mm').rglob('*.c'):
+    text = read(path)
+    if re.search(r'MiFlushPteList\s*\([^;\n]*,\s*(?:FALSE|TRUE)\s*\)', text):
         raise SystemExit(f'old two-argument MiFlushPteList call remains: {path}')
 
 for path in Path('ntoskrnl').rglob('*'):

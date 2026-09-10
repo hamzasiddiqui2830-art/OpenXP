@@ -162,7 +162,33 @@ typedef MMPTE *PMMPTE;
 #define InterlockedExchangePte(_PointerPte, _NewContents) InterlockedExchange64 ((PLONGLONG)(_PointerPte), (LONGLONG)(_NewContents))
 #endif
 
-FORCEINLINE BOOLEAN MiCompareTbFlushTimeStamp (IN ULONG OldStamp, IN ULONG Mask) { ULONG NewStamp; ULONG Diff; NewStamp = KeReadTbFlushTimeStamp (); Diff = ((NewStamp - OldStamp) & Mask); #if defined(NT_UP) if (Diff != 0) return FALSE; #else if (Diff > 2) return FALSE; if (((OldStamp & 1) == 0) && (Diff >= 2)) return FALSE; #endif return TRUE; }
+FORCEINLINE
+BOOLEAN
+MiCompareTbFlushTimeStamp (
+    IN ULONG OldStamp,
+    IN ULONG Mask
+    )
+{
+    ULONG NewStamp;
+    ULONG Diff;
+
+    NewStamp = KeReadTbFlushTimeStamp ();
+    Diff = ((NewStamp - OldStamp) & Mask);
+
+#if defined(NT_UP)
+    if (Diff != 0) {
+        return FALSE;
+    }
+#else
+    if (Diff > 2) {
+        return FALSE;
+    }
+    if (((OldStamp & 1) == 0) && (Diff >= 2)) {
+        return FALSE;
+    }
+#endif
+    return TRUE;
+}
 
 #define MI_GET_PAGE_FRAME_FROM_PTE(PTE) ((ULONG)((PTE)->u.Hard.PageFrameNumber))
 #define MI_GET_PAGE_FRAME_FROM_TRANSITION_PTE(PTE) ((ULONG)((PTE)->u.Trans.PageFrameNumber))

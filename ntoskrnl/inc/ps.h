@@ -903,7 +903,7 @@ typedef struct _INITIAL_PEB {
     BOOLEAN InheritedAddressSpace;      // These four fields cannot change unless the
     BOOLEAN ReadImageFileExecOptions;   //
     BOOLEAN BeingDebugged;              //
-    BOOLEAN SpareBool;                  //
+    BOOLEAN ImageUsesLargePages;        //
     HANDLE Mutant;                      // PEB structure is also updated.
 } INITIAL_PEB, *PINITIAL_PEB;
 
@@ -1108,7 +1108,8 @@ PsInitSystem (
 NTSTATUS
 PsMapSystemDll (
     IN PEPROCESS Process,
-    OUT PVOID *DllBase OPTIONAL
+    OUT PVOID *DllBase OPTIONAL,
+    IN LOGICAL UseLargePages
     );
 
 VOID

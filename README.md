@@ -1,7 +1,7 @@
 # OpenXP 
 
 OpenXP SP0
-An attempt to mae operating system compatible with Windows applications and drivers.
+An attempt to make operating system compatible with Windows applications and drivers.
 
 ## Overview
 

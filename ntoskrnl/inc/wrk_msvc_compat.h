@@ -100,6 +100,10 @@
 #include "../mm/i386/mi386.h"
 #undef MiCompareTbFlushTimeStamp
 
+/* WRK v1.2 x86 MM globals are owned by the architecture implementation. */
+extern MMPTE MmPteGlobal;
+extern PVOID MmHyperSpaceEnd;
+
 #ifndef HARDWARE_PTE_DIRTY_MASK
 #define HARDWARE_PTE_DIRTY_MASK MM_PTE_DIRTY_MASK
 #endif
@@ -152,7 +156,7 @@
 #define MiFillMemoryPte(Destination, Length, Pattern) RtlFillMemoryUlong((Destination), (Length) * sizeof(MMPTE), (Pattern))
 #endif
 #ifndef MiGetSubsectionAddressForPte
-#define MiGetSubsectionAddressForPte(VA) (((ULONG)(VA) < (ULONG)MmSubsectionBase + 128*1024*1024) ? ((((((ULONG)(VA) - (ULONG)MmSubsectionBase) >> 2) & (ULONG)0x0000001E) | ((((ULONG)(VA) - (ULONG)MmSubsectionBase) << 4) & (ULONG)0x7ffff800)) | 0x80000000) : (((((ULONG)MmNonPagedPoolEnd - (ULONG)(VA)) >> 2) & (ULONG)0x0000001E) | ((((ULONG)(VA) - (ULONG)MmSubsectionBase) << 4) & (ULONG)0x7ffff800)))
+#define MiGetSubsectionAddressForPte(VA) (((ULONG)(VA) < (ULONG)MmSubsectionBase + 128*1024*1024) ? ((((((ULONG)(VA) - (ULONG)MmSubsectionBase) >> 2) & (ULONG)0x0000001E) | ((((ULONG)(VA) - (ULONG)MmSubsectionBase) << 4) & (ULONG)0x7ffff800)) | 0x80000000) : (((((ULONG)(MmNonPagedPoolEnd) - (ULONG)(VA)) >> 2) & (ULONG)0x0000001E) | ((((ULONG)(VA) - (ULONG)MmSubsectionBase) << 4) & (ULONG)0x7ffff800)))
 #endif
 #ifndef MiGetSubsectionAddress
 #define MiGetSubsectionAddress(lpte) (((lpte)->u.Long & 0x80000000) ? ((PSUBSECTION)((PCHAR)MmSubsectionBase + ((((lpte)->u.Long & 0x7ffff800) >> 4) | (((lpte)->u.Long << 2) & 0x78)))) : ((PSUBSECTION)((PCHAR)MmNonPagedPoolEnd - (((((lpte)->u.Long) >> 11) << 7) | (((lpte)->u.Long << 2) & 0x78)))))

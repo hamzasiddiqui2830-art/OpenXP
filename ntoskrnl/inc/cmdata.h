@@ -663,6 +663,8 @@ typedef PCM_CACHED_VALUE *PPCM_CACHED_VALUE;
 
 #define CM_KCB_READ_ONLY_KEY        0x0080  // this kcb is read-only all write operations onto it are denied.
 
+#define CMP_LOCK_FREE_KEY_BODY_ARRAY_SIZE                   4
+
 typedef struct _CM_KEY_CONTROL_BLOCK {
 #ifdef CM_DEBUG_KCB
     ULONG                       Signature;
@@ -706,6 +708,9 @@ typedef struct _CM_KEY_CONTROL_BLOCK {
         LIST_ENTRY                  KeyBodyListHead;    // head of the list with all key_nodes using this kcb 
         LIST_ENTRY                  FreeListEntry;      // entry in the free kcbs list inside a page - when we use the private allocator
     };
+    struct _CM_KEY_BODY         * KeyBodyArray[CMP_LOCK_FREE_KEY_BODY_ARRAY_SIZE];    // fast path; lock free
+
+    PVOID                       DelayCloseEntry;    // back pointer to delay close table    
 
     //
     // Bellow is information cached from KEY_NODE for performance reasons.

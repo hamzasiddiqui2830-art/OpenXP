@@ -202,11 +202,26 @@ typedef struct _SECURITY_CLIENT_CONTEXT {
 typedef struct _DISPATCHER_HEADER {
     union {
         struct {
-            UCHAR Type; UCHAR Absolute; UCHAR Size;
-            union { UCHAR Inserted; BOOLEAN DebugActive; };
+            UCHAR Type;
+            union {
+                UCHAR Absolute;
+                UCHAR NpxIrql;
+            };
+
+            union {
+                UCHAR Size;
+                UCHAR Hand;
+            };
+
+            union {
+                UCHAR Inserted;
+                BOOLEAN DebugActive;
+            };
         };
+
         volatile LONG Lock;
     };
+
     LONG SignalState;
     LIST_ENTRY WaitListHead;
 } DISPATCHER_HEADER;

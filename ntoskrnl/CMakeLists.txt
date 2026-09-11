@@ -42,8 +42,6 @@ set(EXE_PATH "${CMAKE_BINARY_DIR}/EXE")
 file(MAKE_DIRECTORY "${TOPobj}")
 file(MAKE_DIRECTORY "${EXE_PATH}")
 
-# Shared kernel definitions and include paths are established by the root
-# build. Keep these here as well for standalone configuration of ntoskrnl/.
 add_compile_definitions(_NTOS_ _NTIFS_ _NTDDK_)
 if(ARCH STREQUAL "amd64")
     add_compile_definitions(_AMD64_ AMD64 _WIN64)
@@ -64,8 +62,6 @@ else()
     set(FREEBUILD 1)
 endif()
 
-# The root already established the common include directories and compiler
-# flags. Standalone use of this directory retains the same kernel include set.
 if(NOT NTOS_INCLUDE_DIRS)
     set(NTOS_INCLUDE_DIRS
         ${REACTOS_SOURCE_DIR}
@@ -87,8 +83,8 @@ include_directories(${NTOS_INCLUDE_DIRS})
 # -----------------------------------------------------------------------------
 # Module dispatch
 # -----------------------------------------------------------------------------
-# Keep this list explicit. Each directory listed here owns its own complete
-# source manifest and target declaration.
+# This list is intentionally explicit. Every module must provide its own
+# CMakeLists.txt with an explicit source manifest and target declaration.
 set(NTOS_MODULES
     rtl
     config
@@ -118,14 +114,16 @@ set(NTOS_MODULES
 )
 
 foreach(MODULE IN LISTS NTOS_MODULES)
-    if(EXISTS "${NTOSKRNL_SOURCE_DIR}/${MODULE}/CMakeLists.txt")
-        add_subdirectory(
-            "${NTOSKRNL_SOURCE_DIR}/${MODULE}"
-            "${TOPobj}/${MODULE}"
+    if(NOT EXISTS "${NTOSKRNL_SOURCE_DIR}/${MODULE}/CMakeLists.txt")
+        message(FATAL_ERROR
+            "NTOSKRNL module '${MODULE}' is missing its required CMakeLists.txt"
         )
-    else()
-        message(STATUS "Skipping missing ntoskrnl module: ${MODULE}")
     endif()
+
+    add_subdirectory(
+        "${NTOSKRNL_SOURCE_DIR}/${MODULE}"
+        "${TOPobj}/${MODULE}"
+    )
 endforeach()
 
 message(STATUS "NTOSKRNL build configured for ${ARCH}")

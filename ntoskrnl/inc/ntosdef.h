@@ -169,6 +169,11 @@ typedef struct _DISPATCHER_HEADER {
 } DISPATCHER_HEADER;
 
 typedef struct _KEVENT { DISPATCHER_HEADER Header; } KEVENT, *PKEVENT, *RESTRICTED_POINTER PRKEVENT;
+
+typedef struct _KGATE {
+    DISPATCHER_HEADER Header;
+} KGATE, *PKGATE;
+
 typedef struct _KTIMER {
     DISPATCHER_HEADER Header; ULARGE_INTEGER DueTime; LIST_ENTRY TimerListEntry;
     struct _KDPC *Dpc; LONG Period;

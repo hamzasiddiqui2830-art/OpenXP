@@ -3172,6 +3172,7 @@ Exit:
 }
 
 NTSTATUS
+NTAPI
 NtLoadKey(
     __in POBJECT_ATTRIBUTES TargetKey,
     __in POBJECT_ATTRIBUTES SourceFile
@@ -3912,6 +3913,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI
 NtSetInformationKey(
     __in HANDLE KeyHandle,
     __in KEY_SET_INFORMATION_CLASS KeySetInformationClass,
@@ -4769,6 +4771,7 @@ Return Value:
 ULONG   CmpOpenSubKeys;
 
 NTSTATUS
+NTAPI
 NtQueryOpenSubKeys(
     __in POBJECT_ATTRIBUTES TargetKey,
     __out PULONG  HandleCount
@@ -4924,6 +4927,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI
 NtQueryOpenSubKeysEx(
     __in POBJECT_ATTRIBUTES   TargetKey,
     __in ULONG                BufferLength,
@@ -5103,6 +5107,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI
 NtRenameKey(
     __in HANDLE           KeyHandle,
     __in PUNICODE_STRING  NewName
@@ -5267,6 +5272,7 @@ CmpKeyInfoProbeAlingment(
 }
 
 NTSTATUS
+NTAPI
 NtCompactKeys(
     __in ULONG Count,
     __in_ecount(Count) HANDLE KeyArray[]
@@ -5457,6 +5463,7 @@ Exit:
 
 
 NTSTATUS
+NTAPI
 NtCompressKey(
     __in HANDLE Key
             )
@@ -5529,6 +5536,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI
 NtLockRegistryKey(
     __in HANDLE           KeyHandle
     )

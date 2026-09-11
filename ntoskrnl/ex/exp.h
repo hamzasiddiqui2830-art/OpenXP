@@ -18,7 +18,7 @@ Abstract:
 
 #ifndef _EXP_
 #define _EXP_
-
+#ifdef _MSC_VER
 #pragma warning(disable:4214)   // bit field types other than int
 #pragma warning(disable:4201)   // nameless struct/union
 #pragma warning(disable:4127)   // condition expression is constant
@@ -28,7 +28,7 @@ Abstract:
 #pragma warning(disable:4324)   // structure was padded
 #pragma warning(disable:4328)   // greater alignment than needed
 #pragma warning(disable:4054)   // cast of function pointer to PVOID
-
+#endif
 #include "ntos.h"
 #include "zwapi.h"
 #define NOEXTAPI

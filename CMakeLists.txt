@@ -172,11 +172,7 @@ set(RTL_KERNEL_SOURCES
     ${NTOSKRNL_SOURCE_DIR}/rtl/xencode.c
 )
 
-add_wrk_module(
-    rtl
-    TARGET_NAME ntosrtl
-    SOURCES ${RTL_KERNEL_SOURCES}
-)
+add_wrk_module(rtl TARGET_NAME ntosrtl SOURCES ${RTL_KERNEL_SOURCES})
 
 if(BUILD_RTL_BOOT_TARGETS)
     set(RTL_BOOT_SOURCES
@@ -195,8 +191,8 @@ if(BUILD_RTL_BOOT_TARGETS)
         ${NTOSKRNL_SOURCE_DIR}/rtl/xdecode.c
         ${NTOSKRNL_SOURCE_DIR}/rtl/sertl.c
     )
-    add_wrk_module(bldrrtl TARGET_NAME bldrrtl SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/rtl/boot SOURCES ${RTL_BOOT_SOURCES} OUTPUT_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}/boot)
-    add_wrk_module(bldrrtl_dbg TARGET_NAME bldrrtl_dbg SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/rtl/boot_dbg SOURCES ${RTL_BOOT_SOURCES} OUTPUT_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}/boot_dbg)
+    add_wrk_module(bldrrtl TARGET_NAME bldrrtl SOURCES ${RTL_BOOT_SOURCES} OUTPUT_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}/boot)
+    add_wrk_module(bldrrtl_dbg TARGET_NAME bldrrtl_dbg SOURCES ${RTL_BOOT_SOURCES} OUTPUT_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}/boot_dbg)
     target_compile_definitions(bldrrtl PRIVATE BLDR_KERNEL_RUNTIME=1)
     target_compile_definitions(bldrrtl_dbg PRIVATE BLDR_KERNEL_RUNTIME=1)
     set_target_properties(bldrrtl bldrrtl_dbg PROPERTIES POSITION_INDEPENDENT_CODE OFF ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME} OUTPUT_NAME bldrrtl)
@@ -262,7 +258,7 @@ set(EX_KERNEL_SOURCES
     ${EX_SOURCE_DIR}/keyedevent.c
 )
 
-add_wrk_module(ex TARGET_NAME ntos_ex SOURCE_DIR ${EX_SOURCE_DIR} SOURCES ${EX_KERNEL_SOURCES})
+add_wrk_module(ex TARGET_NAME ntos_ex SOURCES ${EX_KERNEL_SOURCES})
 
 # Security is intentionally an explicit source manifest. The directory also
 # contains legacy user-mode/test programs that must never enter ntos_se.
@@ -295,11 +291,13 @@ set(SE_KERNEL_SOURCES
     ${NTOSKRNL_SOURCE_DIR}/se/adtutil.c
     ${NTOSKRNL_SOURCE_DIR}/se/rmaudit.c
 )
-add_wrk_module(se TARGET_NAME ntos_se SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/se SOURCES ${SE_KERNEL_SOURCES})
+add_wrk_module(se TARGET_NAME ntos_se SOURCES ${SE_KERNEL_SOURCES})
 
-set(NTOS_MODULES ob mm ke ps io cache lpc dbgk raw fstub fsrtl wmi perf init)
+# Each NTOS module owns an explicit source manifest in its module
+# CMakeLists.txt. Do not infer or discover sources in the top-level build.
+set(NTOS_MODULES ob mm ke ps io cache lpc dbgk raw fstub fsrtl perf)
 foreach(MODULE IN LISTS NTOS_MODULES)
-    add_wrk_module(${MODULE} SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/${MODULE})
+    add_subdirectory(${NTOSKRNL_SOURCE_DIR}/${MODULE})
 endforeach()
 
 if(BUILD_CHKREG)
@@ -315,11 +313,7 @@ if(BUILD_NTOSKRNL_TESTS)
     endforeach()
 endif()
 
-set(NTOS_MODULE_LIBS ntosrtl ntosconfig ntos_ex)
-foreach(MODULE IN LISTS NTOS_MODULES)
-    list(APPEND NTOS_MODULE_LIBS ntos_${MODULE})
-endforeach()
-list(APPEND NTOS_MODULE_LIBS ntos_se)
+set(NTOS_MODULE_LIBS ntosrtl ntosconfig ntos_ex ntosob ntosmm ntoske ntosps ntosio ntoscache ntoslpc ntosdbgk ntosraw ntosfstub ntosFsRtl ntosperf ntos_se)
 if(WRK_ARCH_NAME MATCHES "arm|arm64")
     if(ENABLE_HAL_ARM)
         list(APPEND NTOS_MODULE_LIBS halarm)

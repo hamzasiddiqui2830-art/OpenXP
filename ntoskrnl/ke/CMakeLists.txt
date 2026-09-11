@@ -38,12 +38,8 @@ set(MODULE_SOURCES
     yield.c
 )
 
-# WRK i386 architecture-specific sources.
-# Keep architecture-specific files out of the generic source list so the
-# module remains portable to other WRK architectures.
 if(WRK_ARCH_NAME STREQUAL "i386")
     list(APPEND MODULE_SOURCES
-        # i386 C sources
         i386/abiosc.c
         i386/allproc.c
         i386/apcuser.c
@@ -65,8 +61,6 @@ if(WRK_ARCH_NAME STREQUAL "i386")
         i386/pat.c
         i386/thredini.c
         i386/trapc.c
-
-        # i386 MASM sources
         i386/abiosa.asm
         i386/callout.asm
         i386/clockint.asm
@@ -91,12 +85,8 @@ if(WRK_ARCH_NAME STREQUAL "i386")
         i386/trap.asm
         i386/zero.asm
     )
-endif()
-
-# WRK amd64 architecture-specific sources.
-if(WRK_ARCH_NAME STREQUAL "amd64")
+elseif(WRK_ARCH_NAME STREQUAL "amd64")
     list(APPEND MODULE_SOURCES
-        # amd64 C sources
         amd64/allproc.c
         amd64/apcuser.c
         amd64/callback.c
@@ -113,8 +103,6 @@ if(WRK_ARCH_NAME STREQUAL "amd64")
         amd64/runtime.c
         amd64/spinlock.c
         amd64/thredini.c
-
-        # amd64 MASM sources
         amd64/apcint.asm
         amd64/callout.asm
         amd64/clockint.asm

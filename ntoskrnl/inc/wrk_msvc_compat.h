@@ -3,8 +3,10 @@
 
 /*
  * The WRK build environment historically supplied these symbols while
- * ntos.h also owns them as header guards.  Clear the command-line copies
+ * ntos.h also owns them as header guards. Clear the command-line copies
  * before including ntos.h so MSVC /WX does not report guard redefinitions.
+ * This file is force-included by the WRK-compatible MSVC build, so it must
+ * bootstrap ntos.h before architecture-private headers such as mi386.h.
  */
 #ifdef _NTOS_
 #undef _NTOS_
@@ -15,6 +17,12 @@
 #ifdef _NTDDK_
 #undef _NTDDK_
 #endif
+
+#if defined(_MSC_VER)
+#pragma warning(disable:4324) /* structure was padded due to alignment specifier */
+#endif
+
+#include "ntos.h"
 
 #ifdef NTHALAPI
 #undef NTHALAPI

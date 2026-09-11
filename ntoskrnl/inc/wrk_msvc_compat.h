@@ -15,7 +15,6 @@
 #ifdef _NTDDK_
 #undef _NTDDK_
 #endif
-#include "ntos.h"
 
 #ifdef NTHALAPI
 #undef NTHALAPI

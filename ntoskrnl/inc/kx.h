@@ -17,10 +17,6 @@ Abstract:
              This is very unfortunate since any changes to the subject
              routines must be reflected in locka.asm also.
 
-Author:
-
-    David N. Cutler (davec) 9-Jul-2002
-
 --*/
 
 #ifndef _KX_

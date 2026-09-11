@@ -1,5 +1,5 @@
 #
-# CMake build system for OpenXP / WRK
+# CMake build system for OpenXP
 #
 
 cmake_minimum_required(VERSION 3.15)
@@ -80,7 +80,7 @@ elseif(WRK_ARCH STREQUAL "arm64")
     set(WRK_ARCH_NAME arm64)
     set(ARCH_DEFINES _ARM64_ _M_ARM64=4 TARGET_ARM64)
 else()
-    set(WRK_ARCH_NAME x86)
+    set(WRK_ARCH_NAME i386)
     set(ARCH_DEFINES _X86_=1 i386=1 STD_CALL FPO=0)
 endif()
 

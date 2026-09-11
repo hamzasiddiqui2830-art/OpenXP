@@ -172,7 +172,11 @@ set(RTL_KERNEL_SOURCES
     ${NTOSKRNL_SOURCE_DIR}/rtl/xencode.c
 )
 
-add_wrk_module(rtl TARGET_NAME ntosrtl SOURCE_DIR ${NTOSKRNL_SOURCE_DIR}/rtl SOURCES ${RTL_KERNEL_SOURCES})
+add_wrk_module(
+    rtl
+    TARGET_NAME ntosrtl
+    SOURCES ${RTL_KERNEL_SOURCES}
+)
 
 if(BUILD_RTL_BOOT_TARGETS)
     set(RTL_BOOT_SOURCES

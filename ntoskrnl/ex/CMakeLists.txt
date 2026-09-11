@@ -25,43 +25,43 @@ if(MSVC)
 endif()
 
 set(MODULE_SOURCES
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/callback.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/callperf.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/dbgctrl.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/delay.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/event.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/eventpr.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/exatom.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/exdata.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/exinfo.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/exinit.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/exhotp.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/fmutexc.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/handle.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/harderr.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/hdlsterm.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/lookasid.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/luid.c
+    callback.c
+    callperf.c
+    dbgctrl.c
+    delay.c
+    event.c
+    eventpr.c
+    exatom.c
+    exdata.c
+    exinfo.c
+    exinit.c
+    exhotp.c
+    fmutexc.c
+    handle.c
+    harderr.c
+    hdlsterm.c
+    lookasid.c
+    luid.c
     ${EX_LOCAL_SOURCE_DIR}/mutant.c
     ${EX_LOCAL_SOURCE_DIR}/pool.c
     ${EX_LOCAL_SOURCE_DIR}/pushlock.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/nbqueue.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/probe.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/profile.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/raise.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/resource.c
+    nbqueue.c
+    probe.c
+    profile.c
+    raise.c
+    resource.c
     ${EX_LOCAL_SOURCE_DIR}/sysinfo.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/semphore.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/sysenv.c
+    semphore.c
+    sysenv.c
     ${EX_LOCAL_SOURCE_DIR}/systime.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/timer.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/worker.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/zone.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/uuid.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/win32.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/rundown.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/xipdisp.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/keyedevent.c
+    timer.c
+    worker.c
+    zone.c
+    uuid.c
+    win32.c
+    rundown.c
+    xipdisp.c
+    keyedevent.c
 )
 
 add_wrk_module(${MODULE_NAME}

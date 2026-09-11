@@ -43,10 +43,11 @@
 #if defined(_MSC_VER) && defined(_X86_)
 
 /*
- * These are compiler-facing compatibility definitions only.  Do not include
+ * These are compiler-facing compatibility definitions only. Do not include
  * mi386.h here: that header depends on the memory-manager private type layer
  * (including PFN_NUMBER) and must be reached through the WRK source's normal
- * include order.
+ * include order. Likewise, do not introduce typed declarations here: this
+ * file is force-included before the private MM type layer exists.
  */
 #ifndef MI_FAULT_STATUS_INDICATES_EXECUTION
 #define MI_FAULT_STATUS_INDICATES_EXECUTION(_FaultStatus) 0
@@ -120,9 +121,6 @@
 #define MI_SET_LARGE_PTE_WRITE_COMBINE(PTE) MI_SET_PTE_WRITE_COMBINE(PTE)
 #endif
 
-extern MMPTE MmPteGlobal;
-extern PVOID MmHyperSpaceEnd;
-
 #ifndef HARDWARE_PTE_DIRTY_MASK
 #define HARDWARE_PTE_DIRTY_MASK MM_PTE_DIRTY_MASK
 #endif
@@ -180,10 +178,6 @@ extern PVOID MmHyperSpaceEnd;
 #ifndef MiGetSubsectionAddress
 #define MiGetSubsectionAddress(lpte) (((lpte)->u.Long & 0x80000000) ? ((PSUBSECTION)((PCHAR)MmSubsectionBase + ((((lpte)->u.Long & 0x7ffff800) >> 4) | (((lpte)->u.Long << 2) & 0x78)))) : ((PSUBSECTION)((PCHAR)MmNonPagedPoolEnd - (((((lpte)->u.Long) >> 11) << 7) | (((lpte)->u.Long << 2) & 0x78)))))
 #endif
-extern PVOID MiSystemCacheStartExtra;
-extern PVOID MiSystemCacheEndExtra;
-extern BOOLEAN MiWriteCombiningPtes;
-extern ULONG MiDetermineUserGlobalPteMask(IN PMMPTE PointerPte);
 #endif
 
 #if defined(_MSC_VER) && !defined(__cplusplus)

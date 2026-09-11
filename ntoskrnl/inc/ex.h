@@ -686,55 +686,60 @@ ExReleaseFastMutexUnsafe (
 
 // begin_ntifs begin_ntddk begin_wdm begin_nthal begin_ntosp
 
-#if defined(_IA64_) || defined(_AMD64_)
+// begin_ntifs begin_ntddk begin_wdm begin_nthal begin_ntosp
+
+#if defined(_NTHAL_) && defined(_X86_)
 
 NTKERNELAPI
 VOID
 FASTCALL
-ExAcquireFastMutex (
-    IN PFAST_MUTEX FastMutex
+ExiAcquireFastMutex (
+    __inout PFAST_MUTEX FastMutex
     );
 
 NTKERNELAPI
 VOID
 FASTCALL
-ExReleaseFastMutex (
-    IN PFAST_MUTEX FastMutex
+ExiReleaseFastMutex (
+    __inout PFAST_MUTEX FastMutex
     );
 
 NTKERNELAPI
 BOOLEAN
 FASTCALL
-ExTryToAcquireFastMutex (
-    IN PFAST_MUTEX FastMutex
+ExiTryToAcquireFastMutex (
+    __inout PFAST_MUTEX FastMutex
     );
 
-#elif defined(_X86_)
+#define ExAcquireFastMutex(FastMutex) ExiAcquireFastMutex(FastMutex)
 
-NTHALAPI
-VOID
-FASTCALL
-ExAcquireFastMutex (
-    IN PFAST_MUTEX FastMutex
-    );
+#define ExReleaseFastMutex(FastMutex) ExiReleaseFastMutex(FastMutex)
 
-NTHALAPI
-VOID
-FASTCALL
-ExReleaseFastMutex (
-    IN PFAST_MUTEX FastMutex
-    );
+#define ExTryToAcquireFastMutex(FastMutex) ExiTryToAcquireFastMutex(FastMutex)
 
-NTHALAPI
-BOOLEAN
-FASTCALL
-ExTryToAcquireFastMutex (
-    IN PFAST_MUTEX FastMutex
-    );
 
 #else
 
-#error "Target architecture not defined"
+NTKERNELAPI
+VOID
+FASTCALL
+ExAcquireFastMutex (
+    __inout PFAST_MUTEX FastMutex
+    );
+
+NTKERNELAPI
+VOID
+FASTCALL
+ExReleaseFastMutex (
+    __inout PFAST_MUTEX FastMutex
+    );
+
+NTKERNELAPI
+BOOLEAN
+FASTCALL
+ExTryToAcquireFastMutex (
+    __inout PFAST_MUTEX FastMutex
+    );
 
 #endif
 
@@ -750,7 +755,15 @@ ExTryToAcquireFastMutex (
 
 #endif
 
+#if defined (_X86_)
+
 #define ExIsFastMutexOwned(_FastMutex) ((_FastMutex)->Count != 1)
+
+#else
+
+#define ExIsFastMutexOwned(_FastMutex) (((_FastMutex)->Count&FM_LOCK_BIT) == 0)
+
+#endif
 
 //
 // Interlocked support routine definitions.

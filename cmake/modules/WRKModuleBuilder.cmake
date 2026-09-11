@@ -9,7 +9,7 @@
 #   - No automatic architecture detection.
 #   - Each target must provide an explicit SOURCES list.
 #   - Architecture-specific source selection belongs in the
-#     module's CMakeLists.txt and uses the explicit ARCH variable.
+#     module's CMakeLists.txt and uses the explicit WRK_ARCH variable.
 #
 
 include(CMakeParseArguments)
@@ -27,12 +27,12 @@ include(CMakeParseArguments)
 #       bar.c
 #   )
 #
-#   if(ARCH STREQUAL "i386")
+#   if(WRK_ARCH STREQUAL "i386")
 #       list(APPEND MODULE_SOURCES
 #           i386/foo.asm
 #           i386/bar.asm
 #       )
-#   elseif(ARCH STREQUAL "amd64")
+#   elseif(WRK_ARCH STREQUAL "amd64")
 #       list(APPEND MODULE_SOURCES
 #           amd64/foo.asm
 #           amd64/bar.asm
@@ -163,16 +163,17 @@ function(add_wrk_module MODULE_NAME)
     #
     # Architecture include directory.
     #
-    # ARCH is an explicit build input. This block does not detect the
-    # architecture; it only selects the already-requested architecture.
+    # WRK_ARCH is an explicit build input. This block does not detect
+    # the architecture; it only selects the already-requested target
+    # architecture.
     #
-    if(ARCH STREQUAL "i386")
+    if(WRK_ARCH STREQUAL "i386")
 
         list(APPEND MODULE_INCLUDE_DIRS
             ${CMAKE_SOURCE_DIR}/ntoskrnl/i386
         )
 
-    elseif(ARCH STREQUAL "amd64")
+    elseif(WRK_ARCH STREQUAL "amd64")
 
         list(APPEND MODULE_INCLUDE_DIRS
             ${CMAKE_SOURCE_DIR}/ntoskrnl/amd64
@@ -181,7 +182,7 @@ function(add_wrk_module MODULE_NAME)
     else()
 
         message(FATAL_ERROR
-            "Unsupported WRK architecture '${ARCH}' "
+            "Unsupported WRK architecture '${WRK_ARCH}' "
             "for module '${MODULE_NAME}'"
         )
 
@@ -201,7 +202,7 @@ function(add_wrk_module MODULE_NAME)
     #
     # x86 WRK calling convention.
     #
-    if(MSVC AND ARCH STREQUAL "i386")
+    if(MSVC AND WRK_ARCH STREQUAL "i386")
 
         target_compile_options(
             ${ARG_TARGET_NAME}

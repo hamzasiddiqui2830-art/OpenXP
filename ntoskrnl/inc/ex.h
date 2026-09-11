@@ -11,12 +11,6 @@ Abstract:
 
     Public executive data structures and procedure prototypes.
 
-Author:
-
-    Mark Lucovsky (markl) 23-Feb-1989
-
-Revision History:
-
 --*/
 
 #ifndef _EX_
@@ -2044,6 +2038,54 @@ ProbeForRead(
 #define ProbeAndReadUnicodeString(Source)  \
     (((Source) >= (UNICODE_STRING * const)MM_USER_PROBE_ADDRESS) ? \
         (*(volatile UNICODE_STRING * const)MM_USER_PROBE_ADDRESS) : (*(volatile UNICODE_STRING *)(Source)))
+
+#if !defined(__cplusplus)
+
+#if defined(_AMD64_)
+
+FORCEINLINE
+VOID
+ProbeAndReadUnicodeStringEx (
+    OUT PUNICODE_STRING Destination,
+    IN PUNICODE_STRING Source
+    )
+
+{
+
+    if (Source >= (UNICODE_STRING * const)MM_USER_PROBE_ADDRESS) {
+        Source = (UNICODE_STRING * const)MM_USER_PROBE_ADDRESS;
+    }
+
+    _ReadWriteBarrier();
+    *Destination = *((volatile UNICODE_STRING *)Source);
+    return;
+}
+
+#else
+
+#define ProbeAndReadUnicodeStringEx(Dst, Src) *(Dst) = ProbeAndReadUnicodeString(Src)
+
+#endif
+
+#endif
+
+//++
+//
+// UNICODE_STRING
+// ProbeAndReadUnicodeString (
+//     IN PUNICODE_STRING Source
+//     )
+//
+//--
+
+#if !defined(__cplusplus)
+
+#define ProbeAndReadUnicodeString(Source)  \
+    (((Source) >= (UNICODE_STRING * const)MM_USER_PROBE_ADDRESS) ? \
+        (*(volatile UNICODE_STRING * const)MM_USER_PROBE_ADDRESS) : (*(volatile UNICODE_STRING *)(Source)))
+
+#endif
+
 //++
 //
 // <STRUCTURE>

@@ -1,45 +1,59 @@
-# ex Module CMakeLists.txt
-# Converted from legacy sources.inc
+# Executive module CMakeLists.txt
+# The manifest is explicit. ntos-old is used only for the legacy
+# implementations selected by the active executive build.
 
 set(MODULE_NAME ex)
-set(TARGET_NAME ntosex)
+set(TARGET_NAME ntos_ex)
 
-# Source files from sources.inc
+set(EX_LOCAL_SOURCE_DIR ${CMAKE_BINARY_DIR}/obj/${COMPILER_PREFIX}-${WRK_ARCH_NAME}/ex-local)
+file(MAKE_DIRECTORY ${EX_LOCAL_SOURCE_DIR})
+
+set(EX_LEGACY_SOURCES mutant.c pool.c pushlock.c sysinfo.c systime.c)
+foreach(EX_SOURCE IN LISTS EX_LEGACY_SOURCES)
+    configure_file(
+        ${REACTOS_SOURCE_DIR}/ntos-old/ex/${EX_SOURCE}
+        ${EX_LOCAL_SOURCE_DIR}/${EX_SOURCE}
+        COPYONLY
+    )
+endforeach()
+
+if(MSVC)
+    set_source_files_properties(
+        ${EX_LOCAL_SOURCE_DIR}/sysinfo.c
+        PROPERTIES COMPILE_OPTIONS "/wd4018"
+    )
+endif()
+
 set(MODULE_SOURCES
-    callback.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/callperf.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/dbgctrl.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/delay.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/event.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/eventpr.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/exatom.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/exdata.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/exinfo.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/exinit.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/exhotp.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/fmutexc.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/handle.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/harderr.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/hdlsterm.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/lookasid.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/luid.c
-
-    # These implementations match the executive headers currently selected
-    # by this build. The newer converted sources use newer private APIs and
-    # data structures that are not present in the active ex.h.
-    ${REACTOS_SOURCE_DIR}/ntos-old/ex/mutant.c
-    ${REACTOS_SOURCE_DIR}/ntos-old/ex/pool.c
-    ${REACTOS_SOURCE_DIR}/ntos-old/ex/pushlock.c
-
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/callback.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/callperf.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/dbgctrl.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/delay.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/event.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/eventpr.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/exatom.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/exdata.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/exinfo.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/exinit.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/exhotp.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/fmutexc.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/handle.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/harderr.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/hdlsterm.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/lookasid.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/luid.c
+    ${EX_LOCAL_SOURCE_DIR}/mutant.c
+    ${EX_LOCAL_SOURCE_DIR}/pool.c
+    ${EX_LOCAL_SOURCE_DIR}/pushlock.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/nbqueue.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/probe.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/profile.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/raise.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/resource.c
+    ${EX_LOCAL_SOURCE_DIR}/sysinfo.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/semphore.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/sysenv.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/sysinfo.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/systime.c
+    ${EX_LOCAL_SOURCE_DIR}/systime.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/timer.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/worker.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/zone.c
@@ -50,25 +64,9 @@ set(MODULE_SOURCES
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/keyedevent.c
 )
 
-add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
-
-target_include_directories(${TARGET_NAME} PRIVATE
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ex
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/ke
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/kd64
+add_wrk_module(${MODULE_NAME}
+    TARGET_NAME ${TARGET_NAME}
+    SOURCES ${MODULE_SOURCES}
 )
-
-target_compile_definitions(${TARGET_NAME} PRIVATE
-    _NTOS_
-    _NTIFS_
-    _NTDDK_
-)
-
-if(MSVC)
-    target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX)
-else()
-    target_compile_options(${TARGET_NAME} PRIVATE -Wall -Werror)
-endif()
 
 message(STATUS "Configured ex module: ${TARGET_NAME}")

@@ -621,7 +621,8 @@ typedef struct _CM_CACHED_VALUE_INDEX {
 typedef struct _CM_CACHED_VALUE {
     USHORT DataCacheType;
     USHORT ValueKeySize;
-    CM_KEY_VALUE  KeyValue;
+ 	ULONG  HashKey;   
+	CM_KEY_VALUE  KeyValue;
 } CM_CACHED_VALUE, *PCM_CACHED_VALUE; // This is only used as a pointer.
 
 typedef PCM_CACHED_VALUE *PPCM_CACHED_VALUE;

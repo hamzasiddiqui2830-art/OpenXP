@@ -29,7 +29,7 @@ set(MODULE_SOURCES
     profile.c
     raise.c
     resource.c
-    ysinfo.c
+    sysinfo.c
     semphore.c
     sysenv.c
     systime.c

@@ -69,12 +69,28 @@ typedef BOOLEAN (*PKSYNCHRONIZE_ROUTINE)(IN PVOID SynchronizeContext);
 typedef BOOLEAN (*PKTRANSFER_ROUTINE)(VOID);
 
 typedef struct _KAPC {
-    CSHORT Type; CSHORT Size; ULONG Spare0; struct _KTHREAD *Thread;
-    LIST_ENTRY ApcListEntry; PKKERNEL_ROUTINE KernelRoutine;
-    PKRUNDOWN_ROUTINE RundownRoutine; PKNORMAL_ROUTINE NormalRoutine;
-    PVOID NormalContext; PVOID SystemArgument1; PVOID SystemArgument2;
-    CCHAR ApcStateIndex; KPROCESSOR_MODE ApcMode; BOOLEAN Inserted;
-} KAPC, *PKAPC, *RESTRICTED_POINTER PRKAPC;
+    UCHAR Type;
+    UCHAR SpareByte0;
+    UCHAR Size;
+    UCHAR SpareByte1;
+    ULONG SpareLong0;
+    struct _KTHREAD *Thread;
+    LIST_ENTRY ApcListEntry;
+    PKKERNEL_ROUTINE KernelRoutine;
+    PKRUNDOWN_ROUTINE RundownRoutine;
+    PKNORMAL_ROUTINE NormalRoutine;
+    PVOID NormalContext;
+
+    //
+    // N.B. The following two members MUST be together.
+    //
+
+    PVOID SystemArgument1;
+    PVOID SystemArgument2;
+    CCHAR ApcStateIndex;
+    KPROCESSOR_MODE ApcMode;
+    BOOLEAN Inserted;
+} KAPC, *PKAPC, *PRKAPC;
 
 #define KAPC_OFFSET_TO_SPARE_BYTE0 FIELD_OFFSET(KAPC, SpareByte0)
 #define KAPC_OFFSET_TO_SPARE_BYTE1 FIELD_OFFSET(KAPC, SpareByte1)

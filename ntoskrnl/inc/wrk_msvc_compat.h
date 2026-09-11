@@ -4,9 +4,7 @@
 /*
  * The WRK build environment historically supplied these symbols while
  * ntos.h also owns them as header guards. Clear the command-line copies
- * before including ntos.h so MSVC /WX does not report guard redefinitions.
- * This file is force-included by the WRK-compatible MSVC build, so it must
- * bootstrap ntos.h before architecture-private headers such as mi386.h.
+ * before the translation unit's normal WRK header inclusion order runs.
  */
 #ifdef _NTOS_
 #undef _NTOS_
@@ -44,7 +42,12 @@
 
 #if defined(_MSC_VER) && defined(_X86_)
 
-/* WRK v1.2 x86 MM primitives which must be visible while mi386.h is parsed. */
+/*
+ * These are compiler-facing compatibility definitions only.  Do not include
+ * mi386.h here: that header depends on the memory-manager private type layer
+ * (including PFN_NUMBER) and must be reached through the WRK source's normal
+ * include order.
+ */
 #ifndef MI_FAULT_STATUS_INDICATES_EXECUTION
 #define MI_FAULT_STATUS_INDICATES_EXECUTION(_FaultStatus) 0
 #endif
@@ -117,11 +120,6 @@
 #define MI_SET_LARGE_PTE_WRITE_COMBINE(PTE) MI_SET_PTE_WRITE_COMBINE(PTE)
 #endif
 
-#define MiCompareTbFlushTimeStamp MiCompareTbFlushTimeStamp_X86
-#include "../mm/i386/mi386.h"
-#undef MiCompareTbFlushTimeStamp
-
-/* WRK v1.2 x86 MM globals are owned by the architecture implementation. */
 extern MMPTE MmPteGlobal;
 extern PVOID MmHyperSpaceEnd;
 

@@ -17,6 +17,21 @@ Abstract:
 #ifndef _NTOSDEF_
 #define _NTOSDEF_
 
+//
+// On UP systems high frequency spin locks are naturally aligned whereas on
+// MP systems they cache aligned.
+//
+
+#if defined(NT_UP)
+
+#define ALIGNED_SPINLOCK KSPIN_LOCK
+
+#else
+
+#define ALIGNED_SPINLOCK DECLSPEC_CACHEALIGN KSPIN_LOCK
+
+#endif
+
 #pragma warning(disable:4214)
 #pragma warning(disable:4201)
 #pragma warning(disable:4127)

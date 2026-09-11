@@ -3027,19 +3027,6 @@ VOID
     KeFindFirstSetLeftMember(Set, Member)
 
 #endif // defined(_WIN64)
-
-//
-// Find first set left in 32-bit set.
-//
-
-#if defined(_WIN64)
-
-#if defined(_AMD64_) && !defined(_X86AMD64_)
-
-#define KeFindFirstSetLeftMember(Set, Member) BitScanReverse(Member, Set)
-
-#else
-
 //
 // Find first set left in 32-bit set.
 //
@@ -3064,6 +3051,18 @@ extern DECLSPEC_CACHEALIGN DECLSPEC_SELECTANY const CCHAR KiFindFirstSetLeft[256
         7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
         7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
         7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7};
+
+//
+// Find first set left in 32-bit set.
+//
+
+#if defined(_WIN64)
+
+#if defined(_AMD64_) && !defined(_X86AMD64_)
+
+#define KeFindFirstSetLeftMember(Set, Member) BitScanReverse(Member, Set)
+
+#else
 
 #define KeFindFirstSetLeftMember(Set, Member) {                        \
     ULONG _Mask;                                                       \

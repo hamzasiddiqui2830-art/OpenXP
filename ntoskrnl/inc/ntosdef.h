@@ -186,6 +186,10 @@ typedef struct _KTIMER {
     DISPATCHER_HEADER Header; ULARGE_INTEGER DueTime; LIST_ENTRY TimerListEntry;
     struct _KDPC *Dpc; LONG Period;
 } KTIMER, *PKTIMER, *RESTRICTED_POINTER PRKTIMER;
+
+#define KTIMER_ACTUAL_LENGTH                                                \
+    (FIELD_OFFSET(KTIMER, Period) + sizeof(LONG))
+
 typedef enum _LOCK_OPERATION { IoReadAccess, IoWriteAccess, IoModifyAccess } LOCK_OPERATION;
 
 #endif // _NTOSDEF_

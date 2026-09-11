@@ -42,24 +42,27 @@ set(EXE_PATH "${CMAKE_BINARY_DIR}/EXE")
 file(MAKE_DIRECTORY "${TOPobj}")
 file(MAKE_DIRECTORY "${EXE_PATH}")
 
-add_compile_definitions(_NTOS_ _NTIFS_ _NTDDK_)
+# The WRK sources.inc files define _NTOS_, _NTIFS_ and _NTDDK_ as part of
+# the public-header environment. ntos.h itself owns the corresponding guards,
+# so do not inject those guard symbols globally with CMake.
 if(ARCH STREQUAL "amd64")
-    add_compile_definitions(_AMD64_ AMD64 _WIN64)
+    set(NTOS_ARCH_DEFINES _AMD64_ AMD64 _WIN64)
 elseif(ARCH STREQUAL "i386")
-    add_compile_definitions(_X86_ i386)
+    set(NTOS_ARCH_DEFINES _X86_ i386)
 elseif(ARCH STREQUAL "ia64")
-    add_compile_definitions(_IA64_ IA64)
+    set(NTOS_ARCH_DEFINES _IA64_ IA64)
 endif()
 
-if(NT_UP)
-    add_compile_definitions(NT_UP=${NT_UP})
-endif()
+set(NTOS_COMMON_DEFINES
+    ${NTOS_ARCH_DEFINES}
+    _NTSYSTEM_
+    NTOS_KERNEL_RUNTIME=1
+)
 
 if(BUILD_CHECKED_KERNEL)
-    add_compile_definitions(NTDEBUG=ntsd)
-    set(FREEBUILD 0)
+    list(APPEND NTOS_COMMON_DEFINES NTDEBUG=ntsd)
 else()
-    set(FREEBUILD 1)
+    list(APPEND NTOS_COMMON_DEFINES NDEBUG)
 endif()
 
 if(NOT NTOS_INCLUDE_DIRS)
@@ -80,11 +83,9 @@ if(NOT NTOS_INCLUDE_DIRS)
 endif()
 include_directories(${NTOS_INCLUDE_DIRS})
 
-# -----------------------------------------------------------------------------
-# Module dispatch
-# -----------------------------------------------------------------------------
-# This list is intentionally explicit. Every module must provide its own
-# CMakeLists.txt with an explicit source manifest and target declaration.
+# Make the common WRK modules visible to the kernel-image variant targets.
+# Each module owns its explicit source manifest. The image variants below
+# select their own compile definitions rather than changing global state.
 set(NTOS_MODULES
     rtl
     config
@@ -119,11 +120,64 @@ foreach(MODULE IN LISTS NTOS_MODULES)
             "NTOSKRNL module '${MODULE}' is missing its required CMakeLists.txt"
         )
     endif()
+endforeach()
 
+# Common module targets are configured once. Kernel-image targets link the
+# corresponding module libraries and carry the WRK image-specific symbols.
+foreach(MODULE IN LISTS NTOS_MODULES)
     add_subdirectory(
         "${NTOSKRNL_SOURCE_DIR}/${MODULE}"
         "${TOPobj}/${MODULE}"
     )
 endforeach()
+
+if(ARCH STREQUAL "i386")
+    set(NTOS_IMAGE_VARIANTS
+        ntoskrnl
+        ntkrnlmp
+        ntkrnlpa
+        ntkrpamp
+    )
+
+    # The WRK v1.2 x86 source hierarchy explicitly builds UP, MP, PAE and
+    # PAE+MP images. PAE adds _X86PAE_ and LARGEADDRESSAWARE; MP clears NT_UP.
+    set(NTOS_IMAGE_COMMON_DEFINES
+        ${NTOS_COMMON_DEFINES}
+        KERNEL_NAME
+    )
+
+    add_executable(ntoskrnl ${NTOSKRNL_SOURCE_DIR}/init/ntoskrnl.c)
+    add_executable(ntkrnlmp ${NTOSKRNL_SOURCE_DIR}/init/ntkrnlmp.c)
+    add_executable(ntkrnlpa ${NTOSKRNL_SOURCE_DIR}/init/ntkrnlpa.c)
+    add_executable(ntkrpamp ${NTOSKRNL_SOURCE_DIR}/init/ntkrpamp.c)
+
+    foreach(TARGET_NAME IN LISTS NTOS_IMAGE_VARIANTS)
+        target_include_directories(${TARGET_NAME} PRIVATE ${NTOS_INCLUDE_DIRS})
+        target_compile_definitions(${TARGET_NAME} PRIVATE ${NTOS_IMAGE_COMMON_DEFINES})
+        target_compile_options(${TARGET_NAME} PRIVATE /W3 /WX)
+        set_target_properties(${TARGET_NAME} PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY "${EXE_PATH}"
+            OUTPUT_NAME "${TARGET_NAME}"
+        )
+    endforeach()
+
+    target_compile_definitions(ntoskrnl PRIVATE NT_UP=1 KERNEL_NAME="ntoskrnl.exe")
+    target_compile_definitions(ntkrnlmp PRIVATE NT_UP=0 KERNEL_NAME="ntkrnlmp.exe")
+    target_compile_definitions(ntkrnlpa PRIVATE NT_UP=1 _X86PAE_ KERNEL_NAME="ntkrnlpa.exe")
+    target_compile_definitions(ntkrpamp PRIVATE NT_UP=0 _X86PAE_ KERNEL_NAME="ntkrpamp.exe")
+
+    # /LARGEADDRESSAWARE is the WRK PAE image link property.
+    target_link_options(ntkrnlpa PRIVATE /LARGEADDRESSAWARE)
+    target_link_options(ntkrpamp PRIVATE /LARGEADDRESSAWARE)
+elseif(ARCH STREQUAL "amd64")
+    add_executable(ntoskrnl ${NTOSKRNL_SOURCE_DIR}/init/ntoskrnl.c)
+    target_include_directories(ntoskrnl PRIVATE ${NTOS_INCLUDE_DIRS})
+    target_compile_definitions(ntoskrnl PRIVATE ${NTOS_COMMON_DEFINES} NT_UP=1 KERNEL_NAME="ntoskrnl.exe")
+    target_compile_options(ntoskrnl PRIVATE /W3 /WX)
+    set_target_properties(ntoskrnl PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${EXE_PATH}"
+        OUTPUT_NAME "ntoskrnl"
+    )
+endif()
 
 message(STATUS "NTOSKRNL build configured for ${ARCH}")

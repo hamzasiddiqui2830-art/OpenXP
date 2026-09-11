@@ -13,12 +13,6 @@ Abstract:
     This module contains data structures used by the 
     configuration manager.
 
-Author:
-
-    Dragos C. Sambotin (dragoss) 13-Jan-99
-
-Revision History:
-
 --*/
 
 #ifndef __CM_DATA__
@@ -210,6 +204,17 @@ typedef struct _CM_NAME_HASH {
     USHORT  NameLength;      // Length of string value
     WCHAR   Name[1] ;      // The actual string value
 } CM_NAME_HASH, *PCM_NAME_HASH;
+
+typedef struct _CM_KEY_HASH_TABLE_ENTRY {
+    EX_PUSH_LOCK    Lock;
+    PKTHREAD        Owner;
+    PCM_KEY_HASH    Entry;
+} CM_KEY_HASH_TABLE_ENTRY, *PCM_KEY_HASH_TABLE_ENTRY;
+
+typedef struct _CM_NAME_HASH_TABLE_ENTRY {
+    EX_PUSH_LOCK    Lock;
+    PCM_NAME_HASH   Entry;
+} CM_NAME_HASH_TABLE_ENTRY, *PCM_NAME_HASH_TABLE_ENTRY;
 
 //
 // !!! In Whistler, the Name in the NameBlock is Always UpperCase !!!

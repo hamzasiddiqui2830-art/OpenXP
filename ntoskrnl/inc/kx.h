@@ -519,6 +519,7 @@ Return Value:
 
 FORCEINLINE
 VOID
+FASTCALL
 KeReleaseGuardedMutex (
     IN PKGUARDED_MUTEX Mutex
     )
@@ -542,38 +543,57 @@ Return Value:
 
 {
 
-    PKTHREAD Thread;
-
-    //
-    // Clear the owner thread and increment the guarded mutex count to
-    // detemine if there are any threads waiting for ownership to be
-    // granted.
-    //
-
-    Thread = KeGetCurrentThread();
+    LONG NewValue;
+    LONG OldValue;
 
     ASSERT(KeGetCurrentIrql() <= APC_LEVEL);
 
-    ASSERT(Mutex->Owner == Thread);
+    ASSERT(Mutex->Owner == KeGetCurrentThread());
 
-    ASSERT(Thread->SpecialApcDisable == Mutex->SpecialApcDisable);
+    ASSERT(KeGetCurrentThread()->SpecialApcDisable == Mutex->SpecialApcDisable);
+
+    //
+    // Clear the owner thread and attempt to wake a waiter.
+    //
+    // N.B. The first operation performed on the mutex is a write.
+    //
 
     Mutex->Owner = NULL;
-    if (InterlockedIncrementRelease(&Mutex->Count) <= 0) {
+    OldValue = InterlockedExchangeAdd(&Mutex->Count, GM_LOCK_BIT);
+
+    ASSERT((OldValue & GM_LOCK_BIT) == 0);
+
+    //
+    // If there are no waiters or a waiter has already been woken, then
+    // release the mutex. Otherwise, attempt to wake a waiter.
+    //
+
+    if ((OldValue != 0) &&
+        ((OldValue & GM_LOCK_WAITER_WOKEN) == 0)) {
 
         //
-        // There are one or more threads waiting for ownership of the guarded
-        // mutex.
+        // There must be at least one waiter that needs to be woken. Set the
+        // woken waiter bit and decrement the waiter count. If the exchange
+        // fails, then another thread will do the wake.
         //
 
-        KeSetEventBoostPriority(&Mutex->Event, NULL);
+        OldValue = OldValue + GM_LOCK_BIT;
+        NewValue = OldValue + GM_LOCK_WAITER_WOKEN - GM_LOCK_WAITER_INC;
+        if (InterlockedCompareExchange(&Mutex->Count, NewValue, OldValue) == OldValue) {
+
+            //
+            // Wake one waiter.
+            //
+
+            KeSignalGateBoostPriority(&Mutex->Gate);
+        }
     }
 
     //
     // Leave guarded region.
     //
 
-    KeLeaveGuardedRegionThread(Thread);
+    KeLeaveGuardedRegion();
     return;
 }
 
@@ -708,6 +728,7 @@ Return Value:
 
 FORCEINLINE
 VOID
+FASTCALL
 KeReleaseGuardedMutexUnsafe (
     IN PKGUARDED_MUTEX Mutex
     )
@@ -731,32 +752,51 @@ Return Value:
 
 {
 
-    PKTHREAD Thread;
-
-    //
-    // Clear the owner thread and increment the guarded mutex count to
-    // determine if there are any threads waiting for ownership to be
-    // granted.
-    //
-
-    Thread = KeGetCurrentThread();
+    LONG NewValue;
+    LONG OldValue;
 
     ASSERT((KeGetCurrentIrql() == APC_LEVEL) ||
-           (Thread->SpecialApcDisable < 0) ||
-           (Thread->Teb == NULL) ||
-           (Thread->Teb >= MM_SYSTEM_RANGE_START));
+           (KeGetCurrentThread()->SpecialApcDisable < 0) ||
+           (KeGetCurrentThread()->Teb == NULL) ||
+           (KeGetCurrentThread()->Teb >= MM_SYSTEM_RANGE_START));
 
-    ASSERT(Mutex->Owner == Thread);
+    ASSERT(Mutex->Owner == KeGetCurrentThread());
+
+    //
+    // Clear the owner thread and attempt to wake a waiter.
+    //
+    // N.B. The first operation performed on the mutex is a write.
+    //
 
     Mutex->Owner = NULL;
-    if (InterlockedIncrement(&Mutex->Count) <= 0) {
+    OldValue = InterlockedExchangeAdd(&Mutex->Count, GM_LOCK_BIT);
+
+    ASSERT((OldValue & GM_LOCK_BIT) == 0);
+
+    //
+    // If there are no waiters or a waiter has already been woken, then
+    // release the mutex. Otherwise, attempt to wake a waiter.
+    //
+
+    if ((OldValue != 0) &&
+        ((OldValue & GM_LOCK_WAITER_WOKEN) == 0)) {
 
         //
-        // There are one or more threads waiting for ownership of the guarded
-        // mutex.
+        // There must be at least one waiter that needs to be woken. Set the
+        // woken waiter bit and decrement the waiter count. If the exchange
+        // fails, then another thread will do the wake.
         //
 
-        KeSetEventBoostPriority(&Mutex->Event, NULL);
+        OldValue = OldValue + GM_LOCK_BIT;
+        NewValue = OldValue + GM_LOCK_WAITER_WOKEN - GM_LOCK_WAITER_INC;
+        if (InterlockedCompareExchange(&Mutex->Count, NewValue, OldValue) == OldValue) {
+
+            //
+            // Wake one waiter.
+            //
+
+            KeSignalGateBoostPriority(&Mutex->Gate);
+        }
     }
 
     return;

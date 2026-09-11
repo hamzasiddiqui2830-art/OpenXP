@@ -1,5 +1,4 @@
 # ke Module CMakeLists.txt
-# Converted from legacy sources.inc
 
 set(MODULE_NAME ke)
 set(TARGET_NAME ntoske)

@@ -812,28 +812,31 @@ typedef struct _KTHREAD {
     PVOID StackLimit;
     PVOID KernelStack;
 
-#if defined(_IA64_)
-
-    PVOID InitialBStore;
-    PVOID BStoreLimit;
-    CCHAR Number;          // must match the size of Number in KPCR
-                           // set to the processor number last time
-                           // this thread uses the high fp register set
-                           // see KiRestoreHighFPVolatile in trap.s for details
-    BOOLEAN Spare3;
-    PVOID KernelBStore;
-
-#endif
-
     KSPIN_LOCK ThreadLock;
+    union {
+        KAPC_STATE ApcState;
+        struct {
+            UCHAR ApcStateFill[KAPC_STATE_ACTUAL_LENGTH];
+            BOOLEAN ApcQueueable;
+            volatile UCHAR NextProcessor;
+            volatile UCHAR DeferredProcessor;
+            UCHAR AdjustReason;
+            SCHAR AdjustIncrement;
+        };
+    };
+
+    KSPIN_LOCK ApcQueueLock;
+
+#if !defined(_AMD64_)
+
     ULONG ContextSwitches;
     volatile UCHAR State;
     UCHAR NpxState;
     KIRQL WaitIrql;
     KPROCESSOR_MODE WaitMode;
-    PVOID Teb;
-    KAPC_STATE ApcState;
-    KSPIN_LOCK ApcQueueLock;
+
+#endif
+
     LONG_PTR WaitStatus;
     PRKWAIT_BLOCK WaitBlockList;
     BOOLEAN Alertable;
@@ -849,19 +852,117 @@ typedef struct _KTHREAD {
     };
 
     PRKQUEUE Queue;
-    ULONG WaitTime;
-    union {
-        struct {
-            SHORT KernelApcDisable;
-            SHORT SpecialApcDisable;
-        };
+#if !defined(_AMD64_)
 
-        ULONG CombinedApcDisable;
+    ULONG ContextSwitches;
+    volatile UCHAR State;
+    UCHAR NpxState;
+    KIRQL WaitIrql;
+    KPROCESSOR_MODE WaitMode;
+
+#endif
+   PVOID Teb;
+    union {
+        KTIMER Timer;
+        struct {
+            UCHAR TimerFill[KTIMER_ACTUAL_LENGTH];
+
+            //
+            // N.B. The following bit number definitions must match the
+            //      following bit field.
+            //
+            // N.B. These bits can only be written with interlocked
+            //      operations.
+            //
+    
+#define KTHREAD_AUTO_ALIGNMENT_BIT 0
+#define KTHREAD_DISABLE_BOOST_BIT 1
+   
+union {
+                struct {
+                    LONG AutoAlignment : 1;
+                    LONG DisableBoost : 1;
+                    LONG ReservedFlags : 30;
+                };
+        
+                LONG ThreadFlags;
+            };
+        };
     };
 
-    KTIMER Timer;
-    KWAIT_BLOCK WaitBlock[THREAD_WAIT_OBJECTS + 1];
+    union {
+        KWAIT_BLOCK WaitBlock[THREAD_WAIT_OBJECTS + 1];
+        struct {
+            UCHAR WaitBlockFill0[KWAIT_BLOCK_OFFSET_TO_BYTE0];
+            BOOLEAN SystemAffinityActive;
+        };
+
+        struct {
+            UCHAR WaitBlockFill1[KWAIT_BLOCK_OFFSET_TO_BYTE1];
+            CCHAR PreviousMode;
+        };
+
+        struct {
+            UCHAR WaitBlockFill2[KWAIT_BLOCK_OFFSET_TO_BYTE2];
+            UCHAR ResourceIndex;
+        };
+
+        struct {
+            UCHAR WaitBlockFill3[KWAIT_BLOCK_OFFSET_TO_BYTE3];
+            UCHAR LargeStack;
+        };
+
+#if defined(_AMD64_)
+
+        struct {
+            UCHAR WaitBlockFill4[KWAIT_BLOCK_OFFSET_TO_LONG0];
+            ULONG ContextSwitches;
+        };
+
+        struct {
+            UCHAR WaitBlockFill5[KWAIT_BLOCK_OFFSET_TO_LONG1];
+            volatile UCHAR State;
+            UCHAR NpxState;
+            KIRQL WaitIrql;
+            KPROCESSOR_MODE WaitMode;
+        };
+
+        struct {
+            UCHAR WaitBlockFill6[KWAIT_BLOCK_OFFSET_TO_LONG2];
+            ULONG WaitTime;
+        };
+
+        struct {
+            UCHAR WaitBlockFill7[KWAIT_BLOCK_OFFSET_TO_LONG3];
+             union {
+                 struct {
+                     SHORT KernelApcDisable;
+                     SHORT SpecialApcDisable;
+                 };
+         
+                 ULONG CombinedApcDisable;
+             };
+        };
+
+#endif
+
+    };
+
     LIST_ENTRY QueueListEntry;
+
+    //
+    // The following fields are accessed during system service dispatch.
+    //
+
+    PKTRAP_FRAME TrapFrame;
+    PVOID CallbackStack;
+    PVOID ServiceTable;
+
+#if defined(_AMD64_)
+
+    ULONG KernelLimit;
+
+#endif
 
     //
     // The following fields are referenced during ready thread and wait
@@ -869,21 +970,21 @@ typedef struct _KTHREAD {
     //
 
     UCHAR ApcStateIndex;
-    BOOLEAN ApcQueueable;
+    UCHAR IdealProcessor;
     BOOLEAN Preempted;
     BOOLEAN ProcessReadyQueue;
+
+#if defined(_AMD64_)
+
+    PVOID Win32kTable;
+    ULONG Win32kLimit;
+
+#endif
+
     BOOLEAN KernelStackResident;
-    CHAR Saturation;
-    UCHAR IdealProcessor;
-    volatile UCHAR NextProcessor;
     SCHAR BasePriority;
-    UCHAR Spare4;
     SCHAR PriorityDecrement;
-    SCHAR Quantum;
-    BOOLEAN SystemAffinityActive;
-    CCHAR PreviousMode;
-    UCHAR ResourceIndex;
-    UCHAR DisableBoost;
+    CHAR Saturation;
     KAFFINITY UserAffinity;
     PKPROCESS Process;
     KAFFINITY Affinity;
@@ -892,43 +993,92 @@ typedef struct _KTHREAD {
     // The below fields are infrequently referenced.
     //
 
-    PVOID ServiceTable;
     PKAPC_STATE ApcStatePointer[2];
-    KAPC_STATE SavedApcState;
-    PVOID CallbackStack;
+    union {
+        KAPC_STATE SavedApcState;
+        struct {
+            UCHAR SavedApcStateFill[KAPC_STATE_ACTUAL_LENGTH];
+            CCHAR FreezeCount;
+            CCHAR SuspendCount;
+            UCHAR UserIdealProcessor;
+            UCHAR CalloutActive;
 
-#if defined(_IA64_)
+#if defined(_AMD64_)
 
-    PVOID CallbackBStore;
+            BOOLEAN CodePatchInProgress;
+
+#elif defined(_X86_)
+
+            UCHAR Iopl;
+
+#else
+
+            UCHAR OtherPlatformFill;
 
 #endif
 
-    PVOID Win32Thread;
-    PKTRAP_FRAME TrapFrame;
-    ULONG KernelTime;
-    ULONG UserTime;
-    PVOID StackBase;
-    KAPC SuspendApc;
-    KSEMAPHORE SuspendSemaphore;
-    PVOID TlsArray;
-    PVOID LegoData;
-    LIST_ENTRY ThreadListEntry;
-    UCHAR LargeStack;
-    UCHAR PowerState;
-    UCHAR NpxIrql;
-    UCHAR Spare5;
-    BOOLEAN AutoAlignment;
-    UCHAR Iopl;
-    CCHAR FreezeCount;
-    CCHAR SuspendCount;
-    UCHAR Spare0[1];
-    UCHAR UserIdealProcessor;
-    volatile UCHAR DeferredProcessor;
-    UCHAR AdjustReason;
-    SCHAR AdjustIncrement;
-    UCHAR Spare2[3];
+        };
+    };
 
-} KTHREAD, *PKTHREAD, *RESTRICTED_POINTER PRKTHREAD;
+    PVOID Win32Thread;
+    PVOID StackBase;
+    union {
+        KAPC SuspendApc;
+        struct {
+            UCHAR SuspendApcFill0[KAPC_OFFSET_TO_SPARE_BYTE0];
+            SCHAR Quantum;
+        };
+
+        struct {
+            UCHAR SuspendApcFill1[KAPC_OFFSET_TO_SPARE_BYTE1];
+            UCHAR QuantumReset;
+        };
+
+        struct {
+            UCHAR SuspendApcFill2[KAPC_OFFSET_TO_SPARE_LONG];
+            ULONG KernelTime;
+        };
+
+        struct {
+            UCHAR SuspendApcFill3[KAPC_OFFSET_TO_SYSTEMARGUMENT1];
+            PVOID TlsArray;
+        };
+
+        struct {
+            UCHAR SuspendApcFill4[KAPC_OFFSET_TO_SYSTEMARGUMENT2];
+            PVOID BBTData;
+        };
+
+        struct {
+            UCHAR SuspendApcFill5[KAPC_ACTUAL_LENGTH];
+            UCHAR PowerState;
+            ULONG UserTime;
+        };
+    };
+
+    union {
+        KSEMAPHORE SuspendSemaphore;
+        struct {
+            UCHAR SuspendSemaphorefill[KSEMAPHORE_ACTUAL_LENGTH];
+            ULONG SListFaultCount;
+        };
+    };
+
+    LIST_ENTRY ThreadListEntry;
+    PVOID SListFaultAddress;
+
+#if defined(_WIN64)
+
+    LONG64 ReadOperationCount;
+    LONG64 WriteOperationCount;
+    LONG64 OtherOperationCount;
+    LONG64 ReadTransferCount;
+    LONG64 WriteTransferCount;
+    LONG64 OtherTransferCount;
+
+#endif
+
+} KTHREAD, *PKTHREAD, *PRKTHREAD;
 
 //
 // ccNUMA supported in multiprocessor PAE and WIN64 systems only.

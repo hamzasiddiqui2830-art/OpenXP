@@ -4590,6 +4590,8 @@ extern ULONG KeLargestCacheLine;
 #if !defined(NT_UP)
 
 extern ULONG KeNumprocSpecified;
+extern ULONG KeRegisteredProcessors;
+extern ULONG KeLicensedProcessors;
 extern UCHAR KeProcessNodeSeed;
 
 #endif

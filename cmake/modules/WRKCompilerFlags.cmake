@@ -33,9 +33,6 @@ macro(set_wrk_compiler_flags)
     endif()
 
     if(MSVC)
-        # The WRK is built against the static CRT. Set this through CMake's
-        # runtime abstraction so CMake/Ninja does not append /MD after /MT.
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded" CACHE STRING "MSVC runtime library" FORCE)
 
         set(WRK_BASE_C_FLAGS
             /Zl

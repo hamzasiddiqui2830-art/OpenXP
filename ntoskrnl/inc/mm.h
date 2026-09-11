@@ -2005,7 +2005,7 @@ MmCreateMdl (
 
 NTKERNELAPI
 PVOID
-MmLockPagableDataSection (
+MmLockPageableDataSection (
     IN PVOID AddressWithinSection
     );
 
@@ -2013,7 +2013,7 @@ MmLockPagableDataSection (
 
 NTKERNELAPI
 VOID
-MmLockPagableSectionByHandle (
+MmLockPageableSectionByHandle (
     IN PVOID ImageSectionHandle
     );
 
@@ -2048,7 +2048,7 @@ MmPageEntireDriver (
 
 NTKERNELAPI
 VOID
-MmUnlockPagableImageSection(
+MmUnlockPageableImageSection(
     IN PVOID ImageSectionHandle
     );
 
@@ -2359,7 +2359,7 @@ MmIsDriverVerifying (
 // end_ntddk end_wdm end_ntosp
 
 LOGICAL
-MmTrimAllSystemPagableMemory (
+MmTrimAllSystemPageableMemory (
     IN LOGICAL PurgeTransition
     );
 

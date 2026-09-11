@@ -1,10 +1,6 @@
 /*++
 
-Copyright (c) OpenXP Team 
-
-You may only use this code if you agree to the terms of the Windows Research Kernel Source Code License agreement (see License.txt).
-If you do not agree to the terms, do not use the code.
-
+Copyright (c) 1991  Microsoft Corporation
 
 Module Name:
 
@@ -14,6 +10,16 @@ Abstract:
 
     This module contains the i386 specific mtrr register 
     hardware definitions.
+
+Author:
+
+    Ken Reneris (kenr)  11-Oct-95
+
+Environment:
+
+    Kernel mode only.
+
+Revision History:
 
 --*/
 
@@ -115,3 +121,4 @@ VOID
 KiLockStepExecution(
     IN PPROCESSOR_LOCKSTEP Context
     );
+

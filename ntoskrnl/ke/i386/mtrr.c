@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) OpenXP Team
+Copyright (c) 1991-2000  Microsoft Corporation
 
 Module Name:
 
@@ -12,6 +12,16 @@ Abstract:
     memory type range registers.
 
     These entry points only exist on x86 machines.
+
+Author:
+
+    Ken Reneris (kenr)  11-Oct-95
+
+Environment:
+
+    Kernel mode only.
+
+Revision History:
 
 --*/
 
@@ -568,7 +578,7 @@ Return Value:
 
     //
     // If the processor is a AMD K6 with MTRR support then perform
-    // processor specific implementation.
+    // processor specific implentaiton.
     //
 
     if (KeFeatureBits & KF_AMDK6MTRR) {
@@ -677,7 +687,7 @@ Return Value:
 
     //
     // If the processor is a AMD K6 with MTRR support then perform
-    // processor specific implementation.
+    // processor specific implentaiton.
     //
 
     if (KeFeatureBits & KF_AMDK6MTRR) {
@@ -788,7 +798,7 @@ Return Value:
             return STATUS_UNSUCCESSFUL;
         }
 
-        MmLockPageableSectionByHandle(ExPageLockHandle);
+        MmLockPagableSectionByHandle(ExPageLockHandle);
     }
 
     //
@@ -852,7 +862,7 @@ Return Value:
 
     KeReleaseSpinLock (&KiRangeLock, OldIrql);
     if (EffectRangeChange) {
-        MmUnlockPageableImageSection(ExPageLockHandle);
+        MmUnlockPagableImageSection(ExPageLockHandle);
     }
 
     return NewRange.Status;

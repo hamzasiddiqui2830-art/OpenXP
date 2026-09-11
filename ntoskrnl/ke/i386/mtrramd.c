@@ -1,7 +1,3 @@
-//
-// Copyright (c) OpenXP Team. 
-//
-
 #include "ki.h"
 
 #define STATIC
@@ -327,7 +323,7 @@ KiAmdK6MtrrSetMemoryType (
         // Lock the code.
         //
 
-        MmLockPageableSectionByHandle(ExPageLockHandle);
+        MmLockPagableSectionByHandle(ExPageLockHandle);
         
         //
         // Serialize the region table.
@@ -342,7 +338,7 @@ KiAmdK6MtrrSetMemoryType (
         //
 
         KeReleaseSpinLock (&KiRangeLock, OldIrql);
-        MmUnlockPageableImageSection(ExPageLockHandle);
+        MmUnlockPagableImageSection(ExPageLockHandle);
         
         break;  // End of WriteCombined case.
 
@@ -785,3 +781,5 @@ Return Value:
 
     WRMSR (AMDK6_MTRR_MSR, KiAmdK6Mtrr.u.QuadPart);
 }
+
+

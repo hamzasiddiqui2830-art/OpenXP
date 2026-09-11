@@ -13,13 +13,6 @@ Abstract:
     This module contains data structures used by the
     direct memory loaded hive manager.
 
-Author:
-
-    Dragos C. Sambotin (dragoss) 13-Jan-99
-
-Revision History:
-
-
 
 --*/
 
@@ -706,6 +699,8 @@ typedef struct _HHIVE {
     BOOLEAN                 ReadOnly;           // TRUE if READONLY
 
     BOOLEAN                 Log;
+
+    BOOLEAN                 DirtyFlag;      // tells if at least one write has happened since unload
 
     ULONG                   HiveFlags;
 

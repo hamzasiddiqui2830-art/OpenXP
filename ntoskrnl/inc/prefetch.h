@@ -47,13 +47,16 @@ typedef enum _PF_SCENARIO_TYPE {
 //
 
 typedef enum _PF_BOOT_PHASE_ID {
-    PfBootPhaseNone,
-    PfBootPhaseDriverInit,
-    PfBootPhaseSystemExtends,
-    PfBootPhaseBootDriver,
-    PfBootPhaseFileSystem,
-    PfBootPhaseUserMode,
-    PfBootPhaseMax
+    PfBootPhaseNone                         = 0,
+    PfBootDriverInitPhase                   = 90,
+    PfSystemDriverInitPhase                 = 120,
+    PfSessionManagerInitPhase               = 150,
+    PfSMRegistryInitPhase                   = 180,
+    PfVideoInitPhase                        = 210,
+    PfPostVideoInitPhase                    = 240,
+    PfBootAcceptedRegistryInitPhase         = 270,
+    PfUserShellReadyPhase                   = 300,
+    PfMaxBootPhaseId                        = 900
 } PF_BOOT_PHASE_ID, *PPF_BOOT_PHASE_ID;
 
 //

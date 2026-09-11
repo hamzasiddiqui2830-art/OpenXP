@@ -140,7 +140,8 @@ if(ARCH STREQUAL "i386")
     )
 
     # The WRK v1.2 x86 source hierarchy explicitly builds UP, MP, PAE and
-    # PAE+MP images. PAE adds _X86PAE_ and LARGEADDRESSAWARE; MP clears NT_UP.
+    # PAE+MP images. PAE adds _X86PAE_; MP leaves NT_UP undefined because
+    # WRK selects UP code with #if defined(NT_UP) / #if !defined(NT_UP).
     set(NTOS_IMAGE_COMMON_DEFINES
         ${NTOS_COMMON_DEFINES}
         KERNEL_NAME
@@ -162,9 +163,9 @@ if(ARCH STREQUAL "i386")
     endforeach()
 
     target_compile_definitions(ntoskrnl PRIVATE NT_UP=1 KERNEL_NAME="ntoskrnl.exe")
-    target_compile_definitions(ntkrnlmp PRIVATE NT_UP=0 KERNEL_NAME="ntkrnlmp.exe")
+    target_compile_definitions(ntkrnlmp PRIVATE KERNEL_NAME="ntkrnlmp.exe")
     target_compile_definitions(ntkrnlpa PRIVATE NT_UP=1 _X86PAE_ KERNEL_NAME="ntkrnlpa.exe")
-    target_compile_definitions(ntkrpamp PRIVATE NT_UP=0 _X86PAE_ KERNEL_NAME="ntkrpamp.exe")
+    target_compile_definitions(ntkrpamp PRIVATE _X86PAE_ KERNEL_NAME="ntkrpamp.exe")
 
     # /LARGEADDRESSAWARE is the WRK PAE image link property.
     target_link_options(ntkrnlpa PRIVATE /LARGEADDRESSAWARE)

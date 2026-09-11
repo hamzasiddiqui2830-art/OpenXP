@@ -450,9 +450,9 @@ Return Value:
 {
 
     Mutex->Owner = NULL;
-    Mutex->Count = 1;
+    Mutex->Count = GM_LOCK_BIT;
     Mutex->Contention = 0;
-    KeInitializeEvent(&Mutex->Event, SynchronizationEvent, FALSE);
+    KeInitializeGate(&Mutex->Gate);
     return;
 }
 

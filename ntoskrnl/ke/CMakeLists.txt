@@ -129,6 +129,12 @@ endif()
 
 add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES} ${MODULE_ASM_SOURCES})
 
+if(MSVC)
+    set_target_properties(${TARGET_NAME} PROPERTIES
+        MSVC_RUNTIME_LIBRARY ""
+    )
+endif()
+
 target_include_directories(${TARGET_NAME} PRIVATE
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ke
     ${REACTOS_SOURCE_DIR}/ntoskrnl

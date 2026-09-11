@@ -106,6 +106,10 @@ typedef enum _KDPC_IMPORTANCE { LowImportance, MediumImportance, HighImportance 
 #define DPC_NORMAL 0
 #define DPC_THREADED 1
 
+#define ASSERT_DPC(Object)                                                   \
+    ASSERT(((Object)->Type == DpcObject) ||                                  \
+           ((Object)->Type == ThreadedDpcObject))
+
 typedef struct _KDPC {
     CSHORT Type; UCHAR Number; UCHAR Importance; LIST_ENTRY DpcListEntry;
     PKDEFERRED_ROUTINE DeferredRoutine; PVOID DeferredContext;

@@ -117,21 +117,21 @@ CmpWmiDumpKcb(
     }
 
 #define HookKcbFromHandleForWmiCmTrace(KeyHandle) \
-    if (CmpTraceRoutine && (KeyHandle)) {\
-        PCM_KEY_BODY KeyBody;\
-        NTSTATUS status;\
-        status = ObReferenceObjectByHandle(\
-                    KeyHandle,\
-                    0,\
-                    CmpKeyObjectType,\
-                    KeGetPreviousMode(),\
-                    (PVOID *)(&KeyBody),\
-                    NULL\
-                    );\
-        if (NT_SUCCESS(status)) {\
-            HookKcb = KeyBody->KeyControlBlock;\
-            ObDereferenceObject((PVOID)KeyBody);\
-        }\
+    if (CmpTraceRoutine && (KeyHandle)) { \
+        PCM_KEY_BODY WmiKeyBody; \
+        NTSTATUS WmiStatus; \
+        WmiStatus = ObReferenceObjectByHandle( \
+                    KeyHandle, \
+                    0, \
+                    CmpKeyObjectType, \
+                    KeGetPreviousMode(), \
+                    (PVOID *)(&WmiKeyBody), \
+                    NULL \
+                    ); \
+        if (NT_SUCCESS(WmiStatus)) { \
+            HookKcb = WmiKeyBody->KeyControlBlock; \
+            ObDereferenceObject((PVOID)WmiKeyBody); \
+        } \
     }
 
 #define CmpTraceKcbCreate(kcb) \

@@ -128,6 +128,7 @@ CmpDummyApc(
 //
 
 NTSTATUS
+NTAPI
 NtCreateKey(
     __out PHANDLE KeyHandle,
     __in ACCESS_MASK DesiredAccess,
@@ -388,6 +389,7 @@ extern PCM_KEY_BODY ExpControlKey[2];
 #define OBJ_AUDIT_OBJECT_CLOSE 0x00000004L
 
 NTSTATUS
+NTAPI
 NtDeleteKey(
     __in HANDLE KeyHandle
     )
@@ -495,6 +497,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI
 NtDeleteValueKey(
     __in HANDLE KeyHandle,
     __in PUNICODE_STRING ValueName
@@ -620,6 +623,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI
 NtEnumerateKey(
     __in HANDLE KeyHandle,
     __in ULONG Index,
@@ -782,6 +786,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI
 NtEnumerateValueKey(
     __in HANDLE KeyHandle,
     __in ULONG Index,
@@ -946,6 +951,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI
 NtFlushKey(
     __in HANDLE KeyHandle
     )
@@ -1026,6 +1032,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI
 NtInitializeRegistry(
     __in USHORT BootCondition
     )
@@ -1215,6 +1222,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI
 NtNotifyChangeKey(
     __in HANDLE KeyHandle,
     __in_opt HANDLE Event,
@@ -1371,6 +1379,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI
 NtNotifyChangeMultipleKeys(
     __in HANDLE MasterKeyHandle,
     __in_opt ULONG Count,
@@ -2024,6 +2033,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI
 NtOpenKey(
     __out PHANDLE KeyHandle,
     __in ACCESS_MASK DesiredAccess,
@@ -2185,6 +2195,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI
 NtQueryKey(
     __in HANDLE KeyHandle,
     __in KEY_INFORMATION_CLASS KeyInformationClass,
@@ -2366,6 +2377,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI
 NtQueryValueKey(
     __in HANDLE KeyHandle,
     __in PUNICODE_STRING ValueName,
@@ -2551,6 +2563,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI
 NtRestoreKey(
     __in HANDLE KeyHandle,
     __in HANDLE FileHandle,
@@ -2675,6 +2688,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI
 NtSaveKey(
     __in HANDLE KeyHandle,
     __in HANDLE FileHandle
@@ -2760,6 +2774,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI
 NtSaveKeyEx(
     __in HANDLE   KeyHandle,
     __in HANDLE   FileHandle,
@@ -2867,6 +2882,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI
 NtSaveMergedKeys(
     __in HANDLE HighPrecedenceKeyHandle,
     __in HANDLE LowPrecedenceKeyHandle,
@@ -2972,6 +2988,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI
 NtSetValueKey(
     __in HANDLE KeyHandle,
     __in PUNICODE_STRING ValueName,
@@ -3203,6 +3220,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI
 NtLoadKey2(
     __in POBJECT_ATTRIBUTES   TargetKey,
     __in POBJECT_ATTRIBUTES   SourceFile,
@@ -3256,6 +3274,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI
 NtLoadKeyEx(
     __in POBJECT_ATTRIBUTES   TargetKey,
     __in POBJECT_ATTRIBUTES   SourceFile,
@@ -3462,6 +3481,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI
 NtUnloadKey(
     __in POBJECT_ATTRIBUTES TargetKey
     )
@@ -3500,6 +3520,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI
 NtUnloadKey2(
     __in POBJECT_ATTRIBUTES   TargetKey,
     __in ULONG                Flags
@@ -3706,6 +3727,7 @@ TryExclusive:
 }
 
 NTSTATUS
+NTAPI
 NtUnloadKeyEx(
     __in POBJECT_ATTRIBUTES TargetKey,
     __in_opt HANDLE Event
@@ -4064,6 +4086,7 @@ NtSetInformationKey(
 
 
 NTSTATUS
+NTAPI
 NtReplaceKey(
     __in POBJECT_ATTRIBUTES NewFile,
     __in HANDLE             TargetHandle,

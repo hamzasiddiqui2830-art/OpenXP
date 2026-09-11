@@ -60,6 +60,9 @@ if(WRK_ARCH_NAME STREQUAL "i386")
         i386/pat.c
         i386/thredini.c
         i386/trapc.c
+
+    )
+    list(APPEND MODULE_ASM_SOURCES
         i386/abiosa.asm
         i386/callout.asm
         i386/clockint.asm
@@ -82,8 +85,7 @@ if(WRK_ARCH_NAME STREQUAL "i386")
         i386/threadbg.asm
         i386/timindex.asm
         i386/trap.asm
-        i386/zero.asm
-    )
+        i386/zero.asm)
 elseif(WRK_ARCH_NAME STREQUAL "amd64")
     list(APPEND MODULE_SOURCES
         amd64/allproc.c
@@ -102,6 +104,8 @@ elseif(WRK_ARCH_NAME STREQUAL "amd64")
         amd64/runtime.c
         amd64/spinlock.c
         amd64/thredini.c
+        )
+    list(APPEND MODULE_ASM_SOURCES
         amd64/apcint.asm
         amd64/callout.asm
         amd64/clockint.asm
@@ -123,7 +127,7 @@ elseif(WRK_ARCH_NAME STREQUAL "amd64")
     )
 endif()
 
-add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
+add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES} ${MODULE_ASM_SOURCES})
 
 target_include_directories(${TARGET_NAME} PRIVATE
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ke

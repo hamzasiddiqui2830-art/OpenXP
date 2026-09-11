@@ -4636,6 +4636,7 @@ extern BOOLEAN KeTimeSynchronization;
 #if defined(_X86_)
 
 VOID
+NTAPI
 KeOptimizeProcessorControlState (
     VOID
     );

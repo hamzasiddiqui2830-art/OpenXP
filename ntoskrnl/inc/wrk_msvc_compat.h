@@ -2,14 +2,18 @@
 #define _WRK_MSVC_COMPAT_H_
 
 /*
- * _NTOS_ is also the include guard used by ntos.h.  The WRK compiler
- * environment may define _NTOS_ as a command-line symbol, so clear it
- * before the forced include of ntos.h.  Otherwise ntos.h is skipped and
- * architecture types such as PFN_NUMBER are unavailable when mi386.h is
- * parsed below.
+ * The WRK build environment historically supplied these symbols while
+ * ntos.h also owns them as header guards.  Clear the command-line copies
+ * before including ntos.h so MSVC /WX does not report guard redefinitions.
  */
 #ifdef _NTOS_
 #undef _NTOS_
+#endif
+#ifdef _NTIFS_
+#undef _NTIFS_
+#endif
+#ifdef _NTDDK_
+#undef _NTDDK_
 #endif
 #include "ntos.h"
 

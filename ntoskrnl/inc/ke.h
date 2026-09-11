@@ -3140,8 +3140,6 @@ KeFlushProcessTb (
 
 {
 
-    UNREFERENCED_PARAMETER(AllProcessors);
-
     KiFlushProcessTb();
     return;
 }

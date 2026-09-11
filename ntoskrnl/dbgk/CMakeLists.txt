@@ -4,32 +4,25 @@
 set(MODULE_NAME dbgk)
 set(TARGET_NAME ntosdbgk)
 
-# Source files from sources.inc
 set(MODULE_SOURCES
-    dbgkport.c 
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/dbgkproc.c
-
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/dbgkobj.c
-
+    dbgkport.c
+    dbgkproc.c
+    dbgkobj.c
 )
 
-# Create library target
 add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 
-# Set include directories
 target_include_directories(${TARGET_NAME} PRIVATE
     ${REACTOS_SOURCE_DIR}/ntoskrnl/dbgk
     ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
 )
 
-# Compile definitions
 target_compile_definitions(${TARGET_NAME} PRIVATE
     _NTOS_
     _NTIFS_
     _NTDDK_
 )
 
-# Compiler options - match legacy build settings (/W4 /WX = all warnings + warnings as errors)
 if(MSVC)
     target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX)
 else()

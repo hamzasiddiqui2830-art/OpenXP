@@ -401,6 +401,12 @@ extern ULONG MmReadClusterSize;
 extern ULONG MmNumberOfColors;
 
 //
+// Number of available pages.
+//
+
+extern PFN_NUMBER MmAvailablePages;
+
+//
 // Number of physical pages.
 //
 
@@ -427,6 +433,11 @@ extern SIZE_T MmTotalCommittedPages;
 extern SIZE_T MmTotalCommitLimit;
 
 extern SIZE_T MmPeakCommitment;
+
+ULONG
+MmGetNumberOfFreeSystemPtes (
+    VOID
+    );
 
 typedef enum _MMSYSTEM_PTE_POOL_TYPE {
     SystemPteSpace,
@@ -670,6 +681,32 @@ MmGetSessionMappedViewInformation (
     OUT PULONG Length,
     IN PULONG SessionId OPTIONAL
     );
+
+//++
+//
+// LOGICAL
+// MmIsSessionLeaderProcess (
+//     __in PEPROCESS Process
+//     );
+//
+// Routine Description:
+//
+//
+// This macro checks whether or not the process is the session leader on
+// the system. Mm ensures that there is only ever one such process.
+//
+// Arguments:
+//
+//     Process - The EPROCESS object to query.
+//
+// Return Value:
+//
+//     TRUE if the passed process object is the session leader.
+//
+//--
+
+#define MmIsSessionLeaderProcess(Process)   \
+            ((Process)->Vm.Flags.SessionLeader == 1)
 
 //
 // Pool support routines to allocate complete pages, not for
@@ -957,6 +994,11 @@ MmQueryWorkingSetInformation (
     IN PSIZE_T MinimumWorkingSetSize,
     IN PSIZE_T MaximumWorkingSetSize,
     IN PULONG HardEnforcementFlags
+    );
+
+VOID
+MmQuerySystemCacheWorkingSetInformation (
+    OUT PSYSTEM_FILECACHE_INFORMATION Info
     );
 
 VOID

@@ -1751,7 +1751,7 @@ UserFault:
 
                 if (PageFrameIndex == 0) {
 
-                    PMMPTE ZeroPte;
+                    PMMPTE ZeroPteArgument;
                     PVOID ZeroAddress;
 
                     PageFrameIndex = MiRemoveAnyPage (Color);
@@ -1760,9 +1760,9 @@ UserFault:
 
                     Pfn1 = MI_PFN_ELEMENT (PageFrameIndex);
 
-                    ZeroPte = MiReserveSystemPtes (1, SystemPteSpace);
+                    ZeroPteArgument = MiReserveSystemPtes (1, SystemPteSpace);
     
-                    if (ZeroPte != NULL) {
+                    if (ZeroPteArgument != NULL) {
     
                         TempPte = ValidKernelPte;
                         TempPte.u.Hard.PageFrameNumber = PageFrameIndex;
@@ -1774,13 +1774,13 @@ UserFault:
                             MI_DISABLE_CACHING (TempPte);
                         }
 
-                        MI_WRITE_VALID_PTE (ZeroPte, TempPte);
+                        MI_WRITE_VALID_PTE (ZeroPteArgument, TempPte);
     
-                        ZeroAddress = MiGetVirtualAddressMappedByPte (ZeroPte);
+                        ZeroAddress = MiGetVirtualAddressMappedByPte (ZeroPteArgument);
     
                         KeZeroSinglePage (ZeroAddress);
     
-                        MiReleaseSystemPtes (ZeroPte, 1, SystemPteSpace);
+                        MiReleaseSystemPtes (ZeroPteArgument, 1, SystemPteSpace);
                     }
                     else {
                         MiZeroPhysicalPage (PageFrameIndex);
@@ -1874,7 +1874,7 @@ UserFault:
                                PointerPte,
                                Pfn1,
                                CurrentProcess,
-                               ZeroPte);
+                               ZeroPteArgument);
                 }
             }
             else {

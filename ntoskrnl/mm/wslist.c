@@ -1721,7 +1721,7 @@ Environment:
     // Check to make sure the physical pages are available.
     //
 
-    if ((SPFN_NUMBER)ResidentPages > MI_NONPAGABLE_MEMORY_AVAILABLE() - 20) {
+    if ((SPFN_NUMBER)ResidentPages > MI_NONPAGEABLE_MEMORY_AVAILABLE() - 20) {
 
         UNLOCK_PFN (OldIrql);
 
@@ -2438,7 +2438,7 @@ Environment:
             goto Returns;
         }
 
-        if (MI_NONPAGABLE_MEMORY_AVAILABLE() - (2 * MM_HIGH_LIMIT) < i) {
+        if (MI_NONPAGEABLE_MEMORY_AVAILABLE() - (2 * MM_HIGH_LIMIT) < i) {
             UNLOCK_PFN (OldIrql);
             ReturnStatus = STATUS_INSUFFICIENT_RESOURCES;
             goto Returns;
@@ -2789,7 +2789,7 @@ Environment:
         PfnHeld = TRUE;
         LOCK_PFN (OldIrql);
         if ((MmAvailablePages < MM_HIGH_LIMIT) ||
-            (MI_NONPAGABLE_MEMORY_AVAILABLE() < MM_HIGH_LIMIT)) {
+            (MI_NONPAGEABLE_MEMORY_AVAILABLE() < MM_HIGH_LIMIT)) {
     
             //
             // No pages are available, the caller will have to replace.
@@ -2843,7 +2843,7 @@ Environment:
             PfnHeld = TRUE;
             LOCK_PFN (OldIrql);
             if ((MmAvailablePages < MM_HIGH_LIMIT) ||
-                (MI_NONPAGABLE_MEMORY_AVAILABLE() < MM_HIGH_LIMIT)) {
+                (MI_NONPAGEABLE_MEMORY_AVAILABLE() < MM_HIGH_LIMIT)) {
     
                 //
                 // No pages are available, the caller will have to replace.
@@ -2897,7 +2897,7 @@ Environment:
     if (PfnHeld == FALSE) {
         LOCK_PFN (OldIrql);
         if ((MmAvailablePages < MM_HIGH_LIMIT) ||
-            (MI_NONPAGABLE_MEMORY_AVAILABLE() < MM_HIGH_LIMIT)) {
+            (MI_NONPAGEABLE_MEMORY_AVAILABLE() < MM_HIGH_LIMIT)) {
     
             //
             // No pages are available, the caller will have to replace.
@@ -3181,7 +3181,7 @@ Environment:
         return FALSE;
     }
 
-    if (MI_NONPAGABLE_MEMORY_AVAILABLE() < MM_HIGH_LIMIT) {
+    if (MI_NONPAGEABLE_MEMORY_AVAILABLE() < MM_HIGH_LIMIT) {
         UNLOCK_PFN (OldIrql);
         MiReturnCommitment (1);
         return FALSE;

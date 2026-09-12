@@ -38,6 +38,7 @@ MiDecommitPages (
 
 
 NTSTATUS
+NTAPI
 NtFreeVirtualMemory(
     __in HANDLE ProcessHandle,
     __inout PVOID *BaseAddress,

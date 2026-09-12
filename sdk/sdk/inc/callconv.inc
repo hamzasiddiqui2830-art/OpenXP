@@ -143,11 +143,11 @@ EXTRNP  macro   Func,N,Thunk,FastCall
                     EXTRNTHUNK  Func,%(N*4)
                 endif
             else
-                cFCall&@&Func equ   (N*4)
+                cFCall_&Func equ   (N*4)
                 ifb     <Thunk>
-                    EXTRNP2     &@&Func,%(N*4)
+                    EXTRNP2     _&Func,%(N*4)
                 else
-                    EXTRNTHUNK  &@&Func,%(N*4)
+                    EXTRNTHUNK  _&Func,%(N*4)
                 endif
             endif
         endif
@@ -160,8 +160,8 @@ EXTRNP2 macro   Func,N
 endm
 
 EXTRNTHUNK macro   Func,N
-        IFNDEF  __imp_&Func&@&N
-            extrn       __imp_&Func&@&N:DWORD
+        IFNDEF  __imp__&Func&@&N
+            extrn       __imp__&Func&@&N:DWORD
         ENDIF
 endm
 
@@ -210,9 +210,9 @@ endm
 
 ProcNameF macro  Name,Func,N,M
 
-        cByte&Func  equ     M
-        cFCall&Func equ     N
-        Name        equ     <Func&@&N>
+        cByte_&Func  equ     M
+        cFCall_&Func equ     N
+        Name        equ     <_&Func&@&N>
 
 endm
 
@@ -224,21 +224,21 @@ stdPROCF  macro   Func,N,ArgList
             ProcNameF   Func,Func,%(N*4),0
         endif
 
-        Func        proc    ArgList
+        _&Func        proc    ArgList
 endm
 
 cPublicFastCall macro Func,N,ArgList
         align   dword
-        PUBLICP &@&Func,N
+        PUBLICP _&Func,N
         ifb <N>
-            stdPROCF &@&Func,0,<ArgList>
+            stdPROCF _&Func,0,<ArgList>
         else
-            stdPROCF &@&Func,N,<ArgList>
+            stdPROCF _&Func,N,<ArgList>
         endif
 endm
 
 fstRET  macro   Func
-        ret     cByte&@&Func
+        ret     cByte_&Func
 endm
 
 stdRET  macro   Func
@@ -254,7 +254,7 @@ endm
 
 fstENDP macro   Func
 
-        &@&Func    endp
+        _&Func    endp
 endm
 
 stdENDP macro   Func
@@ -268,10 +268,10 @@ endMod  macro   Func
 endm
 
 stdCallCall macro  Func,N
-    IFDEF   __imp_&Func&@&N
-        call    dword ptr [__imp_&Func&@&N]
+    IFDEF   __imp__&Func&@&N
+        call    dword ptr [__imp__&Func&@&N]
     ELSE
-        call    Func&@&N
+        call    _&Func&@&N
     ENDIF
 endm
 
@@ -292,10 +292,10 @@ fstCall macro   Func,ArgList
         Bytes = Bytes*4
 
         if Bytes eq 0
-            stdCallCall   &@&Func,%cFCall&@&Func
+            stdCallCall   _&Func,%cFCall_&Func
         else
             ; must have 2 register params
-            stdCallCall   &@&Func,%(Bytes+8)
+            stdCallCall   _&Func,%(Bytes+8)
         endif
 endm
 

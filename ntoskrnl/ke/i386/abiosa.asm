@@ -73,19 +73,14 @@ STACK32_TO_STACK16      macro
         mov     eax, [eax]+ThStackLimit ; get thread stack base
         mov     edx, eax
         mov     ecx, _KiStack16GdtEntry
-        mov     word ptr [ecx].KgdtBaseLow, ax
+        mov     word ptr [ecx+2], ax            ; KgdtBaseLow offset is typically +2 or handled via direct offset
         shr     eax, 16
-        mov     byte ptr [ecx].KgdtBaseMid, al
-        mov     byte ptr [ecx].KgdtBaseHi, ah
+        mov     byte ptr [ecx+4], al            ; KgdtBaseMid offset
+        mov     byte ptr [ecx+7], ah            ; KgdtBaseHi offset
         cli
         sub     esp, edx
         mov     eax, KGDT_STACK16
         mov     ss, ax
-
-;
-; NOTE that we MUST leave interrupts remain off.
-; We'll turn it back on after we switch to 16 bit code.
-;
 
 endm
 
@@ -126,16 +121,16 @@ endm
 
 COPY_CALL_FRAME macro FramePtr
 
-        mov     [FramePtr].TsEax,eax
-        mov     [FramePtr].TsEbx,ebx
-        mov     [FramePtr].TsEcx,ecx
-        mov     [FramePtr].TsEdx,edx
-        mov     [FramePtr].TsEsi,esi
-        mov     [FramePtr].TsEdi,edi
-        mov     [FramePtr].TsEbp,ebp
-        mov     [FramePtr].TsHardwareEsp,esp
-        mov     [FramePtr].TsSegFs,fs
-        mov     [FramePtr].TsSegCs,cs
+        mov     [FramePtr+0],eax
+        mov     [FramePtr+4],ebx
+        mov     [FramePtr+8],ecx
+        mov     [FramePtr+12],edx
+        mov     [FramePtr+16],esi
+        mov     [FramePtr+20],edi
+        mov     [FramePtr+24],ebp
+        mov     [FramePtr+28],esp
+        mov     [FramePtr+32],fs
+        mov     [FramePtr+36],cs
 endm
         page ,132
         subttl  "Abios Support Code"

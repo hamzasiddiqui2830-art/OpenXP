@@ -808,7 +808,7 @@ MiDeletePte (
     IN PVOID VirtualAddress,
     IN ULONG AddressSpaceDeletion,
     IN PEPROCESS CurrentProcess,
-    IN PMMPTE PrototypePteArgumentArgument,
+    IN PMMPTE PrototypePte,
     IN PMMPTE_FLUSH_LIST PteFlushList OPTIONAL,
     IN KIRQL OldIrql
     )
@@ -841,7 +841,7 @@ Arguments:
 
     CurrentProcess - Supplies a pointer to the current process.
 
-    PrototypePteArgumentArgument - Supplies a pointer to the prototype PTE which currently
+    PrototypePte - Supplies a pointer to the prototype PTE which currently
                    or originally mapped this page.  This is used to determine
                    if the PTE is a fork PTE and should have its reference block
                    decremented.
@@ -950,7 +950,7 @@ Environment:
 
             if (PointerPte <= MiHighestUserPte) {
 
-                if (PrototypePteArgumentArgument != Pfn1->PteAddress) {
+                if (PrototypePte != Pfn1->PteAddress) {
 
                     //
                     // Locate the clone descriptor within the clone tree.
@@ -978,7 +978,7 @@ Environment:
                             KeBugCheckEx (MEMORY_MANAGEMENT,
                                           0x400, 
                                           (ULONG_PTR) PointerPte,
-                                          (ULONG_PTR) PrototypePteArgumentArgument,
+                                          (ULONG_PTR) PrototypePte,
                                             (ULONG_PTR) Pfn1->PteAddress);
                         }
                     }
@@ -1107,7 +1107,7 @@ Environment:
 
         if ((PteContents.u.Soft.PageFileHigh != MI_PTE_LOOKUP_NEEDED) &&
             (PointerPte <= MiHighestUserPte) &&
-            (PrototypePteArgumentArgument != MiPteToProto (PointerPte))) {
+            (PrototypePte != MiPteToProto (PointerPte))) {
 
             CloneBlock = (PMMCLONE_BLOCK) MiPteToProto (PointerPte);
             CloneDescriptor = MiLocateCloneAddress (CurrentProcess,
@@ -1118,7 +1118,7 @@ Environment:
                 KeBugCheckEx (MEMORY_MANAGEMENT,
                               0x403, 
                               (ULONG_PTR) PointerPte,
-                              (ULONG_PTR) PrototypePteArgumentArgument,
+                              (ULONG_PTR) PrototypePte,
                               (ULONG_PTR) PteContents.u.Long);
             }
 

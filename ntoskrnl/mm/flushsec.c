@@ -3475,7 +3475,7 @@ MiGetSystemCacheSubsection (
 
 LOGICAL
 MiCheckProtoPtePageState (
-    IN PMMPTE PrototypePte,
+    IN PMMPTE PrototypePteArgument,
     IN KIRQL OldIrql,
     OUT PLOGICAL DroppedPfnLock
     )
@@ -3493,7 +3493,7 @@ Routine Description:
 
 Arguments:
 
-    PrototypePte - Supplies a pointer to a prototype PTE within the page.
+    PrototypePteArgument - Supplies a pointer to a prototype PTE within the page.
 
     OldIrql - Supplies the IRQL the caller acquired the PFN lock at or MM_NOIRQL
               if the caller does not hold the PFN lock.
@@ -3523,7 +3523,7 @@ Return Value:
     // is no lazy loading of PPEs, the validity check alone is sufficient.
     //
 
-    PointerPte = MiGetPdeAddress (PrototypePte);
+    PointerPte = MiGetPdeAddress (PrototypePteArgument);
     PteContents = *PointerPte;
 
     if (PteContents.u.Hard.Valid == 0) {
@@ -3532,12 +3532,12 @@ Return Value:
 
 #endif
 
-    PointerPte = MiGetPteAddress (PrototypePte);
+    PointerPte = MiGetPteAddress (PrototypePteArgument);
 
 #if (_MI_PAGING_LEVELS < 3)
 
     if (PointerPte->u.Hard.Valid == 0) {
-        MiCheckPdeForPagedPool (PrototypePte);
+        MiCheckPdeForPagedPool (PrototypePteArgument);
     }
 
 #endif
@@ -3562,7 +3562,7 @@ Return Value:
         Pfn = MI_PFN_ELEMENT (PageFrameIndex);
         if (Pfn->u3.e1.PageLocation >= ActiveAndValid) {
             if (OldIrql != MM_NOIRQL) {
-                MiMakeSystemAddressValidPfn (PrototypePte, OldIrql);
+                MiMakeSystemAddressValidPfn (PrototypePteArgument, OldIrql);
                 *DroppedPfnLock = TRUE;
             }
             return TRUE;

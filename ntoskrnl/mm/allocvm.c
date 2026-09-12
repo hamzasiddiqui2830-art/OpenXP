@@ -2956,7 +2956,7 @@ Environment:
 
     LOCK_PFN (OldIrql);
 
-    if ((SPFN_NUMBER)PagesNeeded > MI_NONPAGABLE_MEMORY_AVAILABLE() - 20) {
+    if ((SPFN_NUMBER)PagesNeeded > MI_NONPAGEABLE_MEMORY_AVAILABLE() - 20) {
         UNLOCK_PFN (OldIrql);
         return FALSE;
     }
@@ -3292,7 +3292,7 @@ Environment:
 
     LOCK_PFN (OldIrql);
 
-    if ((SPFN_NUMBER)PagesNeeded > MI_NONPAGABLE_MEMORY_AVAILABLE() - 20) {
+    if ((SPFN_NUMBER)PagesNeeded > MI_NONPAGEABLE_MEMORY_AVAILABLE() - 20) {
         UNLOCK_PFN (OldIrql);
         MmUnlockPageableImageSection (ExPageLockHandle);
         return FALSE;

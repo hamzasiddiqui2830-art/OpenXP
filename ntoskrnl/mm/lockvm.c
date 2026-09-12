@@ -20,6 +20,7 @@ Abstract:
 
 
 NTSTATUS
+NTAPI
 NtLockVirtualMemory(
     __in HANDLE ProcessHandle,
     __inout PVOID *BaseAddress,
@@ -567,6 +568,7 @@ ErrorReturn1:
 }
 
 NTSTATUS
+NTAPI
 NtUnlockVirtualMemory(
     __in HANDLE ProcessHandle,
     __inout PVOID *BaseAddress,

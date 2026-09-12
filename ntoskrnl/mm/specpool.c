@@ -563,7 +563,7 @@ Environment:
     MM_BUMP_SESS_COUNTER(MM_DBG_SESSION_PAGEDPOOL_PAGETABLE_ALLOC,
                          (ULONG)(0 - PageTablePages));
 
-    InterlockedExchangeAddSizeT (&MmSessionSpace->NonPagablePages, 0 - PageTablePages);
+    InterlockedExchangeAddSizeT (&MmSessionSpace->NonPAGEABLEPages, 0 - PageTablePages);
 
     InterlockedExchangeAddSizeT (&MmSessionSpace->CommittedPages, 0 - PageTablePages);
 
@@ -740,7 +740,7 @@ Environment:
         MM_BUMP_SESS_COUNTER(MM_DBG_SESSION_PAGEDPOOL_PAGETABLE_ALLOC, 1);
         MM_BUMP_SESS_COUNTER (MM_DBG_SESSION_NP_POOL_CREATE, 1);
 
-        InterlockedExchangeAddSizeT (&MmSessionSpace->NonPagablePages, 1);
+        InterlockedExchangeAddSizeT (&MmSessionSpace->NonPAGEABLEPages, 1);
 
         InterlockedExchangeAddSizeT (&MmSessionSpace->CommittedPages, 1);
     }
@@ -886,7 +886,7 @@ Environment:
 
     Kernel mode, no pool locks held.
 
-    Note this is a nonpagable wrapper so that machines without special pool
+    Note this is a nonPAGEABLE wrapper so that machines without special pool
     can still support drivers allocating nonpaged pool at DISPATCH_LEVEL
     requesting special pool.
 
@@ -1108,7 +1108,7 @@ restart:
 
     if ((PoolType & BASE_POOL_TYPE_MASK) == NonPagedPool) {
 
-        if (MI_NONPAGABLE_MEMORY_AVAILABLE() < 100) {
+        if (MI_NONPAGEABLE_MEMORY_AVAILABLE() < 100) {
             UNLOCK_PFN2 (OldIrql);
             MmSpecialPoolRejected[4] += 1;
             MiReturnCommitment (1);
@@ -1212,7 +1212,7 @@ restart:
 
         //
         // As this page is now allocated, add it to the system working set to
-        // make it pagable.
+        // make it PAGEABLE.
         //
 
         ASSERT (Pfn1->u1.Event == 0);
@@ -1724,7 +1724,7 @@ Return Value:
 
 Environment:
 
-    Kernel mode, APC_LEVEL or below for pagable addresses, DISPATCH_LEVEL or
+    Kernel mode, APC_LEVEL or below for PAGEABLE addresses, DISPATCH_LEVEL or
     below for nonpaged addresses.
 
 --*/
@@ -1917,14 +1917,14 @@ Return Value:
 
 Environment:
 
-    Kernel mode, IRQL at APC_LEVEL or below for pagable pool, DISPATCH or
-    below for nonpagable pool.
+    Kernel mode, IRQL at APC_LEVEL or below for PAGEABLE pool, DISPATCH or
+    below for nonPAGEABLE pool.
 
     Note that setting an allocation to NO_ACCESS implies that an accessible
     protection must be applied by the caller prior to this allocation being
     freed.
 
-    Note this is a nonpagable wrapper so that machines without special pool
+    Note this is a nonPAGEABLE wrapper so that machines without special pool
     can still support code attempting to protect special pool at
     DISPATCH_LEVEL.
 
@@ -1967,8 +1967,8 @@ Return Value:
 
 Environment:
 
-    Kernel mode, IRQL at APC_LEVEL or below for pagable pool, DISPATCH or
-    below for nonpagable pool.
+    Kernel mode, IRQL at APC_LEVEL or below for PAGEABLE pool, DISPATCH or
+    below for nonPAGEABLE pool.
 
     Note that setting an allocation to NO_ACCESS implies that an accessible
     protection must be applied by the caller prior to this allocation being
@@ -1986,7 +1986,7 @@ Environment:
     PMMPFN Pfn1;
     ULONG ProtectionMask;
     WSLE_NUMBER WsIndex;
-    LOGICAL Pagable;
+    LOGICAL PAGEABLE;
     LOGICAL SystemWsLocked;
     PMMSUPPORT VmSupport;
     CurrentThread = PsGetCurrentThread ();
@@ -2024,17 +2024,17 @@ Environment:
 #if defined (_PROTECT_PAGED_POOL)
     if ((VirtualAddress >= MmPagedPoolStart) &&
         (VirtualAddress < PagedPoolEnd)) {
-        Pagable = TRUE;
+        PAGEABLE = TRUE;
     }
     else
 #endif
     if ((PointerPte + 1)->u.Soft.PageFileHigh == MI_SPECIAL_POOL_PTE_PAGEABLE) {
-        Pagable = TRUE;
+        PAGEABLE = TRUE;
         SystemWsLocked = TRUE;
         LOCK_WORKING_SET (CurrentThread, VmSupport);
     }
     else {
-        Pagable = FALSE;
+        PAGEABLE = FALSE;
     }
 
     PteContents = *PointerPte;
@@ -2131,7 +2131,7 @@ retry1:
     // Set accessible permissions - the page may already be protected or not.
     //
 
-    if (Pagable == FALSE) {
+    if (PAGEABLE == FALSE) {
 
         Pfn1 = MI_PFN_ELEMENT (PteContents.u.Hard.PageFrameNumber);
         Pfn1->OriginalPte.u.Soft.Protection = ProtectionMask;

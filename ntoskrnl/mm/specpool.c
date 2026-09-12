@@ -12,11 +12,6 @@ Abstract:
     This module contains the routines which allocate and deallocate
     pages from special pool.
 
-Author:
-
-    Lou Perazzoli (loup) 6-Apr-1989
-    Landy Wang (landyw) 02-June-1997
-
 Revision History:
 
 --*/
@@ -2131,7 +2126,7 @@ retry1:
     // Set accessible permissions - the page may already be protected or not.
     //
 
-    if (Pageable == FALSE;) {
+    if (Pageable == FALSE) {
 
         Pfn1 = MI_PFN_ELEMENT (PteContents.u.Hard.PageFrameNumber);
         Pfn1->OriginalPte.u.Soft.Protection = ProtectionMask;

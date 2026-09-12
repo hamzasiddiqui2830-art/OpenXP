@@ -142,7 +142,7 @@ Environment:
         // Check to make sure the physical pages are available.
         //
 
-        if (MI_NONPAGABLE_MEMORY_AVAILABLE() > (SPFN_NUMBER)(PagesToZero)) {
+        if (MI_NONPAGEABLE_MEMORY_AVAILABLE() > (SPFN_NUMBER)(PagesToZero)) {
             MI_DECREMENT_RESIDENT_AVAILABLE (PagesToZero,
                                     MM_RESAVAIL_ALLOCATE_ZERO_PAGE_CLUSTERS);
             MaximumPagesToZero = PagesToZero;

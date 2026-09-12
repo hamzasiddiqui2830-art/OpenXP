@@ -1917,7 +1917,7 @@ return1:
         ANSI_STRING AnsiString;
         UNICODE_STRING ProcedureName = {0};
         UNICODE_STRING DriverName;
-        ULONG i;
+        ULONG ErrorStringIndex;
         PWCHAR temp;
         PWCHAR ptr;
         ULONG PacketSize;
@@ -2036,12 +2036,12 @@ GenericError:
 
                 temp = (PWCHAR) ((PUCHAR) ErrLog + ErrLog->StringOffset);
 
-                for (i = 0; i < StringCount; i += 1) {
+                for (ErrorStringIndex = 0; ErrorStringIndex < StringCount; ErrorStringIndex += 1) {
 
-                    ptr = ErrorStrings[i].Buffer;
+                    ptr = ErrorStrings[ErrorStringIndex].Buffer;
 
-                    RtlCopyMemory (temp, ptr, ErrorStrings[i].Length);
-                    temp += (ErrorStrings[i].Length / sizeof (WCHAR));
+                    RtlCopyMemory (temp, ptr, ErrorStrings[ErrorStringIndex].Length);
+                    temp += (ErrorStrings[ErrorStringIndex].Length / sizeof (WCHAR));
 
                     *temp = L' ';
                     temp += 1;

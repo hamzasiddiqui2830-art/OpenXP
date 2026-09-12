@@ -244,13 +244,13 @@ Environment:
 
     if ((Vad == NULL) ||
         (Vad->u.VadFlags.PrivateMemory) ||
-        (Vad->FirstPrototypePte == NULL)) {
+        (Vad->FirstPrototypePteArgument == NULL)) {
 
         ProtoPte = NULL;
         LastProtoPte = NULL;
     }
     else {
-        ProtoPte = Vad->FirstPrototypePte;
+        ProtoPte = Vad->FirstPrototypePteArgument;
         LastProtoPte = (PMMPTE) 4;
     }
 
@@ -592,8 +592,8 @@ restart:
     
                             if (CloneDescriptor == NULL) {
                                 DbgPrintEx (DPFLTR_MM_ID, DPFLTR_ERROR_LEVEL, 
-                                    "0PrototypePte %p Clone desc %p %p\n",
-                                    PrototypePte, CloneDescriptor, PointerPte);
+                                    "0PrototypePteArgument %p Clone desc %p %p\n",
+                                    PrototypePteArgument, CloneDescriptor, PointerPte);
                                 ASSERT (FALSE);
                             }
                         }
@@ -808,7 +808,7 @@ MiDeletePte (
     IN PVOID VirtualAddress,
     IN ULONG AddressSpaceDeletion,
     IN PEPROCESS CurrentProcess,
-    IN PMMPTE PrototypePteArgument,
+    IN PMMPTE PrototypePteArgumentArgument,
     IN PMMPTE_FLUSH_LIST PteFlushList OPTIONAL,
     IN KIRQL OldIrql
     )
@@ -841,7 +841,7 @@ Arguments:
 
     CurrentProcess - Supplies a pointer to the current process.
 
-    PrototypePteArgument - Supplies a pointer to the prototype PTE which currently
+    PrototypePteArgumentArgument - Supplies a pointer to the prototype PTE which currently
                    or originally mapped this page.  This is used to determine
                    if the PTE is a fork PTE and should have its reference block
                    decremented.
@@ -902,7 +902,7 @@ Environment:
 
         CloneDescriptor = NULL;
 
-        if (Pfn1->u3.e1.PrototypePte == 1) {
+        if (Pfn1->u3.e1.PrototypePteArgument == 1) {
 
             CloneBlock = (PMMCLONE_BLOCK)Pfn1->PteAddress;
 
@@ -950,7 +950,7 @@ Environment:
 
             if (PointerPte <= MiHighestUserPte) {
 
-                if (PrototypePteArgument != Pfn1->PteAddress) {
+                if (PrototypePteArgumentArgument != Pfn1->PteAddress) {
 
                     //
                     // Locate the clone descriptor within the clone tree.
@@ -978,7 +978,7 @@ Environment:
                             KeBugCheckEx (MEMORY_MANAGEMENT,
                                           0x400, 
                                           (ULONG_PTR) PointerPte,
-                                          (ULONG_PTR) PrototypePteArgument,
+                                          (ULONG_PTR) PrototypePteArgumentArgument,
                                             (ULONG_PTR) Pfn1->PteAddress);
                         }
                     }
@@ -1107,7 +1107,7 @@ Environment:
 
         if ((PteContents.u.Soft.PageFileHigh != MI_PTE_LOOKUP_NEEDED) &&
             (PointerPte <= MiHighestUserPte) &&
-            (PrototypePteArgument != MiPteToProto (PointerPte))) {
+            (PrototypePteArgumentArgument != MiPteToProto (PointerPte))) {
 
             CloneBlock = (PMMCLONE_BLOCK) MiPteToProto (PointerPte);
             CloneDescriptor = MiLocateCloneAddress (CurrentProcess,
@@ -1118,7 +1118,7 @@ Environment:
                 KeBugCheckEx (MEMORY_MANAGEMENT,
                               0x403, 
                               (ULONG_PTR) PointerPte,
-                              (ULONG_PTR) PrototypePteArgument,
+                              (ULONG_PTR) PrototypePteArgumentArgument,
                               (ULONG_PTR) PteContents.u.Long);
             }
 
@@ -1295,7 +1295,7 @@ Environment:
     Pfn1 = MI_PFN_ELEMENT (PageFrameIndex);
     WsPfnIndex = Pfn1->u1.WsIndex;
 
-    ASSERT (Pfn1->u3.e1.PrototypePte == 0);
+    ASSERT (Pfn1->u3.e1.PrototypePteArgument == 0);
 
     if ((PMMPTE)((ULONG_PTR)Pfn1->PteAddress & ~0x1) != PointerPte) {
         KeBugCheckEx (MEMORY_MANAGEMENT,

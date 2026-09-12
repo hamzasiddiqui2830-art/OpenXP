@@ -3461,13 +3461,13 @@ Environment:
 
         Size = MmSizeOfPagedPoolInBytes / PAGE_SIZE;
 
-        if ((MI_NONPAGABLE_MEMORY_AVAILABLE() < 2048) ||
+        if ((MI_NONPAGEABLE_MEMORY_AVAILABLE() < 2048) ||
             (MmAvailablePages < 2048)) {
                 Size = 0;
         }
         else {
-            if ((SPFN_NUMBER)(Size) > MI_NONPAGABLE_MEMORY_AVAILABLE() - 2048) {
-                Size = (MI_NONPAGABLE_MEMORY_AVAILABLE() - 2048);
+            if ((SPFN_NUMBER)(Size) > MI_NONPAGEABLE_MEMORY_AVAILABLE() - 2048) {
+                Size = (MI_NONPAGEABLE_MEMORY_AVAILABLE() - 2048);
             }
 
             if (Size > MmAvailablePages - 2048) {

@@ -1,3 +1,20 @@
+/*++
+
+Copyright (c) OpenXP
+
+Module Name:
+
+    mtrramd.c
+
+Abstract:
+
+    This module implements interfaces that support manipulation of
+    memory type range registers for AMD.
+
+    These entry points only exist on x86 machines.
+
+--*/
+
 #include "ki.h"
 
 #define STATIC
@@ -323,7 +340,7 @@ KiAmdK6MtrrSetMemoryType (
         // Lock the code.
         //
 
-        MmLockPagableSectionByHandle(ExPageLockHandle);
+        MmLockPageableSectionByHandle(ExPageLockHandle);
         
         //
         // Serialize the region table.
@@ -338,7 +355,7 @@ KiAmdK6MtrrSetMemoryType (
         //
 
         KeReleaseSpinLock (&KiRangeLock, OldIrql);
-        MmUnlockPagableImageSection(ExPageLockHandle);
+        MmUnlockPageableImageSection(ExPageLockHandle);
         
         break;  // End of WriteCombined case.
 

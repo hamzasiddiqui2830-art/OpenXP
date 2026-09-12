@@ -127,7 +127,7 @@ endif
 ;
 
 Kcb07:  lea     eax,[esp]-KERNEL_LARGE_STACK_COMMIT ; compute bottom address
-        cmp     eax,[ebx+ThStackLimit  ; check if limit exceeded
+        cmp     eax,dword ptr [ebx+ThStackLimit]  ; check if limit exceeded
         jae     short Kcb10             ; if ae, limit not exceeded
         stdCall _MmGrowKernelStack,<esp> ; attempt to grow kernel stack
         or      eax, eax                ; check for successful completion
@@ -276,7 +276,7 @@ cPublicProc _KeSwitchKernelStack, 2
         push    esi                     ; save string move registers
         push    edi                     ;
         mov     edx,PCR[PcPrcbData + PbCurrentThread] ; get current thread address
-        mov     edi,[esp+SsStkBs + 8   ; get new kernel stack base address
+        mov     edi,dword ptr [esp+SsStkBs + 8]   ; get new kernel stack base address
         mov     ecx,dword ptr [edx+ThStackBase]   ; get current stack base address
         sub     ebp,ecx                 ; relocate the callers frame pointer
         add     ebp,edi                 ;
@@ -297,8 +297,8 @@ cPublicProc _KeSwitchKernelStack, 2
 ;
 
         mov     eax,dword ptr [edx+ThStackBase]   ; get old kernel stack base address
-        mov     ecx,[esp+SsStkBs + 8   ; get new kernel stack base address
-        mov     esi,[esp+SsStkLm + 8   ; get new kernel stack limit address
+        mov     ecx,dword ptr [esp+SsStkBs + 8]   ; get new kernel stack base address
+        mov     esi,dword ptr [esp+SsStkLm + 8]   ; get new kernel stack limit address
         cli                             ; disable interrupts
         mov     dword ptr [edx+ThStackBase],ecx   ; set new kernel stack base address
         mov     dword ptr [edx+ThStackLimit],esi  ; set new kernel stack limit address
@@ -307,7 +307,7 @@ cPublicProc _KeSwitchKernelStack, 2
         mov     esi,dword ptr [edx+ThTrapFrame]   ; Get current trap frame address
         mov     edx,PCR[PcTss]          ; get address of task switch segment
 .errnz (EFLAGS_V86_MASK AND 0FF00FFFFh)
-        test    byte ptr [esi+TsEFlags+2,EFLAGS_V86_MASK/010000h  ; is this a V86 frame?
+        test    byte ptr [esi+TsEFlags+2],EFLAGS_V86_MASK/010000h  ; is this a V86 frame?
         lea     ecx, dword ptr [ecx-NPX_FRAME_lENGTH]    ; compute NPX save area address
         jne     @f
         sub     ecx,TsV86Gs - TsHardwareSegSs ; bias for missing V86 fields
@@ -444,7 +444,7 @@ _NtCbGetDebugRet:
         mov     edx, PCR[PcTss]          ; Get address of task switch segment
         lea     esp, dword ptr [ecx+CuCbStk]      ; Trim stack back to callback frame
 .errnz (EFLAGS_V86_MASK AND 0FF00FFFFh)
-        test    byte ptr [edi+TsEFlags+2, EFLAGS_V86_MASK/010000h  ; is this a V86 frame?
+        test    byte ptr [edi+TsEFlags+2], EFLAGS_V86_MASK/010000h  ; is this a V86 frame?
         jne     @f
         sub     ebx, TsV86Gs - TsHardwareSegSs ; bias for missing V86 fields
 @@:
@@ -478,7 +478,7 @@ _NtCbCopyTrapFrame:
         mov     ecx, (TsV86Es-TsSegFs)/4 
         mov     esi, dword ptr [eax+ThTrapFrame]   ; trap frame for this system call
 .errnz (EFLAGS_V86_MASK AND 0FF00FFFFh)
-        test    byte ptr [esi+TsEFlags+2, EFLAGS_V86_MASK/010000h
+        test    byte ptr [esi+TsEFlags+2], EFLAGS_V86_MASK/010000h
         mov     edx, edi
         lea     edi, dword ptr [edi+TsSegFs]
         jz      short @f

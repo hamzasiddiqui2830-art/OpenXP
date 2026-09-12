@@ -1,7 +1,8 @@
         title  "Abios Support Assembly Routines"
 ;++
 ;
-; Copyright (c) OpenXP 
+; Copyright (c) OpenXP
+;
 ;
 ; Module Name:
 ;

@@ -1745,7 +1745,6 @@ UserFault:
                 (!MiEnsureAvailablePageOrWait (CurrentProcess, OldIrql))) {
 
                 ULONG Color;
-                PMMPTE ZeroPteArgument;
                 Color = MI_PAGE_COLOR_VA_PROCESS (VirtualAddress,
                                                 &CurrentProcess->NextPageColor);
                 PageFrameIndex = MiRemoveZeroPageIfAny (Color);

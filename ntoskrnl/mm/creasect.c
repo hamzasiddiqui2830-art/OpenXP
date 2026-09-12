@@ -4979,6 +4979,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI
 NtOpenSection(
     __out PHANDLE SectionHandle,
     __in ACCESS_MASK DesiredAccess,

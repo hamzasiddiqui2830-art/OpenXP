@@ -11,12 +11,6 @@ Abstract:
 
     This module contains the routines to support memory mirroring.
 
-Author:
-
-    Landy Wang (landyw) 17-Jan-2000
-
-Revision History:
-
 --*/
 
 #include "mi.h"
@@ -128,7 +122,7 @@ MmCreateMirror (
 
     ASSERT (MiMirroringActive == FALSE);
 
-    MmLockPagableSectionByHandle (ExPageLockHandle);
+    MmLockPageableSectionByHandle (ExPageLockHandle);
 
     //
     // Setting all the bits here states all the pages need to be mirrored.
@@ -175,7 +169,7 @@ MmCreateMirror (
     Status = HalStartMirroring ();
 
     if (!NT_SUCCESS(Status)) {
-        MmUnlockPagableImageSection(ExPageLockHandle);
+        MmUnlockPageableImageSection(ExPageLockHandle);
         MiZeroingDisabled = FALSE;
         ASSERT (MiMirroringActive == FALSE);
         MI_UNLOCK_DYNAMIC_MEMORY_EXCLUSIVE();
@@ -402,7 +396,7 @@ MmCreateMirror (
     
             if (!NT_SUCCESS(Status)) {
                 MiZeroingDisabled = FALSE;
-                MmUnlockPagableImageSection(ExPageLockHandle);
+                MmUnlockPageableImageSection(ExPageLockHandle);
                 MiMirroringActive = FALSE;
                 MI_UNLOCK_DYNAMIC_MEMORY_EXCLUSIVE();
                 return Status;
@@ -481,7 +475,7 @@ MmCreateMirror (
         }
 
         ASSERT (KeGetCurrentIrql () <= APC_LEVEL);
-        MmUnlockPagableImageSection(ExPageLockHandle);
+        MmUnlockPageableImageSection(ExPageLockHandle);
         MiZeroingDisabled = FALSE;
         MiMirroringActive = FALSE;
         MI_UNLOCK_DYNAMIC_MEMORY_EXCLUSIVE();
@@ -661,7 +655,7 @@ MmCreateMirror (
         if (!NT_SUCCESS(Status)) {
             UNLOCK_PFN2 (ExitIrql);
             MiZeroingDisabled = FALSE;
-            MmUnlockPagableImageSection(ExPageLockHandle);
+            MmUnlockPageableImageSection(ExPageLockHandle);
             MI_UNLOCK_DYNAMIC_MEMORY_EXCLUSIVE();
             return Status;
         }
@@ -737,7 +731,7 @@ MmCreateMirror (
             if (!NT_SUCCESS(Status)) {
                 UNLOCK_PFN2 (ExitIrql);
                 MiZeroingDisabled = FALSE;
-                MmUnlockPagableImageSection(ExPageLockHandle);
+                MmUnlockPageableImageSection(ExPageLockHandle);
                 MI_UNLOCK_DYNAMIC_MEMORY_EXCLUSIVE();
                 return Status;
             }
@@ -775,7 +769,7 @@ MmCreateMirror (
 
     MiZeroingDisabled = FALSE;
 
-    MmUnlockPagableImageSection(ExPageLockHandle);
+    MmUnlockPageableImageSection(ExPageLockHandle);
 
     MI_UNLOCK_DYNAMIC_MEMORY_EXCLUSIVE();
 

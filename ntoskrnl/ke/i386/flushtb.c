@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) Open XP
+Copyright (c) OpenXP
 
 Module Name:
 

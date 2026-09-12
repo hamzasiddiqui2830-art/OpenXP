@@ -14,10 +14,6 @@ Abstract:
 
     For the i386, it also contains code to initialize the PCR.
 
-Environment:
-
-    Kernel mode only.
-
 --*/
 
 #include "ki.h"
@@ -168,10 +164,10 @@ extern CHAR CmpIntelID[];
 extern CHAR CmpAmdID[];
 extern CHAR CmpTransmetaID[];
 extern CHAR CmpCentaurID[];
+extern CHAR CmpRiseID[];
 extern BOOLEAN KiFastSystemCallIsIA32;
 extern ULONG KiTimeLimitIsrMicroseconds;
 extern BOOLEAN KiSMTProcessorsPresent;
-extern BOOLEAN KiUnlicensedProcessorPresent;
 
 //
 // Declare routines who's addresses are taken but that are not otherwise
@@ -204,6 +200,7 @@ typedef enum {
     CPU_CYRIX,
     CPU_TRANSMETA,
     CPU_CENTAUR,
+    CPU_RISE,
     CPU_UNKNOWN
 } CPU_VENDORS;
 
@@ -214,14 +211,6 @@ typedef enum {
 //
 
 BOOLEAN KeI386XMMIPresent;
-
-//
-// x86 statically provides the idle process and idle thread for
-// processor 0.
-//
-
-EPROCESS    KiIdleProcess;
-ETHREAD     KiIdleThread0;
 
 //
 // Define prototypes and static initialization for the fast zero
@@ -274,13 +263,67 @@ RtlPrefetchMemoryNonTemporal(
 //
 
 ULONG Ki486CompatibilityLock;
-
+
 //
 // Profile vars
 //
 
-extern  KIDTENTRY IDT[];
-
+extern KIDTENTRY IDT[];
+
+#if defined(_X86PAE_)
+
+FORCEINLINE
+VOID
+KiEnableNXSupport (
+    VOID
+    )
+
+/*++
+
+Routine Description:
+
+    This function enables NX support on the current processor.
+
+Arguments:
+
+    None.
+
+Return Value:
+
+    None.
+
+--*/
+
+{
+
+    ULONG Temp;
+
+    //
+    // Enable NX support in the extended function enable register.
+    //
+
+    Temp = (ULONG)RDMSR(0xc0000080);
+    Temp |= 0x800;
+    WRMSR(0xc0000080, (ULONGLONG)Temp);
+
+    //
+    // Set memory management control values.
+    //
+
+    KeErrorMask = 0x9;
+    MmPaeErrMask = 0x8;
+    MmPaeMask = 0x8000000000000000UI64;
+
+    //
+    // Set NX enabled in user shared page.
+    //
+
+    SharedUserData->ProcessorFeatures[PF_NX_ENABLED] = TRUE;
+    return;
+}
+
+#endif
+
 VOID
 KiInitializeKernel (
     IN PKPROCESS Process,
@@ -330,16 +373,24 @@ Return Value:
 
 {
     ULONG DirectoryTableBase[2];
+    PVOID DpcStack;
     KIRQL OldIrql;
     PKPCR Pcr;
     BOOLEAN NpxFlag;
+
 #if !defined(NT_UP)
+
     BOOLEAN FxsrPresent;
     BOOLEAN XMMIPresent;
+
 #endif
+
     ULONG FeatureBits;
+
 #if defined(KE_MULTINODE)
+
     LONG  Index;
+
 #endif
 
     KiSetProcessorType();
@@ -351,7 +402,7 @@ Return Value:
     // Initialize processor's PowerState
     //
 
-    PoInitializePrcb (Prcb);
+    PoInitializePrcb(Prcb);
 
     //
     // Check for unsupported processor revision
@@ -366,11 +417,59 @@ Return Value:
     //
 
     FeatureBits = KiGetFeatureBits();
+
+    //
+    // Enable no execute protection if the host processor supports the
+    // feature and it is enabled via a loader option.
+    //
+    // N.B. If no execute protection is enabled, then other processors
+    //      are enabled in the HAL during their startup.
+    //
+    // N.B. LoadOptions is upcased by the loader.
+    //
+
+    SharedUserData->NXSupportPolicy = NX_SUPPORT_POLICY_OPTIN;
+    if (strstr(KeLoaderBlock->LoadOptions, "NOEXECUTE=ALWAYSON") != NULL) {
+        SharedUserData->NXSupportPolicy = NX_SUPPORT_POLICY_ALWAYSON;
+        FeatureBits |= KF_GLOBAL_32BIT_NOEXECUTE;
+
+    } else if (strstr(KeLoaderBlock->LoadOptions, "NOEXECUTE=OPTOUT") != NULL) {
+        SharedUserData->NXSupportPolicy = NX_SUPPORT_POLICY_OPTOUT;
+        FeatureBits |= KF_GLOBAL_32BIT_NOEXECUTE;
+
+    } else if (strstr(KeLoaderBlock->LoadOptions, "NOEXECUTE=OPTIN") != NULL) {
+        FeatureBits |= KF_GLOBAL_32BIT_NOEXECUTE;
+
+    } else if (strstr(KeLoaderBlock->LoadOptions, "NOEXECUTE=ALWAYSOFF") != NULL) {
+        SharedUserData->NXSupportPolicy = NX_SUPPORT_POLICY_ALWAYSOFF;
+        FeatureBits |= KF_GLOBAL_32BIT_EXECUTE;
+
+    } else if (strstr(KeLoaderBlock->LoadOptions, "NOEXECUTE") != NULL) {
+        FeatureBits |= KF_GLOBAL_32BIT_NOEXECUTE;
+
+    } else if (strstr(KeLoaderBlock->LoadOptions, "EXECUTE") != NULL) {
+        SharedUserData->NXSupportPolicy = NX_SUPPORT_POLICY_ALWAYSOFF;
+        FeatureBits |= KF_GLOBAL_32BIT_EXECUTE;
+    }
+
+
+#if defined (_X86PAE_)
+
+    if ((FeatureBits & KF_NOEXECUTE) == 0) {
+        FeatureBits &= ~KF_GLOBAL_32BIT_NOEXECUTE;
+    }
+
+    if ((FeatureBits & KF_GLOBAL_32BIT_NOEXECUTE) != 0) {
+        KiEnableNXSupport();
+    }
+
+#endif
+
     Prcb->FeatureBits = FeatureBits;
 
     //
-    // Do one time initialization of the ProcesorControlSpace in the PRCB
-    // so local kernel debugger can get things like the GDT
+    // Do one time initialization of the ProcessorControlSpace in the PRCB
+    // so local kernel debugger can get things like the GDT.
     //
 
     KiSaveProcessorControlState(&Prcb->ProcessorState);
@@ -393,14 +492,6 @@ Return Value:
     //
 
     if (Number == 0) {
-
-        //
-        // If any loader options were specified, then upper case the options.
-        //
-
-        if (LoaderBlock->LoadOptions != NULL) {
-            _strupr(LoaderBlock->LoadOptions);
-        }
 
         //
         // Set default node.  Used in non-multinode systems and in
@@ -444,13 +535,11 @@ Return Value:
         }
 
         KeFeatureBits = FeatureBits;
-
         KeI386FxsrPresent = ((KeFeatureBits & KF_FXSR) ? TRUE:FALSE);
-
         KeI386XMMIPresent = ((KeFeatureBits & KF_XMMI) ? TRUE:FALSE);
 
         //
-        // As of Whistler, cmpxchg8b is a required instruction.
+        // As of Windows XP, cmpxchg8b is a required instruction.
         //
 
         if ((KeFeatureBits & KF_CMPXCHG8B) == 0) {
@@ -461,6 +550,7 @@ Return Value:
             // Argument 1:
             //   bits 31-24: Unique value for missing feature.
             //   bits 23-0 : Family/Model/Stepping (this could compress).
+            //
             // Arguments 2 thru 4:
             //   Vendor Id string.
             //
@@ -471,8 +561,7 @@ Return Value:
                           | (Prcb->CpuType << 16) | Prcb->CpuStep,
                          Vendor[0],
                          Vendor[1],
-                         Vendor[2]
-                         );
+                         Vendor[2]);
         }
 
         //
@@ -542,7 +631,7 @@ Return Value:
 
             //
             // Copy the UP version of KeTryToAcquireQueuedSpinLockAtRaisedIrql
-            // over the top of the MP versin.
+            // over the top of the MP version.
             //
 
             PatchSource = (PUCHAR)(ULONG_PTR)&(KeTryToAcquireQueuedSpinLockAtRaisedIrqlUP);
@@ -555,6 +644,7 @@ Return Value:
 
             #undef RET
         }
+
         KeReleaseSpinLock(&Ki486CompatibilityLock, OldIrql);
 
 #endif
@@ -594,26 +684,31 @@ Return Value:
 
         FxsrPresent = ((FeatureBits & KF_FXSR) ? TRUE:FALSE);
         if (FxsrPresent != KeI386FxsrPresent) {
+
             //
             // FXSR support must be available on all processors or on none
             //
-            KeBugCheckEx (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED, KF_FXSR, 0, 0, 0);
+
+            KeBugCheckEx(MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED, KF_FXSR, 0, 0, 0);
         }
 
         XMMIPresent = ((FeatureBits & KF_XMMI) ? TRUE:FALSE);
         if (XMMIPresent != KeI386XMMIPresent) {
+
             //
             // XMMI support must be available on all processors or on none
             //
-            KeBugCheckEx (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED, KF_XMMI, 0, 0, 0);
+
+            KeBugCheckEx(MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED, KF_XMMI, 0, 0, 0);
         }
 
         if (NpxFlag != KeI386NpxPresent) {
+
             //
             // NPX support must be available on all processors or on none
             //
 
-            KeBugCheckEx (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED, 0x387, 0, 0, 0);
+            KeBugCheckEx(MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED, 0x387, 0, 0, 0);
         }
 
         if ((ULONG)(Prcb->CpuType) != KeI386CpuType) {
@@ -630,38 +725,42 @@ Return Value:
         }
 
         if ((KiBootFeatureBits & KF_CMPXCHG8B)  &&  !(FeatureBits & KF_CMPXCHG8B)) {
+
             //
             // cmpxchg8b must be available on all processors, if installed at boot
             //
 
-            KeBugCheckEx (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED, KF_CMPXCHG8B, 0, 0, 0);
+            KeBugCheckEx(MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED, KF_CMPXCHG8B, 0, 0, 0);
         }
 
         if ((KeFeatureBits & KF_GLOBAL_PAGE)  &&  !(FeatureBits & KF_GLOBAL_PAGE)) {
+
             //
             // Global page support must be available on all processors, if on boot processor
             //
 
-            KeBugCheckEx (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED, KF_GLOBAL_PAGE, 0, 0, 0);
+            KeBugCheckEx(MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED, KF_GLOBAL_PAGE, 0, 0, 0);
         }
 
         if ((KeFeatureBits & KF_PAT)  &&  !(FeatureBits & KF_PAT)) {
+
             //
             // PAT must be available on all processors, if on boot processor
             //
 
-            KeBugCheckEx (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED, KF_PAT, 0, 0, 0);
+            KeBugCheckEx(MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED, KF_PAT, 0, 0, 0);
         }
 
         if ((KeFeatureBits & KF_MTRR)  &&  !(FeatureBits & KF_MTRR)) {
+
             //
             // MTRR must be available on all processors, if on boot processor
             //
 
-            KeBugCheckEx (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED, KF_MTRR, 0, 0, 0);
+            KeBugCheckEx(MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED, KF_MTRR, 0, 0, 0);
         }
 
-               if ((KeFeatureBits & KF_NOEXECUTE) && !(FeatureBits & KF_NOEXECUTE)) {
+        if ((KeFeatureBits & KF_NOEXECUTE) && !(FeatureBits & KF_NOEXECUTE)) {
 
             //
             // KF_NOEXECUTE must be available on all processors, if on
@@ -676,6 +775,7 @@ Return Value:
         }
 
         if ((KeFeatureBits & KF_FAST_SYSCALL) != (FeatureBits & KF_FAST_SYSCALL)) {
+
             //
             // If this feature is not available on all processors
             // don't use it at all.
@@ -800,35 +900,12 @@ Return Value:
     //
 
     if (Number == 0) {
-        ULONG i, j;
-        ULONGLONG Temp1;
+        KiTimeIncrementReciprocal = KeComputeReciprocal((LONG)KeMaximumIncrement,
+                                                        &KiTimeIncrementShiftCount);
 
         Prcb->MaximumDpcQueueDepth = KiMaximumDpcQueueDepth;
         Prcb->MinimumDpcRate = KiMinimumDpcRate;
         Prcb->AdjustDpcThreshold = KiAdjustDpcThreshold;
-
-        i = 1;
-        j = KeMaximumIncrement;
-        while ((1UI64<<i) <= KeMaximumIncrement) {
-            i++;
-        }
-        KiLog2MaximumIncrement = i;
-        ASSERT ((1UL<<KiLog2MaximumIncrement) >= KeMaximumIncrement);
-        ASSERT ((1UL<<KiLog2MaximumIncrement) <= KeMaximumIncrement * 2 - 1);
-
-        Temp1 = 1UI64 << (KiLog2MaximumIncrement + 32);
-        Temp1 /= KeMaximumIncrement;
-        Temp1 -= 1UI64<<32;
-        Temp1 += 1;
-        KiMaximumIncrementReciprocal = (ULONG) Temp1;
-        KeTimerReductionModulus = KeMaximumIncrement * TIMER_TABLE_SIZE;
-        ASSERT ((KeTimerReductionModulus / TIMER_TABLE_SIZE) == KeMaximumIncrement);
-        Temp1 = 1UI64<<32;
-        Temp1 %= KeTimerReductionModulus;
-        KiUpperModMul = (ULONG) Temp1;
-    }
-
-    if (Number == 0) {
 
         //
         // Processor 0's DPC stack was temporarily allocated on
@@ -836,10 +913,7 @@ Return Value:
         // stack now.
         //
 
-        PVOID DpcStack;
-
         DpcStack = MmCreateKernelStack(FALSE, 0);
-
         if (DpcStack == NULL) {
             KeBugCheckEx(NO_PAGES_AVAILABLE, 1, 0, 0, 0);
         }
@@ -905,7 +979,7 @@ KiInitializePcr (
 Routine Description:
 
     This function is called to initialize the PCR for a processor.  It
-    simply stuffs values into the PCR.  (The PCR is not inited statically
+    simply stuffs values into the PCR.  (The PCR is not initialized statically
     because the number varies with the number of processors.)
 
     Note that each processor has its own IDT, GDT, and TSS as well as PCR!
@@ -929,47 +1003,59 @@ Return Value:
     None.
 
 --*/
+
 {
+
+    //
     // set version values
+    //
 
     Pcr->MajorVersion = PCR_MAJOR_VERSION;
     Pcr->MinorVersion = PCR_MINOR_VERSION;
-
     Pcr->PrcbData.MajorVersion = PRCB_MAJOR_VERSION;
     Pcr->PrcbData.MinorVersion = PRCB_MINOR_VERSION;
-
     Pcr->PrcbData.BuildType = 0;
 
 #if DBG
+
     Pcr->PrcbData.BuildType |= PRCB_BUILD_DEBUG;
+
 #endif
 
 #ifdef NT_UP
+
     Pcr->PrcbData.BuildType |= PRCB_BUILD_UNIPROCESSOR;
+
 #endif
 
 #if defined (_X86PAE_)
+
     if (Processor == 0) {
+
         //
         //  PAE feature must be initialized prior to the first HAL call.
         //
 
         SharedUserData->ProcessorFeatures[PF_PAE_ENABLED] = TRUE;
     }
+
 #endif
 
+    //
     //  Basic addressing fields
+    //
 
     Pcr->SelfPcr = Pcr;
     Pcr->Prcb = &(Pcr->PrcbData);
 
+    //
     //  Thread control fields
+    //
 
     Pcr->NtTib.ExceptionList = EXCEPTION_CHAIN_END;
     Pcr->NtTib.StackBase = NULL;
     Pcr->PerfGlobalGroupMask = NULL;
     Pcr->NtTib.Self = NULL;
-
     Pcr->PrcbData.CurrentThread = Thread;
 
     //
@@ -980,10 +1066,11 @@ Return Value:
     Pcr->PrcbData.Number = (UCHAR)Processor;
     Pcr->PrcbData.SetMember = 1 << Processor;
     KiProcessorBlock[Processor] = Pcr->Prcb;
-
     Pcr->Irql = 0;
 
+    //
     //  Machine structure addresses
+    //
 
     Pcr->GDT = Gdt;
     Pcr->IDT = Idt;
@@ -996,101 +1083,9 @@ Return Value:
     //
 
     Pcr->PrcbData.MultiThreadProcessorSet = Pcr->PrcbData.SetMember;
-
     return;
 }
-
-#if 0
-VOID
-KiInitializeDblFaultTSS(
-    IN PKTSS Tss,
-    IN ULONG Stack,
-    IN PKGDTENTRY TssDescriptor
-    )
 
-/*++
-
-Routine Description:
-
-    This function is called to initialize the double-fault TSS for a
-    processor.  It will set the static fields of the TSS to point to
-    the double-fault handler and the appropriate double-fault stack.
-
-    Note that the IOPM for the double-fault TSS grants access to all
-    ports.  This is so the standard HAL's V86-mode callback to reset
-    the display to text mode will work.
-
-Arguments:
-
-    Tss - Supplies a pointer to the double-fault TSS
-
-    Stack - Supplies a pointer to the double-fault stack.
-
-    TssDescriptor - Linear address of the descriptor for the TSS.
-
-Return Value:
-
-    None.
-
---*/
-
-{
-    PUCHAR  p;
-    ULONG   i;
-    ULONG   j;
-
-    //
-    // Set limit for TSS
-    //
-
-    if (TssDescriptor != NULL) {
-        TssDescriptor->LimitLow = sizeof(KTSS) - 1;
-        TssDescriptor->HighWord.Bits.LimitHi = 0;
-    }
-
-    //
-    // Initialize IOPMs
-    //
-
-    for (i = 0; i < IOPM_COUNT; i++) {
-            p = (PUCHAR)(Tss->IoMaps[i]);
-
-        for (j = 0; j < PIOPM_SIZE; j++) {
-            p[j] = 0;
-        }
-    }
-
-    //  Set IO Map base address to indicate no IO map present.
-
-    // N.B. -1 does not seem to be a valid value for the map base.  If this
-    //      value is used, byte immediate in's and out's will actually go
-    //      the hardware when executed in V86 mode.
-
-    Tss->IoMapBase = KiComputeIopmOffset(IO_ACCESS_MAP_NONE);
-
-    //  Set flags to 0, which in particular disables traps on task switches.
-
-    Tss->Flags = 0;
-
-
-    //  Set LDT and Ss0 to constants used by NT.
-
-    Tss->LDT  = 0;
-    Tss->Ss0  = KGDT_R0_DATA;
-    Tss->Esp0 = Stack;
-    Tss->Eip  = (ULONG)KiTrap08;
-    Tss->Cs   = KGDT_R0_CODE || RPL_MASK;
-    Tss->Ds   = KGDT_R0_DATA;
-    Tss->Es   = KGDT_R0_DATA;
-    Tss->Fs   = KGDT_R0_DATA;
-
-
-    return;
-
-}
-#endif
-
-
 VOID
 KiInitializeTSS (
     IN PKTSS Tss
@@ -1116,29 +1111,33 @@ Return Value:
     None.
 
 --*/
+
 {
 
+    //
     //  Set IO Map base address to indicate no IO map present.
-
+    //
     // N.B. -1 does not seem to be a valid value for the map base.  If this
     //      value is used, byte immediate in's and out's will actually go
     //      the hardware when executed in V86 mode.
 
     Tss->IoMapBase = KiComputeIopmOffset(IO_ACCESS_MAP_NONE);
 
+    //
     //  Set flags to 0, which in particular disables traps on task switches.
+    //
 
     Tss->Flags = 0;
 
-
+    //
     //  Set LDT and Ss0 to constants used by NT.
+    //
 
     Tss->LDT = 0;
     Tss->Ss0 = KGDT_R0_DATA;
-
     return;
 }
-
+
 VOID
 KiInitializeTSS2 (
     IN PKTSS Tss,
@@ -1162,7 +1161,9 @@ Return Value:
     None.
 
 --*/
+
 {
+
     PUCHAR  p;
     ULONG   i;
     ULONG   j;
@@ -1206,21 +1207,26 @@ Return Value:
     //
     // Initialize the map for IO_ACCESS_MAP_NONE
     //
+
     p = (PUCHAR)(Tss->IntDirectionMap);
     for (j = 0; j < INT_DIRECTION_MAP_SIZE; j++) {
         p[j] = 0;
     }
 
+    //
     // dpmi requires special case for int 2, 1b, 1c, 23, 24
+    //
+
     p[0] = 4;
     p[3] = 0x18;
     p[4] = 0x18;
 
     return;
 }
-
+
 VOID
 KiSwapIDT (
+    VOID
     )
 
 /*++
@@ -1242,7 +1248,9 @@ Return Value:
     None.
 
 --*/
+
 {
+
     LONG    Index;
     USHORT Temp;
 
@@ -1256,9 +1264,9 @@ Return Value:
         IDT[Index].ExtendedOffset = Temp;
     }
 }
-
+
 ULONG
-KiGetCpuVendor(
+KiGetCpuVendor (
     VOID
     )
 
@@ -1278,7 +1286,9 @@ Return Value:
     One of the members of the enumeration CPU_VENDORS (defined above).
 
 --*/
+
 {
+
     PKPRCB Prcb;
     ULONG  Junk;
     ULONG  Buffer[4];
@@ -1301,25 +1311,31 @@ Return Value:
     RtlCopyMemory(
         Prcb->VendorString,
         Buffer,
-        sizeof(Prcb->VendorString) - 1
-        );
+        sizeof(Prcb->VendorString) - 1);
 
     Prcb->VendorString[sizeof(Prcb->VendorString) - 1] = '\0';
-
     if (strcmp((PCHAR)Buffer, CmpIntelID) == 0) {
         return CPU_INTEL;
+
     } else if (strcmp((PCHAR)Buffer, CmpAmdID) == 0) {
         return CPU_AMD;
+
     } else if (strcmp((PCHAR)Buffer, CmpCyrixID) == 0) {
         return CPU_CYRIX;
+
     } else if (strcmp((PCHAR)Buffer, CmpTransmetaID) == 0) {
         return CPU_TRANSMETA;
+
     } else if (strcmp((PCHAR)Buffer, CmpCentaurID) == 0) {
         return CPU_CENTAUR;
+
+    } else if (strcmp((PCHAR)Buffer, CmpRiseID) == 0) {
+        return CPU_RISE;
     }
+
     return CPU_UNKNOWN;
 }
-
+
 ULONG
 KiGetFeatureBits (
     VOID
@@ -1343,6 +1359,7 @@ Return Value:
 --*/
 
 {
+
     ULONG           Junk;
     ULONG           Temp;
     ULONG           ProcessorFeatures;
@@ -1354,7 +1371,6 @@ Return Value:
     BOOLEAN         ExtendedCPUIDSupport = TRUE;
 
     Prcb = KeGetCurrentPrcb();
-
     NtBits = KF_WORKING_PTE;
 
     //
@@ -1521,7 +1537,7 @@ Return Value:
     if (CpuVendor == CPU_CYRIX) {
 
         //
-        // Workaround bug 324467 which is caused by INTR being
+        // Workaround problem caused by INTR being
         // held high too long during an FP instruction and causing
         // random Trap07 with no exception bits.
         //
@@ -1595,10 +1611,10 @@ Return Value:
     // will not be able to boot if they set this feature bit.
     //
     // This was incorrect in NT4 and resulted processor vendors claiming
-    // not to support cmpxchg8b even if they did.   Whistler requires
+    // not to support cmpxchg8b even if they did.   Windows XP requires
     // cmpxchg8b, work around this problems for the cases we know about.
     //
-    // Because cmpxchg8b is a requirement for whistler, winnt32 needs to
+    // Because cmpxchg8b is a requirement for Windows XP, winnt32 needs to
     // be modified if new processors are added to the following list.
     // Also, setupldr.   Both executables were modified so as to warn
     // the user rather than installing an unbootable system.
@@ -1632,6 +1648,7 @@ Return Value:
             //
 
             ULONG CentaurFeatureControlMSR = 0x107;
+            ULONGLONG FeatureMask = 0xFFFFFFFFFFFFFFFFUI64;
 
             if (Prcb->CpuType >= 6) {
 
@@ -1639,13 +1656,28 @@ Return Value:
                 // Centaur processors (Cyrix III) turn on the cmpxchg8b
                 // feature bit by setting bit 1 in MSR 1107.
                 //
+                // Disable bit 0 which controls the Cyrix ALTINST feature.
+                //
             
                 CentaurFeatureControlMSR = 0x1107;
+                FeatureMask = 0xFFFFFFFFFFFFFFFEUI64;
             }
 
             MsrValue = RDMSR(CentaurFeatureControlMSR);
             MsrValue |= 2;
+            MsrValue &= FeatureMask;
             WRMSR(CentaurFeatureControlMSR, MsrValue);
+
+            ProcessorFeatures |= 0x100;
+        
+        } else if (CpuVendor == CPU_RISE) {
+
+            //
+            // Embedded x86 processor from Rise.  This processor
+            // doesn't have a mechanism to turn on this feature bit
+            // but does have the functionality.  Act as if we saw the
+            // feature bit.
+            //
 
             ProcessorFeatures |= 0x100;
         }
@@ -1705,15 +1737,17 @@ Return Value:
         Prcb->LogicalProcessorsPerPhysicalProcessor = (UCHAR)(Temp >> 16);
         if (Prcb->LogicalProcessorsPerPhysicalProcessor > 1) {
             KiSMTProcessorsPresent = TRUE;
+
         } else {
             Prcb->LogicalProcessorsPerPhysicalProcessor = 1;
         }
+
     } else {
         Prcb->LogicalProcessorsPerPhysicalProcessor = 1;
     }
 
     //
-    // Check extended functions.   First, check for existance,
+    // Check extended functions.   First, check for existence,
     // then check extended function 0x80000001 (Extended Processor
     // Features) if present.
     //
@@ -1745,6 +1779,14 @@ Return Value:
                 CPUID(0x80000001, &Temp, &Junk, &Junk, &ExtendedProcessorFeatures);
 
                 //
+                // Check if no execute protection supported.
+                //
+
+                if (ExtendedProcessorFeatures & 0x00100000) {
+                    NtBits |= KF_NOEXECUTE;
+                }
+
+                //
                 // With these, we can only do what we're told.
                 //
 
@@ -1754,31 +1796,6 @@ Return Value:
                     if (ExtendedProcessorFeatures & 0x80000000) {
                         NtBits |= KF_3DNOW;
                     }
-
-#if 0
-
-                    //
-                    // There is a security hole with this implementation
-                    // of fast system call such that it is possible to
-                    // end up in the trap01 handler running on the user
-                    // stack (ie not kernel stack).   Unfortunately this
-                    // prohibits use of this instruction pair.
-                    //
-
-                    if (ExtendedProcessorFeatures & 0x00000800) {
-
-                        //
-                        // This processor supports AMD's implementation
-                        // of SYSENTER/SYSEXIT (SYSCALL/SYSRET).  Use this
-                        // unless it also supports the IA32 version.
-                        //
-
-                        if ((NtBits & KF_FAST_SYSCALL) == 0) {
-                            NtBits |= KF_FAST_SYSCALL;
-                        }
-                    }
-
-#endif
 
                     //
                     // If the host processor supports no execute protection,
@@ -1796,29 +1813,6 @@ Return Value:
                         KiMtrrMaxRangeShift = 40;
                     }
 
-#if defined(_X86PAE_)
-
-                    //
-                    // Enable no execute protection if the host processor
-                    // supports the feature and it is enabled via a loader
-                    // option.
-                    //
-
-                    if (ExtendedProcessorFeatures & 0x00100000) {
-                        Temp = (ULONG)RDMSR(0xc0000080);
-                        Temp |= 0x800;
-                        WRMSR(0xc0000080, (ULONGLONG)Temp);
-                        if ((KeLoaderBlock->LoadOptions != NULL) &&
-                            (strstr(KeLoaderBlock->LoadOptions, "NOEXECUTE") != NULL)) {
-
-                            KeErrorMask = 0x9;
-                            MmPaeErrMask = 0x8;
-                            MmPaeMask = 0x8000000000000000UI64;
-                        }
-                    }
-
-#endif
-
                     break;
                 }
             }
@@ -1829,11 +1823,13 @@ Return Value:
 }
 
 VOID
-KiGetCacheInformation(
+KiGetCacheInformation (
     VOID
     )
 {
+
 #define CPUID_REG_COUNT 4
+
     ULONG CpuidData[CPUID_REG_COUNT];
     ULONG Line = 64;
     ULONG Size = 0;
@@ -1847,7 +1843,6 @@ KiGetCacheInformation(
     //
 
     Pcr = KeGetPcr();
-
     Pcr->SecondLevelCacheSize = 0;
 
     //
@@ -1855,7 +1850,6 @@ KiGetCacheInformation(
     //
 
     CpuVendor = KiGetCpuVendor();
-
     if (CpuVendor == CPU_NONE) {
         return;
     }
@@ -1903,7 +1897,7 @@ KiGetCacheInformation(
             // The Intel folks say keep it to a reasonable upper bound,
             // eg 49.
             //
-            // N.B. the range 0x80 .. 0x86 indicates the same cache
+            // N.B. the range 0x80 .. 0x85 indicates the same cache
             // sizes but 8 way associative.
             //
             // Also, the most significant bit of each register indicates
@@ -1969,14 +1963,15 @@ KiGetCacheInformation(
 
                         if (((Descriptor > 0x40) && (Descriptor <= 0x47)) ||
                             ((Descriptor > 0x78) && (Descriptor <= 0x7c)) ||
-                            ((Descriptor > 0x80) && (Descriptor <= 0x87))) {
+                            ((Descriptor > 0x80) && (Descriptor <= 0x85))) {
 
                             //
                             // L2 descriptor.
                             //
-                            // To date, for all the descriptors we know
+                            // To date, for most of the descriptors we know
                             // about those above 0x78 are 8 way and those
-                            // below are 4 way.
+                            // below are 4 way.  The others will be special
+                            // cased below.
                             //
 
                             Assoc = Descriptor >= 0x79 ? 8 : 4;
@@ -1988,9 +1983,9 @@ KiGetCacheInformation(
                             Descriptor &= 0x07;
 
                             //
-                            // There are cache descriptors in this
+                            // There may be cache descriptors in this
                             // range that we don't understand
-                            // accurately yet e.g on Banias
+                            // accurately yet.
                             //
 
                             Size = 0x10000 << Descriptor;
@@ -2048,6 +2043,73 @@ KiGetCacheInformation(
                             //
 
                             KePrefetchNTAGranularity = 128;
+
+                        } else if (
+                             ((Descriptor >= 0x4A) && (Descriptor <= 0x4C)) ||
+                             (Descriptor == 0x78) ||
+                             (Descriptor == 0x7D) || (Descriptor == 0x7F) ||
+                             (Descriptor == 0x86) || (Descriptor == 0x87)
+                            ) {
+
+                            //
+                            // These are the 64 byte cache line entries for L2
+                            // caches that do not fit the pattern described
+                            // above.
+                            //
+
+                            if (Line < 64) {
+                                Line = 64;
+                            }
+
+                            switch (Descriptor) {
+
+                            case 0x4A:
+                                Size = 4 * 1024 * 1024;
+                                Assoc = 8;
+                                break;
+
+                            case 0x4B:
+                                Size = 6 * 1024 * 1024;
+                                Assoc = 12;
+                                break;
+
+                            case 0x4C:
+                                Size = 8 * 1024 * 1024;
+                                Assoc = 16;
+                                break;
+
+                            case 0x78:
+                                Size = 1 * 1024 * 1024;
+                                Assoc = 4;
+                                break;
+
+                            case 0x7D:
+                                Size = 2 * 1024 * 1024;
+                                Assoc = 8;
+                                break;
+
+                            case 0x7F:
+                                Size = 512 * 1024;
+                                Assoc = 2;
+                                break;
+
+                            case 0x86:
+                                Size = 512 * 1024;
+                                Assoc = 4;
+                                break;
+
+                            case 0x87:
+                                Size = 1 * 1024 * 1024;
+                                Assoc = 8;
+                                break;
+
+                            }
+
+                            if ((Size / Assoc) > AdjustedSize) {
+                                AdjustedSize = Size / Assoc;
+                                Pcr->SecondLevelCacheSize = Size;
+                                Pcr->SecondLevelCacheAssociativity = Assoc;
+                            }
                         }
 
                         //
@@ -2066,7 +2128,9 @@ KiGetCacheInformation(
 
             } while (--CpuidIterations);
         }
+
         break;
+
     case CPU_AMD:
 
         //
@@ -2082,6 +2146,7 @@ KiGetCacheInformation(
 
             break;
         }
+
         CPUID(0x80000005, CpuidData, CpuidData+1, CpuidData+2, CpuidData+3);
         KePrefetchNTAGranularity = CpuidData[2] & 0xff;
 
@@ -2098,6 +2163,7 @@ KiGetCacheInformation(
 
             break;
         }
+
         CPUID(0x80000006, CpuidData, CpuidData+1, CpuidData+2, CpuidData+3);
         Line = CpuidData[2] & 0xff;
         switch ((CpuidData[2] >> 12) & 0xf) {
@@ -2112,6 +2178,7 @@ KiGetCacheInformation(
         case 0xf:  Assoc = 16; break;
         default:    Assoc = 1;  break;
         }
+
         Size = (CpuidData[2] >> 16) << 10;
         if ((Pcr->PrcbData.CpuType == 0x6) &&
             (Pcr->PrcbData.CpuStep == 0x300)) {
@@ -2134,20 +2201,24 @@ KiGetCacheInformation(
     }
 
 #undef CPUID_REG_COUNT
+
 }
-
-#define MAX_ATTEMPTS    10
+
+#define MAX_ATTEMPTS 10
 
 VOID
-KiLockStepProcessor(
+KiLockStepProcessor (
     PKIPI_CONTEXT SignalDone,
     IN PVOID Arg1,
     IN PVOID Arg2,
     IN PVOID Proceed
     )
+
 {
+
     UNREFERENCED_PARAMETER(Arg1);
     UNREFERENCED_PARAMETER(Arg2);
+
     //
     // Tell initiating processor that this processor is now waiting
     // and wait until the initial processor signals this processor
@@ -2158,10 +2229,12 @@ KiLockStepProcessor(
 }
 
 VOID
-KiLockStepOtherProcessors(
+KiLockStepOtherProcessors (
     PULONG Proceed
     )
+
 {
+
     PKPRCB Prcb;
     KAFFINITY TargetProcessors;
 
@@ -2186,15 +2259,19 @@ VOID
 KiUnlockStepOtherProcessors(
     PULONG Proceed
     )
+
 {
     (*Proceed) += 1;
 }
+
 
 BOOLEAN
 KiInitMachineDependent (
     VOID
     )
+
 {
+
     PKPRCB Prcb;
     KAFFINITY       ActiveProcessors, CurrentAffinity;
     ULONG           NumberProcessors;
@@ -2212,21 +2289,15 @@ KiInitMachineDependent (
         LONGLONG        TSCDelta;
         ULONG           MHz;
     } Samples[MAX_ATTEMPTS], *pSamp;
+
 #ifndef NT_UP
+
     PUCHAR          PatchLocation;
+
 #endif
 
     Prcb = KeGetCurrentPrcb();
 
-    //
-    // If we've got unlicensed processors dependent on previous page
-    // table state, don't enable large page support otherwise an SMI
-    // can cause those unlicensed processors to reset.
-    //
-
-    if (KiUnlicensedProcessorPresent) {
-        KeFeatureBits &= ~KF_LARGE_PAGE;
-    }
 
     //
     // If PDE large page is supported, enable it.
@@ -2235,6 +2306,7 @@ KiInitMachineDependent (
     // easier while turning on large pages.
     //
 
+    KiLargePageSafetyCheck();
     if (KeFeatureBits & KF_LARGE_PAGE) {
         if (Ki386CreateIdentityMap(&IdentityMap,
                                    (PVOID) (ULONG_PTR) &Ki386EnableCurrentLargePage,
@@ -2294,7 +2366,6 @@ KiInitMachineDependent (
         }
     }
 
-
     //
     // If PAT is supported then initialize it.
     //
@@ -2302,7 +2373,6 @@ KiInitMachineDependent (
     if (KeFeatureBits & KF_PAT) {
         KiInitializePAT();
     }
-
 
     //
     // Check to see if the floating point emulator should be used.
@@ -2392,6 +2462,7 @@ em20:
             }
 
         }
+
         break;
 
     default:
@@ -2471,31 +2542,61 @@ em20:
             );
 
 #if !defined(NT_UP)
-            //
-            // Enable non-temporal zeroing on all machines except MP
-            // Pentium 4 machines.  Pentium 4 machines can explicitly
-            // request this functionality via registry key.  This was
-            // done to address a livelock issue.
-            //
 
-            if ((strcmp((PCHAR)Prcb->VendorString, CmpIntelID) != 0) ||
-                (Prcb->CpuType != 15) || KiXMMIZeroingEnable)
+
+#define XMMI_ZEROING_ALLOW_OVERRIDE                     1
+#define XMMI_ZEROING_DISALLOW_OVERRIDE                  2
+
+
+            //
+            // Having XMMI Zeroing enabled if the processor supports it is good.
+            // By default if the feature is present we will use it.
+            //
+            // We allow three sets of overrides to this however.
+            // 1. disable use of XMMI Zeroing if explicitly configured via disable regkey.
+            //  Purportedly, some pentium 3 based systems boot faster in this configuration.
+            //
+            // 2. Some Intel pentium 4 systems do not operate properly with this feature
+            //  enabled.  These machines hit a livelock.  Thus by default, if your system
+            //  is a pentium 4, this feature gets disabled.
+            //
+            // 3. Not all pentium 4 based systems have this livelock issue.  To enable these
+            //  systems that work properly to take advantage of this feature, we allow an
+            //  explicit enable registry key to be set.
+            //
+            if (KiXMMIZeroingEnable != XMMI_ZEROING_DISALLOW_OVERRIDE) {
+                //
+                // Enable non-temporal zeroing on all machines except MP
+                // Pentium 4 machines.  Pentium 4 machines can explicitly
+                // request this functionality via registry key.  This was
+                // done to address a livelock issue.
+                //
+
+                if ((strcmp((PCHAR)Prcb->VendorString, CmpIntelID) != 0) ||
+                    (Prcb->CpuType != 15) || (KiXMMIZeroingEnable == XMMI_ZEROING_ALLOW_OVERRIDE) )
+
 #endif
-            {
-                KeZeroPages = KiXMMIZeroPages;
-                KeZeroPagesFromIdleThread = KiXMMIZeroPagesNoSave;
-            }
 
-            *(PUCHAR)(ULONG_PTR)&RtlPrefetchMemoryNonTemporal = 0x90;
+                {
+                    KeZeroPages = KiXMMIZeroPages;
+                    KeZeroPagesFromIdleThread = KiXMMIZeroPagesNoSave;
+                }
+#if !defined(NT_UP)
+             }
+#endif
+                *(PUCHAR)(ULONG_PTR)&RtlPrefetchMemoryNonTemporal = 0x90;
         }
 
 
     } else {
+
 #ifndef NT_UP
+
         //
         // Patch the fxsave instruction in SwapContext to use
         // "fnsave {dd, 31}, fwait {9b}"
         //
+
         ASSERT( ((ULONG)&ScPatchFxe-(ULONG)&ScPatchFxb) >= 3);
 
         PatchLocation = (PUCHAR)&ScPatchFxb;
@@ -2503,14 +2604,15 @@ em20:
         *PatchLocation++ = 0xdd;
         *PatchLocation++ = 0x31;
         *PatchLocation++ = 0x9b;
-
         while (PatchLocation < (PUCHAR)&ScPatchFxe) {
             //
             // Put nop's in the remaining bytes
             //
             *PatchLocation++ = 0x90;
         }
+
 #endif
+
     }
 
     //
@@ -2520,10 +2622,8 @@ em20:
     //
 
     KiRestoreFastSyscallReturnState();
-
     ActiveProcessors = KeActiveProcessors;
     for (CurrentAffinity=1; ActiveProcessors; CurrentAffinity <<= 1) {
-
         if (ActiveProcessors & CurrentAffinity) {
 
             //
@@ -2790,11 +2890,9 @@ KeOptimizeProcessorControlState (
     VOID
     )
 {
-    Ke386ConfigureCyrixProcessor ();
+    Ke386ConfigureCyrixProcessor();
 }
 
-
-
 VOID
 KeSetup80387OrEmulate (
     IN PVOID *R3EmulatorTable
@@ -2822,6 +2920,7 @@ Return Value:
 --*/
 
 {
+
     PKINTERRUPT_ROUTINE HandlerAddress;
     KAFFINITY           ActiveProcessors, CurrentAffinity;
     KIRQL               OldIrql;
@@ -2959,21 +3058,23 @@ Return Value:
                     KiMoveRegTree (SourceHandle, DestHandle);
                     ZwClose (DestHandle);
                 }
+
                 ZwClose (SourceHandle);
             }
+
             ZwClose (SystemHandle);
         }
     }
 }
 
-
-
 NTSTATUS
-KiMoveRegTree(
+KiMoveRegTree (
     HANDLE  Source,
     HANDLE  Dest
     )
+
 {
+
     NTSTATUS                    Status;
     PKEY_BASIC_INFORMATION      KeyInformation;
     PKEY_VALUE_FULL_INFORMATION KeyValue;
@@ -3008,31 +3109,28 @@ KiMoveRegTree(
             break;
         }
 
-
         //
         // Write value to dest node
         //
 
         ValueName.Buffer = KeyValue->Name;
         ValueName.Length = (USHORT) KeyValue->NameLength;
-        ZwSetValueKey( Dest,
-                       &ValueName,
-                       KeyValue->TitleIndex,
-                       KeyValue->Type,
-                       buffer+KeyValue->DataOffset,
-                       KeyValue->DataLength
-                      );
+        ZwSetValueKey(Dest,
+                      &ValueName,
+                      KeyValue->TitleIndex,
+                      KeyValue->Type,
+                      buffer+KeyValue->DataOffset,
+                      KeyValue->DataLength);
 
         //
         // Delete value and get first value again
         //
 
-        Status = ZwDeleteValueKey (Source, &ValueName);
+        Status = ZwDeleteValueKey(Source, &ValueName);
         if (!NT_SUCCESS(Status)) {
             break;
         }
     }
-
 
     //
     // Enumerate node's children and apply ourselves to each one
@@ -3045,14 +3143,12 @@ KiMoveRegTree(
         // Open node's first key
         //
 
-        Status = ZwEnumerateKey(
-                    Source,
-                    0,
-                    KeyBasicInformation,
-                    KeyInformation,
-                    sizeof (buffer),
-                    &ResultLength
-                    );
+        Status = ZwEnumerateKey(Source,
+                                0,
+                                KeyBasicInformation,
+                                KeyInformation,
+                                sizeof (buffer),
+                                &ResultLength);
 
         if (!NT_SUCCESS(Status)) {
             break;
@@ -3060,7 +3156,6 @@ KiMoveRegTree(
 
         KeyName.Buffer = KeyInformation->Name;
         KeyName.Length = (USHORT) KeyInformation->NameLength;
-
         InitializeObjectAttributes(
             &ObjectAttributes,
             &KeyName,
@@ -3130,7 +3225,7 @@ KiMoveRegTree(
 
     return NtDeleteKey (Source);
 }
-
+
 VOID
 KiI386PentiumLockErrataFixup (
     VOID

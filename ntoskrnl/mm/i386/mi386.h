@@ -537,6 +537,12 @@ extern PMMPTE MiInitialSystemPageDirectory;
             MI_LOG_PTE_CHANGE (_PointerPte, ZeroPte);       \
             (_PointerPte)->u.Long = 0;
 
+ULONG
+FASTCALL
+MiDetermineUserGlobalPteMask (
+    IN PMMPTE Pte
+    );
+
 extern ULONG_PTR MmBootImageSize;
 extern ULONG MiMaximumWorkingSet;
 extern ULONG_PTR MiUseMaximumSystemSpace;

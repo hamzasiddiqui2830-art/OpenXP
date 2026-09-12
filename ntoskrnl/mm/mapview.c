@@ -177,6 +177,7 @@ MiInsertPhysicalViewAndRefControlArea (
 
 
 NTSTATUS
+NTAPI
 NtMapViewOfSection(
     __in HANDLE SectionHandle,
     __in HANDLE ProcessHandle,

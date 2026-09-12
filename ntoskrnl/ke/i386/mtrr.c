@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 1991-2000  Microsoft Corporation
+Copyright (c) OpenXP
 
 Module Name:
 
@@ -12,16 +12,6 @@ Abstract:
     memory type range registers.
 
     These entry points only exist on x86 machines.
-
-Author:
-
-    Ken Reneris (kenr)  11-Oct-95
-
-Environment:
-
-    Kernel mode only.
-
-Revision History:
 
 --*/
 
@@ -798,7 +788,7 @@ Return Value:
             return STATUS_UNSUCCESSFUL;
         }
 
-        MmLockPagableSectionByHandle(ExPageLockHandle);
+        MmLockPageableSectionByHandle(ExPageLockHandle);
     }
 
     //

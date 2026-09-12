@@ -251,8 +251,6 @@ ExpGetSystemProcessorInformation (
     OUT PSYSTEM_PROCESSOR_INFORMATION ProcessorInformation
     );
 
-    );
-
 VOID
 static
 ExpWatchExpirationDataWork(

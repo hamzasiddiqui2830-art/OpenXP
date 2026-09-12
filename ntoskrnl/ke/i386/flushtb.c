@@ -1,7 +1,6 @@
 /*++
 
-Copyright (c) 1989  Microsoft Corporation
-Copyright (c) 1990  Microsoft Corporation
+Copyright (c) Open XP
 
 Module Name:
 
@@ -16,10 +15,6 @@ Abstract:
          The UP versions are macros in ke.h
          KeFlushEntireTb remains a routine for the UP system since it is
          exported from the kernel for backwards compatibility.
-
-Author:
-
-    David N. Cutler (davec) 13-May-1989
 
 Environment:
 
@@ -62,9 +57,8 @@ KiFlushTargetSingleTb (
     );
 
 VOID
-KeFlushEntireTb (
-    IN BOOLEAN Invalid,
-    IN BOOLEAN AllProcessors
+KxFlushEntireTb (
+   VOID
     )
 
 /*++
@@ -75,9 +69,7 @@ Routine Description:
 
 Arguments:
 
-    Invalid - Not used.
-
-    AllProcessors - Not used.
+   None.
 
 Return Value:
 
@@ -95,9 +87,6 @@ Return Value:
     KAFFINITY TargetProcessors;
 
 #endif
-
-    UNREFERENCED_PARAMETER(Invalid);
-    UNREFERENCED_PARAMETER(AllProcessors);
 
     //
     // Compute the target set of processors and send the flush entire

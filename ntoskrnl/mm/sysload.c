@@ -2722,7 +2722,7 @@ Return Value:
 
     LOCK_PFN (OldIrql);
 
-    if (MI_NONPAGABLE_MEMORY_AVAILABLE() <= (SPFN_NUMBER)NumberOfPages) {
+    if (MI_NONPAGEABLE_MEMORY_AVAILABLE() <= (SPFN_NUMBER)NumberOfPages) {
         UNLOCK_PFN (OldIrql);
         return FALSE;
     }

@@ -12,10 +12,6 @@ Abstract:
     This module contains the routines which implement dynamically adding
     and removing physical memory from the system.
 
-Author:
-
-    Landy Wang (landyw) 05-Feb-1999
-
 Revision History:
 
 --*/
@@ -843,7 +839,7 @@ Environment:
         }
     }
 
-    MaxPages = MI_NONPageable_MEMORY_AVAILABLE() - FluidPages;
+    MaxPages = MI_NONPAGEABLE_MEMORY_AVAILABLE() - FluidPages;
 
     if ((SPFN_NUMBER)NumberOfPages > MaxPages) {
 #if DBG

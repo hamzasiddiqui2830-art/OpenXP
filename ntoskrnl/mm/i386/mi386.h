@@ -191,34 +191,6 @@ typedef MMPTE *PMMPTE;
 #define InterlockedExchangePte(_PointerPte, _NewContents) InterlockedExchange64 ((PLONGLONG)(_PointerPte), (LONGLONG)(_NewContents))
 #endif
 
-FORCEINLINE
-BOOLEAN
-MiCompareTbFlushTimeStamp (
-    IN ULONG OldStamp,
-    IN ULONG Mask
-    )
-{
-    ULONG NewStamp;
-    ULONG Diff;
-
-    NewStamp = KeReadTbFlushTimeStamp ();
-    Diff = ((NewStamp - OldStamp) & Mask);
-
-#if defined(NT_UP)
-    if (Diff != 0) {
-        return FALSE;
-    }
-#else
-    if (Diff > 2) {
-        return FALSE;
-    }
-    if (((OldStamp & 1) == 0) && (Diff >= 2)) {
-        return FALSE;
-    }
-#endif
-    return TRUE;
-}
-
 #if !defined(_X86PAE_)
 #ifndef PTE_BASE
 #define PTE_BASE 0xC0000000

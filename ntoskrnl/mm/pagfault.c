@@ -1829,7 +1829,7 @@ Environment:
 
                 KeZeroSinglePage (ZeroAddress);
 
-                MiReleaseSystemPtes ZeroPteArgument, 1, SystemPteSpace);
+                MiReleaseSystemPtes(ZeroPteArgument, 1, SystemPteSpace);
             }
             else {
                 MiZeroPhysicalPage (PageFrameIndex);

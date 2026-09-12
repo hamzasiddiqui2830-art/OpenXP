@@ -57,10 +57,10 @@ BOOLEAN ObpTraceEnabled = FALSE;
 //  The constants below are used by the !obtrace debugger extension
 //
 
-const ObpObjectBuckets   = OBTRACE_OBJECTBUCKETS;
-const ObpMaxStacks       = OBTRACE_STACKS;
-const ObpStacksPerObject = OBTRACE_STACKSPEROBJECT;
-const ObpTraceDepth      = OBTRACE_TRACEDEPTH;
+const ULONG ObpObjectBuckets   = OBTRACE_OBJECTBUCKETS;
+const ULONG ObpMaxStacks       = OBTRACE_STACKS;
+const ULONG ObpStacksPerObject = OBTRACE_STACKSPEROBJECT;
+const ULONG ObpTraceDepth      = OBTRACE_TRACEDEPTH;
 
 //
 // Object reference stacktrace structure

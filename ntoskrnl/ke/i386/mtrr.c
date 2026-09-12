@@ -852,7 +852,7 @@ Return Value:
 
     KeReleaseSpinLock (&KiRangeLock, OldIrql);
     if (EffectRangeChange) {
-        MmUnlockPagableImageSection(ExPageLockHandle);
+        MmUnlockPageableImageSection(ExPageLockHandle);
     }
 
     return NewRange.Status;

@@ -1875,7 +1875,7 @@ UserFault:
                                PointerPte,
                                Pfn1,
                                CurrentProcess,
-                               ZeroPteArgument);
+                               ZeroPte);
                 }
             }
             else {

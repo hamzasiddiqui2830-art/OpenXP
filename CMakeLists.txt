@@ -16,7 +16,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     message(FATAL_ERROR "In-source builds are not allowed. Please create a separate build directory.")
 endif()
 
-project(wrk VERSION 5.2 LANGUAGES C ASM)
+project(wrk VERSION 5.2 LANGUAGES C ASM_MASM)
 
 set(REACTOS_SOURCE_DIR ${CMAKE_SOURCE_DIR})
 set(CMAKE_C_STANDARD 99)

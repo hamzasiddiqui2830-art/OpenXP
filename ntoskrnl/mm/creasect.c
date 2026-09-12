@@ -128,6 +128,7 @@ typedef struct _PHARLAP_CONFIG {
 #pragma pack ()
 
 NTSTATUS
+NTAPI
 NtCreateSection (
     __out PHANDLE SectionHandle,
     __in ACCESS_MASK DesiredAccess,

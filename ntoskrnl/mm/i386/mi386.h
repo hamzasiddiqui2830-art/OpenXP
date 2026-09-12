@@ -173,16 +173,6 @@ ULONGLONG LongLong;
 MMPTE_HARDWARE Hard; MMPTE_LARGEPAGE Large; HARDWARE_PTE Flush; MMPTE_PROTOTYPE Proto; MMPTE_SOFTWARE Soft; MMPTE_TRANSITION Trans; MMPTE_SUBSECTION Subsect; MMPTE_LIST List; } u; } MMPTE;
 typedef MMPTE *PMMPTE;
 
-#if defined(_WIN64)
-#define InterlockedExchangeAddSizeT(a,b) InterlockedExchangeAdd64((PLONGLONG)(a),(b))
-#define InterlockedIncrementSizeT(a) InterlockedIncrement64((PLONGLONG)(a))
-#define InterlockedDecrementSizeT(a) InterlockedDecrement64((PLONGLONG)(a))
-#else
-#define InterlockedExchangeAddSizeT(a,b) InterlockedExchangeAdd((PLONG)(a),(LONG)(b))
-#define InterlockedIncrementSizeT(a) InterlockedIncrement((PLONG)(a))
-#define InterlockedDecrementSizeT(a) InterlockedDecrement((PLONG)(a))
-#endif
-
 #if !defined (_X86PAE_)
 #define InterlockedCompareExchangePte(_PointerPte, _NewContents, _OldContents) InterlockedCompareExchange ((PLONG)(_PointerPte), (LONG)(_NewContents), (LONG)(_OldContents))
 #define InterlockedExchangePte(_PointerPte, _NewContents) InterlockedExchange ((PLONG)(_PointerPte), (LONG)(_NewContents))

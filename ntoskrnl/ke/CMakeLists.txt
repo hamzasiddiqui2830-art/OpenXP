@@ -150,10 +150,15 @@ target_compile_definitions(${TARGET_NAME} PRIVATE
 )
 
 if(MSVC)
-    target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX)
+    target_compile_options(${TARGET_NAME} PRIVATE
+        $<$<COMPILE_LANGUAGE:C>:/W4 /WX>
+        $<$<COMPILE_LANGUAGE:ASM_MASM>:/W3 /WX>
+    )
 
     if(WRK_ARCH STREQUAL "i386")
-        target_compile_options(${TARGET_NAME} PRIVATE /Gz)
+        target_compile_options(${TARGET_NAME} PRIVATE
+            $<$<COMPILE_LANGUAGE:C>:/Gz>
+        )
     endif()
 else()
     target_compile_options(${TARGET_NAME} PRIVATE -Wall -Werror)

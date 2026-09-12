@@ -501,6 +501,7 @@ extern PMMPTE MiInitialSystemPageDirectory;
        (OUTPTE).u.Soft.PageFileHigh = (OFFSET); \
        (OUTPTE).u.Soft.PageFileLow = (FILEINFO);
 
+#define GET_PAGING_FILE_OFFSET(PTE) ((((PTE).u.Long) >> 12) & 0x000FFFFF)
 #endif
 
 extern ULONG_PTR MmBootImageSize;

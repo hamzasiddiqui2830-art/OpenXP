@@ -84,6 +84,10 @@ target_compile_definitions(${TARGET_NAME} PRIVATE
 
 if(MSVC)
     target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX)
+
+    if(WRK_ARCH STREQUAL "i386")
+        target_compile_options(${TARGET_NAME} PRIVATE /Gz)
+    endif()
 else()
     target_compile_options(${TARGET_NAME} PRIVATE -Wall -Werror)
 endif()

@@ -668,7 +668,7 @@ Environment:
     PFN_NUMBER VadBitMapPage;
     ULONG i;
     ULONG NumberOfPages;
-    MMPTE DemandZeroPte;
+    MMPTE DemandZeroPteLocal;
     ULONG AllocationType;
     ULONG WowLACompatRes = 0;
     
@@ -699,7 +699,7 @@ Environment:
 #endif
 
     CurrentThread = PsGetCurrentThread ();
-    DemandZeroPte.u.Long = MM_KERNEL_DEMAND_ZERO_PTE;
+    DemandZeroPteLocal.u.Long = MM_KERNEL_DEMAND_ZERO_PTE;
 
 #if !defined(_WIN64)
 
@@ -835,7 +835,7 @@ Environment:
 
         ASSERT (PointerPte->u.Long != 0);
         VadBitMapPage = MI_GET_PAGE_FRAME_FROM_PTE (PointerPte);
-        MI_WRITE_INVALID_PTE (PointerPte, DemandZeroPte);
+        MI_WRITE_INVALID_PTE (PointerPte, DemandZeroPteLocal);
 
         MiInitializePfn (VadBitMapPage, PointerPte, 1);
 
@@ -3163,7 +3163,7 @@ Environment:
     PVOID StackVa;
     KIRQL OldIrql;
     PSLIST_HEADER DeadStackList;
-    MMPTE DemandZeroPte;
+    MMPTE DemandZeroPteLocal;
 
     if (!LargeStack) {
 
@@ -3239,9 +3239,9 @@ Environment:
         PointerPte += BYTES_TO_PAGES (MI_LARGE_STACK_SIZE - KERNEL_LARGE_STACK_COMMIT);
     }
 
-    DemandZeroPte.u.Long = MM_KERNEL_DEMAND_ZERO_PTE;
+    DemandZeroPteLocal.u.Long = MM_KERNEL_DEMAND_ZERO_PTE;
 
-    DemandZeroPte.u.Soft.Protection = MM_NOACCESS;
+    DemandZeroPteLocal.u.Soft.Protection = MM_NOACCESS;
 
     MI_MAKE_VALID_KERNEL_PTE (TempPte,
                               0,
@@ -3277,7 +3277,7 @@ Environment:
         PageFrameIndex = MiRemoveAnyPage (
                             MI_GET_PAGE_COLOR_NODE (PreferredNode));
 
-        MI_WRITE_INVALID_PTE (PointerPte, DemandZeroPte);
+        MI_WRITE_INVALID_PTE (PointerPte, DemandZeroPteLocal);
 
         MiInitializePfn (PageFrameIndex, PointerPte, 1);
 
@@ -3868,7 +3868,7 @@ Environment:
         MI_SET_PFN_DELETED (Pfn1);
         MiDecrementShareCount (Pfn1, PageFrameIndex);
 
-        TempPte = KernelDemandZeroPte;
+        TempPte = KernelDemandZeroPteLocal;
 
         TempPte.u.Soft.Protection = MM_NOACCESS;
 
@@ -4129,7 +4129,7 @@ Environment:
 
     while (PointerPte >= EndOfStackPte) {
 
-        if (!((PointerPte->u.Long == KernelDemandZeroPte.u.Long) ||
+        if (!((PointerPte->u.Long == KernelDemandZeroPteLocal.u.Long) ||
                 (PointerPte->u.Soft.Protection == MM_NOACCESS))) {
 
             KeBugCheckEx (MEMORY_MANAGEMENT,

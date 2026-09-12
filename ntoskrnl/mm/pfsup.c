@@ -295,8 +295,8 @@ Environment:
 
     KeEnterGuardedRegionThread (&CurrentThread->Tcb);
 
-    ASSERT (CurrentThread->NestedFaultCount == 0);
-    CurrentThread->NestedFaultCount += 1;
+    ASSERT (CurrentThread->ActiveFaultCount == 0);
+    CurrentThread->ActiveFaultCount += 1;
 
     KeLeaveGuardedRegionThread (&CurrentThread->Tcb);
 
@@ -413,9 +413,9 @@ Environment:
 
     KeEnterGuardedRegionThread (&CurrentThread->Tcb);
 
-    ASSERT (CurrentThread->NestedFaultCount == 1);
+    ASSERT (CurrentThread->ActiveFaultCount == 1);
 
-    CurrentThread->NestedFaultCount -= 1;
+    CurrentThread->ActiveFaultCount -= 1;
 
     if (CurrentThread->ApcNeeded == 1) {
         ApcNeeded = TRUE;
@@ -435,7 +435,7 @@ Environment:
     ExFreePool (MiReadLists);
 
     ASSERT (KeGetCurrentIrql() == PASSIVE_LEVEL);
-    ASSERT (CurrentThread->NestedFaultCount == 0);
+    ASSERT (CurrentThread->ActiveFaultCount == 0);
     ASSERT (CurrentThread->ApcNeeded == 0);
 
     if (ApcNeeded == TRUE) {

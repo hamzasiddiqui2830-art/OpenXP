@@ -1,9 +1,7 @@
         TITLE   "Compute Timer Table Index"
 ;++
 ;
-; Copyright (c) OpenXP 
-;
-;
+; Copyright (c) OpenXP
 ;
 ; Module Name:
 ;

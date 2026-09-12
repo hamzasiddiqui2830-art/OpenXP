@@ -26,8 +26,8 @@ include irqli386.inc
         extrn   _KiServiceExit:PROC
         extrn   _KeUserCallbackDispatcher:DWORD
 
-        EXTRNP  _KeBugCheck2,6
-        EXTRNP  _MmGrowKernelStack,1
+        EXTRNP  KeBugCheck2,6
+        EXTRNP  MmGrowKernelStack,1
 
 _TEXT   SEGMENT DWORD PUBLIC 'CODE'
         ASSUME  DS:FLAT, ES:FLAT, SS:FLAT, FS:NOTHING, GS:NOTHING
@@ -105,7 +105,7 @@ if DBG
         CurrentIrql                     ; get current IRQL
         or      al,al                   ; check if IRQL is passive level
         jz      short Kcb00             ; if z, IRQL at passive level
-        stdCall _KeBugCheck2,<IRQL_GT_ZERO_AT_SYSTEM_SERVICE,0,eax,0,0,0>
+        stdCall KeBugCheck2,<IRQL_GT_ZERO_AT_SYSTEM_SERVICE,0,eax,0,0,0>
 
 ;
 ; Check if kernel APCs are disabled or a process is attached.
@@ -117,7 +117,7 @@ Kcb00:  movzx   eax,byte ptr [ebx+ThApcStateIndex ; get APC state index
         jne     short Kcb05            ; if ne, process is attached
         or      edx,edx                ; check if kernel APCs disabled
         jz      short Kcb07            ; if z, kernel APCs enabled
-Kcb05:  stdCall _KeBugCheck2,<APC_INDEX_MISMATCH,0,eax,edx,0,0>
+Kcb05:  stdCall KeBugCheck2,<APC_INDEX_MISMATCH,0,eax,edx,0,0>
 
 endif
 
@@ -126,10 +126,10 @@ endif
 ; system call.
 ;
 
-Kcb07:  lea     eax,[esp]-KERNEL_LARGE_STACK_COMMIT ; compute bottom address
+Kcb07:  lea     eax,[esp-KERNEL_LARGE_STACK_COMMIT] ; compute bottom address
         cmp     eax,dword ptr [ebx+ThStackLimit]  ; check if limit exceeded
         jae     short Kcb10             ; if ae, limit not exceeded
-        stdCall _MmGrowKernelStack,<esp> ; attempt to grow kernel stack
+        stdCall MmGrowKernelStack,<esp> ; attempt to grow kernel stack
         or      eax, eax                ; check for successful completion
         jne     Kcb20                   ; if ne, attempt to grow failed
 

@@ -27,7 +27,7 @@ include mac386.inc
 
         EXTRNP  Kei386EoiHelper
         EXTRNP  HalRequestSoftwareInterrupt,1,IMPORT,FASTCALL
-        EXTRNP  _HalEndSystemInterrupt,2,IMPORT
+        EXTRNP  HalEndSystemInterrupt,2,IMPORT
         extern  _ExpInterlockedPopEntrySListEnd@0:PROC
         extrn   _ExpInterlockedPopEntrySListResume@0:PROC
         extrn   _KeTimeIncrement:DWORD
@@ -44,10 +44,10 @@ include mac386.inc
         extrn   _KiProfileLock:DWORD
         extrn   _KiProfileInterval:DWORD
         extrn   _KdDebuggerEnabled:BYTE
-        EXTRNP  _DbgBreakPoint
-        EXTRNP  _DbgBreakPointWithStatus,1
-        EXTRNP  _KdPollBreakIn
-        EXTRNP  _KiDeliverApc,3
+        EXTRNP  DbgBreakPoint
+        EXTRNP  DbgBreakPointWithStatus,1
+        EXTRNP  KdPollBreakIn
+        EXTRNP  KiDeliverApc,3
         extrn   _KeI386MachineType:DWORD
         extrn   _PPerfGlobalGroupMask:DWORD
         EXTRNP  PerfProfileInterrupt,2,,FASTCALL
@@ -267,10 +267,10 @@ kust40:
         inc     dword ptr [PCR+PcPrcbData+PbInterruptCount]
         INTERRUPT_EXIT
 
-kust45: stdCall _KdPollBreakIn
+kust45: stdCall KdPollBreakIn
         or      al,al
         jz      short kust30
-        stdCall _DbgBreakPointWithStatus,<DBG_STATUS_CONTROL_C>
+        stdCall DbgBreakPointWithStatus,<DBG_STATUS_CONTROL_C>
         jmp     short kust30
 
 if DBG
@@ -602,7 +602,7 @@ kipeflags       equ     <dword ptr [ebp+TsEFlags]>
         ;; add profile interrupt to perfinfo
         mov        ecx, [esp+8]
         mov        edx,kipieip
-        fstCall    PerfProfileInterrupt
+        fstCall    _PerfProfileInterrupt
         mov     ebp, dword ptr [esp+4]  ; (ebp)-> trap frame
 
 ;
@@ -617,7 +617,7 @@ kipi03:
         cmp     kipieip, offset FLAT:_ExpInterlockedPopEntrySListEnd@0
         ja      kipi04
         mov     ecx, ebp
-        fstCall KiCheckForSListAddress
+        fstCall _KiCheckForSListAddress
 
 kipi04:
 

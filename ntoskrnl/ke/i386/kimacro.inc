@@ -1280,7 +1280,7 @@ endif
 ifdef __imp_Kei386EoiHelper@0
         cli
 
-        call    _HalEndSystemInterrupt@8
+        call    HalEndSystemInterrupt@8
         jmp     dword ptr [__imp_Kei386EoiHelper@0]
 
 else

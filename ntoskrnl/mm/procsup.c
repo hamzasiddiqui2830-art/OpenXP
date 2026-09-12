@@ -3868,7 +3868,7 @@ Environment:
         MI_SET_PFN_DELETED (Pfn1);
         MiDecrementShareCount (Pfn1, PageFrameIndex);
 
-        TempPte = KernelDemandZeroPteLocal;
+        TempPte = KernelDemandZeroPte;
 
         TempPte.u.Soft.Protection = MM_NOACCESS;
 
@@ -4129,7 +4129,7 @@ Environment:
 
     while (PointerPte >= EndOfStackPte) {
 
-        if (!((PointerPte->u.Long == KernelDemandZeroPteLocal.u.Long) ||
+        if (!((PointerPte->u.Long == KernelDemandZeroPte.u.Long) ||
                 (PointerPte->u.Soft.Protection == MM_NOACCESS))) {
 
             KeBugCheckEx (MEMORY_MANAGEMENT,

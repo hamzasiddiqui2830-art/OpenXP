@@ -69,10 +69,10 @@ local   a, b, c_
 
 if  DEVL
         EXTRNP   _DbgBreakPointWithStatus,1
-        stdCall _KdPollBreakIn
+        stdCall KdPollBreakIn
         or      al,al
         jz      short c_
-        stdCall _DbgBreakPointWithStatus,<DBG_STATUS_CONTROL_C>
+        stdCall DbgBreakPointWithStatus,<DBG_STATUS_CONTROL_C>
 c_:
 endif   ; DEVL
 endm
@@ -1277,7 +1277,7 @@ endif
 ; N.B. End system interrupt MUST be called with a trap frame at 8[esp].
 ;
 
-ifdef __imp_Kei386EoiHelper@0
+ifdef __imp__HalEndSystemInterrupt@8
         cli
 
         call    HalEndSystemInterrupt@8

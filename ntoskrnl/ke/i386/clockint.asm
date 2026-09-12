@@ -234,7 +234,7 @@ kust15:                                 ;
         mov     [ecx+PbTimerRequest], esp ; set timer request
         mov     [ecx+PbTimerHand], ebx  ; set timer hand value
         mov     ecx, DISPATCH_LEVEL     ; request dispatch interrupt
-        fstCall HalRequestSoftwareInterrupt ;
+        fstCall HalRequestSoftwareInterrupt,ecx
 
 ;
 ; If the debugger is enabled, check if a break is requested.
@@ -433,7 +433,7 @@ Kutp50: mov     ecx, [eax+PcPrcbData+PbDpcCount] ; get current DPC count
         cmp     byte ptr [eax+PcPrcbData+PbDpcInterruptRequested], 0 ; check if interrupt
         jne     short Kutp53            ; if ne, DPC routine active
         mov     ecx, DISPATCH_LEVEL     ; request a dispatch interrupt
-        fstCall HalRequestSoftwareInterrupt ;
+        fstCall HalRequestSoftwareInterrupt,ecx
         mov     eax, [PCR+PcSelfPcr]     ; restore address of current PCR
         mov     ecx, [eax+PcPrcbData+PbDpcRequestRate] ; get DPC request rate
         mov     edx, _KiAdjustDpcThreshold ; reset initial threshold counter
@@ -479,7 +479,7 @@ Kutp55: sub     byte ptr [ebx+ThQuantum], CLOCK_QUANTUM_DECREMENT ; decrement qu
         jz      Kutp75                      ; if z, then idle thread
         mov     byte ptr [eax+PcPrcbData+PbQuantumEnd], 1 ; set quantum end indicator
         mov     ecx, DISPATCH_LEVEL         ; request dispatch interrupt
-        fstCall HalRequestSoftwareInterrupt ;
+        fstCall HalRequestSoftwareInterrupt,ecx
 Kutp75:                                     ;
         pop     ebx                         ;
         stdRET    _KeUpdateRunTime          ;
@@ -602,7 +602,7 @@ kipeflags       equ     <dword ptr [ebp+TsEFlags]>
         ;; add profile interrupt to perfinfo
         mov        ecx, [esp+8]
         mov        edx,kipieip
-        fstCall    _PerfProfileInterrupt
+        fstCall    PerfProfileInterrupt,ecx,edx
         mov     ebp, dword ptr [esp+4]  ; (ebp)-> trap frame
 
 ;
@@ -617,7 +617,7 @@ kipi03:
         cmp     kipieip, offset FLAT:_ExpInterlockedPopEntrySListEnd@0
         ja      kipi04
         mov     ecx, ebp
-        fstCall _KiCheckForSListAddress
+        fstCall KiCheckForSListAddress,ecx
 
 kipi04:
 

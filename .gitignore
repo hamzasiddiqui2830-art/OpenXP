@@ -1,5 +1,4 @@
-```
-# Compiled and binary files
+# Compiled and build artifacts
 *.o
 *.obj
 *.exe
@@ -13,69 +12,30 @@ node_modules/
 venv/
 .venv/
 __pycache__/
-dist/
-build/
+.mypy_cache/
+.pytest_cache/
 target/
 .gradle/
-
-# Editors/IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# System/Environment
-.DS_Store
-Thumbs.db
-.env
-.env.local
-*.env.*
 
 # Logs and temp files
 *.log
 *.tmp
+*.swp
+
+# Editors
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+*.env.*
 
 # Coverage
 coverage/
 htmlcov/
 .coverage
 
-# Python specific
-*.pyc
-*.pyo
-*.pyd
-__pycache__/
-*.py~*
-*.so
-
-# Build directories (common)
-*.class
-*.jar
-*.war
-*.ear
-*.zip
-*.tar.gz
-*.tgz
-*.tar.bz2
-*.tar.xz
-*.deb
-*.rpm
-
-# Compressed files
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.Z
-*.lz
-*.lzo
-```
+# System files
+.DS_Store
+Thumbs.db

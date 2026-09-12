@@ -129,7 +129,8 @@ endif
 Kcb07:  lea     eax,[esp-KERNEL_LARGE_STACK_COMMIT] ; compute bottom address
         cmp     eax,dword ptr [ebx+ThStackLimit]  ; check if limit exceeded
         jae     short Kcb10             ; if ae, limit not exceeded
-        stdCall MmGrowKernelStack,<esp> ; attempt to grow kernel stack
+        push    esp                     ; push current stack pointer
+        call    _MmGrowKernelStack@4    ; attempt to grow kernel stack
         or      eax, eax                ; check for successful completion
         jne     Kcb20                   ; if ne, attempt to grow failed
 

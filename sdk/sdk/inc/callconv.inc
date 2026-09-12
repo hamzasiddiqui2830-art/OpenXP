@@ -160,8 +160,8 @@ EXTRNP2 macro   Func,N
 endm
 
 EXTRNTHUNK macro   Func,N
-        IFNDEF  __imp_&Func&@&N
-            extrn       __imp_&Func&@&N:DWORD
+        IFNDEF  __imp__&Func&@&N
+            extrn       __imp__&Func&@&N:DWORD
         ENDIF
 endm
 
@@ -268,8 +268,8 @@ endMod  macro   Func
 endm
 
 stdCallCall macro  Func,N
-    IFDEF   __imp_&Func&@&N
-        call    dword ptr [__imp_&Func&@&N]
+    IFDEF   __imp__&Func&@&N
+        call    dword ptr [__imp__&Func&@&N]
     ELSE
         call    _&Func&@&N
     ENDIF

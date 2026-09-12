@@ -248,7 +248,7 @@ Environment:
     // Check to make sure the physical pages are available.
     //
 
-    if (MI_NONPAGABLE_MEMORY_AVAILABLE() <= (SPFN_NUMBER)MinimumWorkingSetSize){
+    if (MI_NONPAGEABLE_MEMORY_AVAILABLE() <= (SPFN_NUMBER)MinimumWorkingSetSize){
 
         UNLOCK_PFN (OldIrql);
         MiReturnCommitment (MM_PROCESS_COMMIT_CHARGE);
@@ -3256,7 +3256,7 @@ Environment:
     // Check to make sure the physical pages are available.
     //
 
-    if (MI_NONPAGABLE_MEMORY_AVAILABLE() <= (SPFN_NUMBER)NumberOfPages) {
+    if (MI_NONPAGEABLE_MEMORY_AVAILABLE() <= (SPFN_NUMBER)NumberOfPages) {
         UNLOCK_PFN (OldIrql);
         MiReleaseSystemPtes (BasePte, RequestedPtes, SystemPteSpace);
         MiReturnCommitment (ChargedPtes);
@@ -3651,7 +3651,7 @@ Return Value:
 
     LOCK_PFN (OldIrql);
 
-    if (MI_NONPAGABLE_MEMORY_AVAILABLE() <= (SPFN_NUMBER)NumberOfPages) {
+    if (MI_NONPAGEABLE_MEMORY_AVAILABLE() <= (SPFN_NUMBER)NumberOfPages) {
         UNLOCK_PFN (OldIrql);
         return STATUS_NO_MEMORY;
     }

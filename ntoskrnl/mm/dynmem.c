@@ -280,7 +280,7 @@ Environment:
     start = 0;
     TempPte = ValidKernelPte;
 
-    MmLockPagableSectionByHandle (ExPageLockHandle);
+    MmLockPageableSectionByHandle (ExPageLockHandle);
 
     LOCK_PFN (OldIrql);
 
@@ -294,7 +294,7 @@ Environment:
     if (Flags & MM_PHYSICAL_MEMORY_PRODUCED_VIA_COMPRESSION) {
         if (MiSetCompressionThreshold == NULL) {
             UNLOCK_PFN (OldIrql);
-            MmUnlockPagableImageSection(ExPageLockHandle);
+            MmUnlockPageableImageSection(ExPageLockHandle);
             KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
             ExFreePool (NewPhysicalMemoryBlock);
             return STATUS_NOT_SUPPORTED;
@@ -313,7 +313,7 @@ Environment:
 
             if ((StartPage < Page) && (EndPage > Page)) {
                 UNLOCK_PFN (OldIrql);
-                MmUnlockPagableImageSection(ExPageLockHandle);
+                MmUnlockPageableImageSection(ExPageLockHandle);
                 KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
                 ExFreePool (NewPhysicalMemoryBlock);
                 return STATUS_CONFLICTING_ADDRESSES;
@@ -321,7 +321,7 @@ Environment:
 
             if ((StartPage >= Page) && (StartPage < LastPage)) {
                 UNLOCK_PFN (OldIrql);
-                MmUnlockPagableImageSection(ExPageLockHandle);
+                MmUnlockPageableImageSection(ExPageLockHandle);
                 KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
                 ExFreePool (NewPhysicalMemoryBlock);
                 return STATUS_CONFLICTING_ADDRESSES;
@@ -353,7 +353,7 @@ Environment:
     
         if (MmAvailablePages < PagesNeeded) {
             UNLOCK_PFN (OldIrql);
-            MmUnlockPagableImageSection(ExPageLockHandle);
+            MmUnlockPageableImageSection(ExPageLockHandle);
             KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
             ExFreePool (NewPhysicalMemoryBlock);
             return STATUS_INSUFFICIENT_RESOURCES;
@@ -606,7 +606,7 @@ Environment:
 
     InterlockedExchangeAddSizeT (&MmTotalCommitLimit, NumberOfPages);
 
-    MmUnlockPagableImageSection(ExPageLockHandle);
+    MmUnlockPageableImageSection(ExPageLockHandle);
 
     KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
 
@@ -818,7 +818,7 @@ Environment:
 
     MiReturnCommitment (NumberOfPages + FluidPages);
 
-    MmLockPagableSectionByHandle (ExPageLockHandle);
+    MmLockPageableSectionByHandle (ExPageLockHandle);
 
     //
     // Check for outstanding promises that cannot be broken.
@@ -843,7 +843,7 @@ Environment:
         }
     }
 
-    MaxPages = MI_NONPAGABLE_MEMORY_AVAILABLE() - FluidPages;
+    MaxPages = MI_NONPageable_MEMORY_AVAILABLE() - FluidPages;
 
     if ((SPFN_NUMBER)NumberOfPages > MaxPages) {
 #if DBG
@@ -1155,7 +1155,7 @@ retry:
 
         UNLOCK_PFN (OldIrql);
 
-        MmUnlockPagableImageSection(ExPageLockHandle);
+        MmUnlockPageableImageSection(ExPageLockHandle);
     
         KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
     
@@ -1402,7 +1402,7 @@ retry:
         MiReturnCommitment (PagesReleased);
     }
 
-    MmUnlockPagableImageSection(ExPageLockHandle);
+    MmUnlockPageableImageSection(ExPageLockHandle);
 
     KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
 
@@ -1497,7 +1497,7 @@ giveup2:
     InterlockedExchangeAddSizeT (&MmTotalCommitLimitMaximum, NumberOfPages);
     InterlockedExchangeAddSizeT (&MmTotalCommitLimit, NumberOfPages);
 
-    MmUnlockPagableImageSection(ExPageLockHandle);
+    MmUnlockPageableImageSection(ExPageLockHandle);
     KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
 
     return Status;
@@ -1854,7 +1854,7 @@ Environment:
 
     start = 0;
 
-    MmLockPagableSectionByHandle (ExPageLockHandle);
+    MmLockPageableSectionByHandle (ExPageLockHandle);
 
     LOCK_PFN (OldIrql);
 
@@ -1878,7 +1878,7 @@ Environment:
 
     if (start == MmPhysicalMemoryBlock->NumberOfRuns) {
         UNLOCK_PFN (OldIrql);
-        MmUnlockPagableImageSection(ExPageLockHandle);
+        MmUnlockPageableImageSection(ExPageLockHandle);
         KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
         return STATUS_CONFLICTING_ADDRESSES;
     }
@@ -1921,7 +1921,7 @@ Environment:
 
     InterlockedExchangeAddSizeT (&MmTotalCommitLimit, NumberOfPages);
 
-    MmUnlockPagableImageSection(ExPageLockHandle);
+    MmUnlockPageableImageSection(ExPageLockHandle);
 
     KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
 
@@ -1991,7 +1991,7 @@ Environment:
 
     p = PhysicalMemoryBlock;
 
-    MmLockPagableSectionByHandle (ExPageLockHandle);
+    MmLockPageableSectionByHandle (ExPageLockHandle);
 
     LOCK_PFN (OldIrql);
 
@@ -2008,7 +2008,7 @@ Environment:
 
     UNLOCK_PFN (OldIrql);
 
-    MmUnlockPagableImageSection(ExPageLockHandle);
+    MmUnlockPageableImageSection(ExPageLockHandle);
 
     KeReleaseGuardedMutex (&MmDynamicMemoryMutex);
 

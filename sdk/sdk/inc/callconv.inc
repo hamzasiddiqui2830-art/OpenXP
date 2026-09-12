@@ -1,8 +1,7 @@
 ;
-; Copyright (c) Microsoft Corporation. All rights reserved.
+; Copyright (c) OpenXP
 ;
-; You may only use this code if you agree to the terms of the Windows Research Kernel Source Code License agreement (see License.txt).
-; If you do not agree to the terms, do not use the code.
+;
 ;
 
 ;****************************CallConv.Inc************************************
@@ -17,7 +16,7 @@
 ;****************************************************************************
 
 ComposeInst macro   Inst,p1,p2,p3,p4,p5,p6,p7,p8,p9
-        &Inst   p1&p2&p3&p4&p5&p6&p7&p8&p9
+        Inst    @CatStr(p1,p2,p3,p4,p5,p6,p7,p8,p9)
 endm
 
 ;****************************Public Macro************************************
@@ -119,7 +118,7 @@ endif
 PUBLICP macro   Func,N
 
         ifb    <N>
-            public      Func&@0
+            public      @CatStr(Func,<@>,%0)
         else
             PUBLICP2    Func,%(N*4)
         endif
@@ -127,13 +126,13 @@ endm
 
 PUBLICP2 macro   Func,N
 
-        public  Func&@&N
+        public  @CatStr(Func,<@>,%N)
 endm
 
 EXTRNP  macro   Func,N,Thunk,FastCall
         ifb    <N>
-            IFNDEF  Func&@0
-                extrn       Func&@0:NEAR
+            IFNDEF  @CatStr(Func,<@>,%0)
+                extrn       @CatStr(Func,<@>,%0):NEAR
             ENDIF
         else
             ifb     <FastCall>
@@ -143,32 +142,32 @@ EXTRNP  macro   Func,N,Thunk,FastCall
                     EXTRNTHUNK  Func,%(N*4)
                 endif
             else
-                cFCall&@&Func equ   (N*4)
+                @CatStr(cFCall,<@>,Func) equ   (N*4)
                 ifb     <Thunk>
-                    EXTRNP2     &@&Func,%(N*4)
+                    EXTRNP2     @CatStr(<@>,Func),%(N*4)
                 else
-                    EXTRNTHUNK  &@&Func,%(N*4)
+                    EXTRNTHUNK  @CatStr(<@>,Func),%(N*4)
                 endif
             endif
         endif
 endm
 
 EXTRNP2 macro   Func,N
-        IFNDEF  Func&@&N
-            extrn   Func&@&N:NEAR
+        IFNDEF  @CatStr(Func,<@>,%N)
+            extrn   @CatStr(Func,<@>,%N):NEAR
         ENDIF
 endm
 
 EXTRNTHUNK macro   Func,N
-        IFNDEF  __imp_&Func&@&N
-            extrn       __imp_&Func&@&N:DWORD
+        IFNDEF  @CatStr(<__imp_>,Func,<@>,%N)
+            extrn       @CatStr(<__imp_>,Func,<@>,%N):DWORD
         ENDIF
 endm
 
 LABELP  macro   Func,N
 
         ifb    <N>
-            Func&@0 label   near
+            @CatStr(Func,<@>,%0) label   near
         else
             LABELP2 Func,%(N*4)
         endif
@@ -176,18 +175,18 @@ endm
 
 LABELP2 macro   Func,N
 
-Func&@&N    label   near
+@CatStr(Func,<@>,%N)    label   near
 
 endm
 
-ProcName macro  Name,Func,N
+ProcName macro   Name,Func,N
 
         ifb <N>
-            cByte&Func  equ     0
-            Name        equ     <Func&@0>
+            @CatStr(cByte,<@>,Func)  equ     0
+            Name        equ     <@CatStr(Func,<@>,%0)>
         else
-            cByte&Func  equ     N
-            Name        equ     <Func&@&N>
+            @CatStr(cByte,<@>,Func)  equ     N
+            Name        equ     <@CatStr(Func,<@>,%N)>
         endif
 endm
 
@@ -210,9 +209,9 @@ endm
 
 ProcNameF macro  Name,Func,N,M
 
-        cByte&Func  equ     M
-        cFCall&Func equ     N
-        Name        equ     <Func&@&N>
+        @CatStr(cByte,<@>,Func)  equ     M
+        @CatStr(cFCall,<@>,Func) equ     N
+        Name        equ     <@CatStr(Func,<@>,%N)>
 
 endm
 
@@ -229,20 +228,20 @@ endm
 
 cPublicFastCall macro Func,N,ArgList
         align   dword
-        PUBLICP &@&Func,N
+        PUBLICP @CatStr(<@>,Func),N
         ifb <N>
-            stdPROCF &@&Func,0,<ArgList>
+            stdPROCF @CatStr(<@>,Func),0,<ArgList>
         else
-            stdPROCF &@&Func,N,<ArgList>
+            stdPROCF @CatStr(<@>,Func),N,<ArgList>
         endif
 endm
 
 fstRET  macro   Func
-        ret     cByte&@&Func
+        ret     @CatStr(cByte,<@>,Func)
 endm
 
 stdRET  macro   Func
-        ret     cByte&Func
+        ret     @CatStr(cByte,<@>,Func)
 endm
 
 cPublicFpo macro FpoLocals, FpoParams
@@ -254,7 +253,7 @@ endm
 
 fstENDP macro   Func
 
-        &@&Func    endp
+        @CatStr(<@>,Func)    endp
 endm
 
 stdENDP macro   Func
@@ -268,10 +267,10 @@ endMod  macro   Func
 endm
 
 stdCallCall macro  Func,N
-    IFDEF   __imp_&Func&@&N
-        call    dword ptr [__imp_&Func&@&N]
+    IFDEF   @CatStr(<__imp_>,Func,<@>,%N)
+        call    dword ptr [@CatStr(<__imp_>,Func,<@>,%N)]
     ELSE
-        call    Func&@&N
+        call    @CatStr(Func,<@>,%N)
     ENDIF
 endm
 
@@ -292,10 +291,10 @@ fstCall macro   Func,ArgList
         Bytes = Bytes*4
 
         if Bytes eq 0
-            stdCallCall   &@&Func,%cFCall&@&Func
+            stdCallCall   @CatStr(<@>,Func),%cFCall@Func
         else
             ; must have 2 register params
-            stdCallCall   &@&Func,%(Bytes+8)
+            stdCallCall   @CatStr(<@>,Func),%(Bytes+8)
         endif
 endm
 
@@ -303,5 +302,5 @@ endm
 MovAddr macro   dest,addr,n
 
         ComposeInst <mov >,dest,<,offset FLAT:>,addr,<@>,n
-endm
 
+endm

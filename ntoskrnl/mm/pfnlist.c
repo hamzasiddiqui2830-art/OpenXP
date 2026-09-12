@@ -2850,9 +2850,9 @@ Environment:
 {
     KIRQL OldIrql;
     PFN_NUMBER PageFrameIndex;
-    MMPTE DemandZeroPte;
+    MMPTE DemandZeroPteLocal;
 
-    DemandZeroPte.u.Long = MM_KERNEL_DEMAND_ZERO_PTE;
+    DemandZeroPteLocal.u.Long = MM_KERNEL_DEMAND_ZERO_PTE;
 
     LOCK_PFN (OldIrql);
 
@@ -2862,7 +2862,7 @@ Environment:
 
     PageFrameIndex = MiRemoveAnyPage (MI_GET_PAGE_COLOR_FROM_PTE (PointerPte));
 
-    MI_WRITE_INVALID_PTE (PointerPte, DemandZeroPte);
+    MI_WRITE_INVALID_PTE (PointerPte, DemandZeroPteLocal);
 
     PointerPte->u.Soft.Protection |= Protection;
 

@@ -599,6 +599,7 @@ Return Value:
     PfnHeld = FALSE;
     IoHeld = FALSE;
     Ws = NULL;
+    Thread = NULL;
 
     //
     // Initializing PfnIrql and OldIrql are not needed for

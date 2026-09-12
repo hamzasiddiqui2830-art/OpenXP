@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 1989  Microsoft Corporation
+Copyright (c) OpenXP
 
 Module Name:
 
@@ -14,23 +14,9 @@ Abstract:
 
     For the i386, it also contains code to initialize the PCR.
 
-Author:
-
-    David N. Cutler (davec) 21-Apr-1989
-
 Environment:
 
     Kernel mode only.
-
-Revision History:
-
-    24-Jan-1990  shielin
-
-                 Changed for NT386
-
-    20-Mar-1990     bryanwi
-
-                Added KiInitializePcr
 
 --*/
 
@@ -589,13 +575,14 @@ Return Value:
 
         DirectoryTableBase[0] = 0;
         DirectoryTableBase[1] = 0;
+        InitializeListHead(&KiProcessListHead);
         KeInitializeProcess(Process,
                             (KPRIORITY)0,
                             (KAFFINITY)(0xffffffff),
                             &DirectoryTableBase[0],
                             FALSE);
 
-        Process->ThreadQuantum = MAXCHAR;
+        Process->QuantumReset = MAXCHAR;
 
 #if !defined(NT_UP)
 
@@ -672,6 +659,20 @@ Return Value:
             //
 
             KeBugCheckEx (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED, KF_MTRR, 0, 0, 0);
+        }
+
+               if ((KeFeatureBits & KF_NOEXECUTE) && !(FeatureBits & KF_NOEXECUTE)) {
+
+            //
+            // KF_NOEXECUTE must be available on all processors, if on
+            // boot processor.
+            // 
+
+            KeBugCheckEx(MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED,
+                         KF_NOEXECUTE,
+                         0,
+                         0,
+                         0);
         }
 
         if ((KeFeatureBits & KF_FAST_SYSCALL) != (FeatureBits & KF_FAST_SYSCALL)) {

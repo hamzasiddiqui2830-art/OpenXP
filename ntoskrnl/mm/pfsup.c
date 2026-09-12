@@ -1460,7 +1460,7 @@ Environment:
         //
 
         if ((MmAvailablePages < MM_HIGH_LIMIT) ||
-            (MI_NONPAGABLE_MEMORY_AVAILABLE() < MM_HIGH_LIMIT)) {
+            (MI_NONPAGEABLE_MEMORY_AVAILABLE() < MM_HIGH_LIMIT)) {
 
             UNLOCK_PFN (OldIrql);
 
@@ -1713,7 +1713,7 @@ Environment:
                 NOTHING;
             }
             else if ((MmAvailablePages >= MM_HIGH_LIMIT) &&
-                (MI_NONPAGABLE_MEMORY_AVAILABLE() >= MM_HIGH_LIMIT)) {
+                (MI_NONPAGEABLE_MEMORY_AVAILABLE() >= MM_HIGH_LIMIT)) {
 
                 NumberOfPages += 1;
 

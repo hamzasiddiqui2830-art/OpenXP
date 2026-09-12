@@ -35,6 +35,7 @@ MiFlushRangeFilter (
 
 
 NTSTATUS
+NTAPI
 NtFlushWriteBuffer (
    VOID
    )
@@ -145,6 +146,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI
 NtFlushInstructionCache (
     __in HANDLE ProcessHandle,
     __in_opt PVOID BaseAddress,

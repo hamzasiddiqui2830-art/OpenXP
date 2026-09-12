@@ -902,7 +902,7 @@ Environment:
 
         CloneDescriptor = NULL;
 
-        if (Pfn1->u3.e1.PrototypePteArgument == 1) {
+        if (Pfn1->u3.e1.PrototypePte == 1) {
 
             CloneBlock = (PMMCLONE_BLOCK)Pfn1->PteAddress;
 

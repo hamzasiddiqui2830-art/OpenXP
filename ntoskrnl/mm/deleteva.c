@@ -902,7 +902,7 @@ Environment:
 
         CloneDescriptor = NULL;
 
-        if (Pfn1->u3.e1.PrototypePte == 1) {
+        if (Pfn1->u3.e1.PrototypePteArgument == 1) {
 
             CloneBlock = (PMMCLONE_BLOCK)Pfn1->PteAddress;
 
@@ -1107,7 +1107,7 @@ Environment:
 
         if ((PteContents.u.Soft.PageFileHigh != MI_PTE_LOOKUP_NEEDED) &&
             (PointerPte <= MiHighestUserPte) &&
-            (PrototypePte != MiPteToProto (PointerPte))) {
+            (PrototypePteArgument != MiPteToProto (PointerPte))) {
 
             CloneBlock = (PMMCLONE_BLOCK) MiPteToProto (PointerPte);
             CloneDescriptor = MiLocateCloneAddress (CurrentProcess,
@@ -1118,7 +1118,7 @@ Environment:
                 KeBugCheckEx (MEMORY_MANAGEMENT,
                               0x403, 
                               (ULONG_PTR) PointerPte,
-                              (ULONG_PTR) PrototypePte,
+                              (ULONG_PTR) PrototypePteArgument,
                               (ULONG_PTR) PteContents.u.Long);
             }
 

@@ -364,6 +364,12 @@ extern PMMPTE MiInitialSystemPageDirectory;
         (PTE).u.Long |= MM_PROTECTION_COPY_MASK << MM_PROTECT_FIELD_SHIFT; \
     }
 
+#define MI_MAKE_VALID_PTE_TRANSITION(OUTPTE,PROTECT) \
+                (OUTPTE).u.Soft.Transition = 1;           \
+                (OUTPTE).u.Soft.Valid = 0;                \
+                (OUTPTE).u.Soft.Prototype = 0;            \
+                (OUTPTE).u.Soft.Protection = PROTECT;
+
 #define MI_MAKE_TRANSITION_PTE_VALID(OUTPTE,PPTE) \
     ASSERT (((PPTE)->u.Hard.Valid == 0) && \
             ((PPTE)->u.Trans.Prototype == 0) && \

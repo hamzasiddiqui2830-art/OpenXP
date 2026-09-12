@@ -1,8 +1,7 @@
-title  "Abios Support Assembly Routines"
+        title  "Abios Support Assembly Routines"
 ;++
 ;
-; Copyright (c) OpenXP. 
-;
+; Copyright (c) OpenXP 
 ;
 ; Module Name:
 ;
@@ -70,13 +69,13 @@ STACK32_TO_STACK16      macro
         mov     _FlagState,ecx
         popfd
         mov     eax, PCR[PcPrcbData+PbCurrentThread] ; get current thread address
-        mov     eax, [eax+ThStackLimit] ; get thread stack base
+        mov     eax, [eax]+ThStackLimit ; get thread stack base
         mov     edx, eax
         mov     ecx, _KiStack16GdtEntry
-        mov     word ptr [ecx+KgdtBaseLow], ax
+        mov     word ptr [ecx].KgdtBaseLow, ax
         shr     eax, 16
-        mov     byte ptr [ecx+KgdtBaseMid], al
-        mov     byte ptr [ecx+KgdtBaseHi], ah
+        mov     byte ptr [ecx].KgdtBaseMid, al
+        mov     byte ptr [ecx].KgdtBaseHi, ah
         cli
         sub     esp, edx
         mov     eax, KGDT_STACK16
@@ -110,7 +109,7 @@ STACK16_TO_STACK32      macro   Stack32
         mov     eax, PCR[PcPrcbData+PbCurrentThread] ; get current thread address
         db      OPERAND_OVERRIDE
         db      ADDRESS_OVERRIDE
-        mov     eax, [eax+ThStackLimit] ; get thread stack limit
+        mov     eax, [eax]+ThStackLimit ; get thread stack limit
         cli
         db      OPERAND_OVERRIDE
         add     esp, eax
@@ -126,16 +125,16 @@ endm
 
 COPY_CALL_FRAME macro FramePtr
 
-        mov     [FramePtr+TsEax],eax
-        mov     [FramePtr+TsEbx],ebx
-        mov     [FramePtr+TsEcx],ecx
-        mov     [FramePtr+TsEdx],edx
-        mov     [FramePtr+TsEsi],esi
-        mov     [FramePtr+TsEdi],edi
-        mov     [FramePtr+TsEbp],ebp
-        mov     [FramePtr+TsHardwareEsp],esp
-        mov     word ptr [FramePtr+TsSegFs],fs
-        mov     word ptr [FramePtr+TsSegCs],cs
+        mov     [FramePtr].TsEax,eax
+        mov     [FramePtr].TsEbx,ebx
+        mov     [FramePtr].TsEcx,ecx
+        mov     [FramePtr].TsEdx,edx
+        mov     [FramePtr].TsEsi,esi
+        mov     [FramePtr].TsEdi,edi
+        mov     [FramePtr].TsEbp,ebp
+        mov     [FramePtr].TsHardwareEsp,esp
+        mov     [FramePtr].TsSegFs,fs
+        mov     [FramePtr].TsSegCs,cs
 endm
         page ,132
         subttl  "Abios Support Code"
@@ -176,7 +175,7 @@ cPublicProc _KiAbiosGetGdt,0
         stdRET    _KiAbiosGetGdt
 
 stdENDP _KiAbiosGetGdt
-
+
 ;++
 ; VOID
 ; KiI386CallAbios(
@@ -398,21 +397,21 @@ endif
         ; Load context to call with
         ;
 
-        push    word ptr [ebx+CsEFlags]
-        push    word ptr [ebx+CsSegCs]
-        push    dword ptr [ebx+CsEip]
+        push    word ptr [ebx].CsEFlags
+        push    word ptr [ebx].CsSegCs
+        push    word ptr [ebx].CsEip
 
-        mov     eax, [ebx+CsEax]
-        mov     ecx, [ebx+CsEcx]
-        mov     edx, [ebx+CsEdx]
-        mov     edi, [ebx+CsEdi]
-        mov     esi, [ebx+CsEsi]
-        mov     ebp, [ebx+CsEbp]
-        push    word ptr [ebx+CsSegGs]
-        push    word ptr [ebx+CsSegFs]
-        push    word ptr [ebx+CsSegEs]
-        push    word ptr [ebx+CsSegDs]
-        mov     ebx, [ebx+CsEbx]
+        mov     eax, [ebx].CsEax
+        mov     ecx, [ebx].CsEcx
+        mov     edx, [ebx].CsEdx
+        mov     edi, [ebx].CsEdi
+        mov     esi, [ebx].CsEsi
+        mov     ebp, [ebx].CsEbp
+        push    [ebx].CsSegGs
+        push    [ebx].CsSegFs
+        push    [ebx].CsSegEs
+        push    [ebx].CsSegDs
+        mov     ebx, [ebx].CsEbx
         pop     ds
         pop     es
         pop     fs
@@ -490,19 +489,19 @@ Kbf50:
     ;
 
         mov     eax, dword ptr [esp+44+LocalStack]     ; (eax) = Context Record
-        pop     [eax+CsEflags]
-        pop     [eax+CsEax]
-        pop     [eax+CsSegGs]
-        pop     [eax+CsSegFs]
-        pop     [eax+CsSegEs]
-        pop     [eax+CsSegDs]
+        pop     [eax].CsEflags
+        pop     [eax].CsEax
+        pop     [eax].CsSegGs
+        pop     [eax].CsSegFs
+        pop     [eax].CsSegEs
+        pop     [eax].CsSegDs
 
-        mov     [eax+CsEbx], ebx
-        mov     [eax+CsEcx], ecx
-        mov     [eax+CsEdx], edx
-        mov     [eax+CsEdi], edi
-        mov     [eax+CsEsi], esi
-        mov     [eax+CsEbp], ebp
+        mov     [eax].CsEbx, ebx
+        mov     [eax].CsEcx, ecx
+        mov     [eax].CsEdx, edx
+        mov     [eax].CsEdi, edi
+        mov     [eax].CsEsi, esi
+        mov     [eax].CsEbp, ebp
 
 ;
 ; Restore regs & return
@@ -704,3 +703,4 @@ _KiEndOfCode16  equ     $
 
 _TEXT   ends
         end
+

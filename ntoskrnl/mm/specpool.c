@@ -563,7 +563,7 @@ Environment:
     MM_BUMP_SESS_COUNTER(MM_DBG_SESSION_PAGEDPOOL_PAGETABLE_ALLOC,
                          (ULONG)(0 - PageTablePages));
 
-    InterlockedExchangeAddSizeT (&MmSessionSpace->NonPAGEABLEPages, 0 - PageTablePages);
+    InterlockedExchangeAddSizeT (&MmSessionSpace->NonPageablePages, 0 - PageTablePages);
 
     InterlockedExchangeAddSizeT (&MmSessionSpace->CommittedPages, 0 - PageTablePages);
 
@@ -740,7 +740,7 @@ Environment:
         MM_BUMP_SESS_COUNTER(MM_DBG_SESSION_PAGEDPOOL_PAGETABLE_ALLOC, 1);
         MM_BUMP_SESS_COUNTER (MM_DBG_SESSION_NP_POOL_CREATE, 1);
 
-        InterlockedExchangeAddSizeT (&MmSessionSpace->NonPAGEABLEPages, 1);
+        InterlockedExchangeAddSizeT (&MmSessionSpace->NonPageablePages, 1);
 
         InterlockedExchangeAddSizeT (&MmSessionSpace->CommittedPages, 1);
     }
@@ -1212,7 +1212,7 @@ restart:
 
         //
         // As this page is now allocated, add it to the system working set to
-        // make it PAGEABLE.
+        // make it pageable.
         //
 
         ASSERT (Pfn1->u1.Event == 0);
@@ -1918,7 +1918,7 @@ Return Value:
 Environment:
 
     Kernel mode, IRQL at APC_LEVEL or below for PAGEABLE pool, DISPATCH or
-    below for nonPAGEABLE pool.
+    below for nonpageable pool.
 
     Note that setting an allocation to NO_ACCESS implies that an accessible
     protection must be applied by the caller prior to this allocation being
@@ -1968,7 +1968,7 @@ Return Value:
 Environment:
 
     Kernel mode, IRQL at APC_LEVEL or below for PAGEABLE pool, DISPATCH or
-    below for nonPAGEABLE pool.
+    below for nonpageable pool.
 
     Note that setting an allocation to NO_ACCESS implies that an accessible
     protection must be applied by the caller prior to this allocation being
@@ -1986,7 +1986,7 @@ Environment:
     PMMPFN Pfn1;
     ULONG ProtectionMask;
     WSLE_NUMBER WsIndex;
-    LOGICAL PAGEABLE;
+    LOGICAL Pageable;
     LOGICAL SystemWsLocked;
     PMMSUPPORT VmSupport;
     CurrentThread = PsGetCurrentThread ();
@@ -2024,17 +2024,17 @@ Environment:
 #if defined (_PROTECT_PAGED_POOL)
     if ((VirtualAddress >= MmPagedPoolStart) &&
         (VirtualAddress < PagedPoolEnd)) {
-        PAGEABLE = TRUE;
+        Pageable = TRUE;
     }
     else
 #endif
     if ((PointerPte + 1)->u.Soft.PageFileHigh == MI_SPECIAL_POOL_PTE_PAGEABLE) {
-        PAGEABLE = TRUE;
+        Pageable = TRUE;
         SystemWsLocked = TRUE;
         LOCK_WORKING_SET (CurrentThread, VmSupport);
     }
     else {
-        PAGEABLE = FALSE;
+        Pageable = FALSE;
     }
 
     PteContents = *PointerPte;
@@ -2131,7 +2131,7 @@ retry1:
     // Set accessible permissions - the page may already be protected or not.
     //
 
-    if (PAGEABLE == FALSE) {
+    if (Pageable == FALSE;) {
 
         Pfn1 = MI_PFN_ELEMENT (PteContents.u.Hard.PageFrameNumber);
         Pfn1->OriginalPte.u.Soft.Protection = ProtectionMask;

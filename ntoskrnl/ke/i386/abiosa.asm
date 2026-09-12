@@ -73,10 +73,10 @@ STACK32_TO_STACK16      macro
         mov     eax, [eax]+ThStackLimit ; get thread stack base
         mov     edx, eax
         mov     ecx, _KiStack16GdtEntry
-        mov     word ptr [ecx].KgdtBaseLow, ax
+        mov     word ptr [ecx]+KgdtBaseLow, ax
         shr     eax, 16
-        mov     byte ptr [ecx].KgdtBaseMid, al
-        mov     byte ptr [ecx].KgdtBaseHi, ah
+        mov     byte ptr [ecx]+KgdtBaseMid, al
+        mov     byte ptr [ecx]+KgdtBaseHi, ah
         cli
         sub     esp, edx
         mov     eax, KGDT_STACK16
@@ -134,8 +134,8 @@ COPY_CALL_FRAME macro FramePtr
         mov     [FramePtr]+TsEdi,edi
         mov     [FramePtr]+TsEbp,ebp
         mov     [FramePtr]+TsHardwareEsp,esp
-        mov     [FramePtr]+TsSegFs,fs
-        mov     [FramePtr]+TsSegCs,cs
+        mov     word ptr [FramePtr]+TsSegFs,fs
+        mov     word ptr [FramePtr]+TsSegCs,cs
 endm
         page ,132
         subttl  "Abios Support Code"
@@ -398,20 +398,20 @@ endif
         ; Load context to call with
         ;
 
-        push    word ptr [ebx].CsEFlags
-        push    word ptr [ebx].CsSegCs
-        push    word ptr [ebx].CsEip
+        push    word ptr [ebx]+CsEFlags
+        push    word ptr [ebx]+CsSegCs
+        push    dword ptr [ebx]+CsEip
 
-        mov     eax, [ebx].CsEax
-        mov     ecx, [ebx].CsEcx
-        mov     edx, [ebx].CsEdx
-        mov     edi, [ebx].CsEdi
-        mov     esi, [ebx].CsEsi
-        mov     ebp, [ebx].CsEbp
-        push    [ebx].CsSegGs
-        push    [ebx].CsSegFs
-        push    [ebx].CsSegEs
-        push    [ebx].CsSegDs
+        mov     eax, [ebx]+CsEax
+        mov     ecx, [ebx]+CsEcx
+        mov     edx, [ebx]+CsEdx
+        mov     edi, [ebx]+CsEdi
+        mov     esi, [ebx]+CsEsi
+        mov     ebp, [ebx]+CsEbp
+        push    word ptr [ebx]+CsSegGs
+        push    word ptr [ebx]+CsSegFs
+        push    word ptr [ebx]+CsSegEs
+        push    word ptr [ebx]+CsSegDs
         mov     ebx, [ebx].CsEbx
         pop     ds
         pop     es

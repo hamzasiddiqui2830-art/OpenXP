@@ -117,7 +117,7 @@ cPublicProc _KeUpdateSystemTime     ,0
 .FPO (2, 0, 0, 0, 0, 1) ; treat params as locals since functions is JMPed too
 
 if DBG
-        cmp     byte ptr PCR[PcPrcbData+PbSkipTick], 0
+        cmp     byte ptr [ecx+PcPrcbData+PbSkipTick], 0
         jnz     kust_skiptick
 endif
 
@@ -129,13 +129,13 @@ endif
 ;
 
         mov     ecx,USER_SHARED_DATA    ; get address of user shared data
-        mov     edi,[ecx].UsInterruptTime+0 ; get low interrupt time
-        mov     esi,[ecx].UsInterruptTime+4 ; get high interrupt time
+        mov     edi,[ecx+UsInterruptTime+0] ; get low interrupt time
+        mov     esi,[ecx+UsInterruptTime+4] ; get high interrupt time
         add     edi,eax                 ; add time increment
         adc     esi,0                   ; propagate carry
-        mov     [ecx].UsInterruptTime+8,esi ; store high 2 interrupt time
-        mov     [ecx].UsInterruptTime+0,edi ; store low interrupt time
-        mov     [ecx].UsInterruptTime+4,esi ; store high 1 interrupt time
+        mov     [ecx+UsInterruptTime+8],esi ; store high 2 interrupt time
+        mov     [ecx+UsInterruptTime+0],edi ; store low interrupt time
+        mov     [ecx+UsInterruptTime+4],esi ; store high 1 interrupt time
 
 ifndef NT_UP
 
@@ -159,13 +159,13 @@ endif
 ;
 
         mov     ebx,USER_SHARED_DATA    ; get address of user shared data
-        mov     ecx,[ebx].UsSystemTime+0 ; get low system time
-        mov     edx,[ebx].UsSystemTime+4 ; get high system time
+        mov     ecx,[ebx+UsSystemTime+0] ; get low system time
+        mov     edx,[ebx+UsSystemTime+4] ; get high system time
         add     ecx,_KeTimeAdjustment   ; add time increment
         adc     edx,0                   ; propagate carry
-        mov     [ebx].UsSystemTime+8,edx ; store high 2 system time
-        mov     [ebx].UsSystemTime+0,ecx ; store low system time
-        mov     [ebx].UsSystemTime+4,edx ; store high 1 system time
+        mov     [ebx+UsSystemTime+8],edx ; store high 2 system time
+        mov     [ebx+UsSystemTime+0],ecx ; store low system time
+        mov     [ebx+UsSystemTime+4],edx ; store high 1 system time
         mov     ebx,eax                 ; restore low tick count
 
 ;
@@ -182,9 +182,9 @@ endif
         mov     _KeTickCount+8,edx      ; store high 2 tick count
         mov     _KeTickCount+0,ecx      ; store low tick count
         mov     _KeTickCount+4,edx      ; store high 1 tick count
-        mov     USERDATA[UsTickCount]+8, edx ; store USD high 2 tick count
-        mov     USERDATA[UsTickCount]+0, ecx ; store USD low tick count
-        mov     USERDATA[UsTickCount]+4, edx ; store USD high 1 tick count
+        mov     USERDATA[UsTickCount+8], edx ; store USD high 2 tick count
+        mov     USERDATA[UsTickCount+0], ecx ; store USD low tick count
+        mov     USERDATA[UsTickCount+4], edx ; store USD high 1 tick count
 
 ;
 ; Check to determine if a timer has expired.
@@ -197,10 +197,10 @@ endif
 
         and     eax,TIMER_TABLE_SIZE-1  ; isolate current hand value
         shl     eax, 4                  ; compute timer entry offset
-        cmp     esi,[eax]+_KiTimerTableListHead+TtTime+4 ; compare high due time 
+        cmp     esi,[eax+_KiTimerTableListHead+TtTime+4] ; compare high due time 
         jb      short kust5             ; if below, timer has not expired
         ja      short kust15            ; if above, timer has expired
-        cmp     edi,[eax]+_KiTimerTableListHead+TtTime ; compare low due time
+        cmp     edi,[eax+_KiTimerTableListHead+TtTime] ; compare low due time
         jae     short kust15            ; if above or equal, timer has expired
 kust5:  inc     ebx                     ; advance hand value to next entry
         mov     eax, ebx                ;
@@ -214,10 +214,10 @@ kust5:  inc     ebx                     ; advance hand value to next entry
 
 kust10: and     eax,TIMER_TABLE_SIZE-1  ; isolate current hand value
         shl     eax, 4                  ; compute timer entry offset
-        cmp     esi,[eax]+_KiTimerTableListHead+TtTime+4 ; compare high due time 
+        cmp     esi,[eax+_KiTimerTableListHead+TtTime+4] ; compare high due time 
         jb      kustxx                  ; if below, timer has not expired
         ja      short kust15            ; if above, timer has expired
-        cmp     edi,[eax]+_KiTimerTableListHead+TtTime ; compare low due time
+        cmp     edi,[eax+_KiTimerTableListHead+TtTime] ; compare low due time
         jb      kustxx                  ; if below, timer has not expired
 kust15:                                 ;
 
@@ -228,11 +228,11 @@ kust15:                                 ;
 ; (ebx) = KeTickCount.LowPart
 ;
 
-        mov     ecx,PCR[PcPrcb]         ; get processor control block address
-        cmp     dword ptr [ecx]+PbTimerRequest, 0 ; check if expiration active
+        mov     ecx,[PCR+PcPrcb]         ; get processor control block address
+        cmp     dword ptr [ecx+PbTimerRequest], 0 ; check if expiration active
         jne     short kustxx            ; if ne, expiration already active
-        mov     [ecx]+PbTimerRequest, esp ; set timer request
-        mov     [ecx]+PbTimerHand, ebx  ; set timer hand value
+        mov     [ecx+PbTimerRequest], esp ; set timer request
+        mov     [ecx+PbTimerHand], ebx  ; set timer hand value
         mov     ecx, DISPATCH_LEVEL     ; request dispatch interrupt
         fstCall HalRequestSoftwareInterrupt ;
 
@@ -264,7 +264,7 @@ kust30: cmp     _KiTickOffset,0         ; check if full tick
         INTERRUPT_EXIT
 
 kust40:
-        inc     dword ptr PCR[PcPrcbData+PbInterruptCount]
+        inc     dword ptr [PCR+PcPrcbData+PbInterruptCount]
         INTERRUPT_EXIT
 
 kust45: stdCall _KdPollBreakIn
@@ -276,7 +276,7 @@ kust45: stdCall _KdPollBreakIn
 if DBG
 
 kust_skiptick:
-        mov     byte ptr PCR[PcPrcbData+PbSkipTick], 0
+        mov     byte ptr [PCR+PcPrcbData+PbSkipTick], 0
         jmp     short kust40
 
 endif
@@ -314,44 +314,44 @@ stdENDP _KeUpdateSystemTime
 cPublicProc _KeUpdateRunTime   ,1
 cPublicFpo 1, 1
 
-        mov     eax, PCR[PcSelfPcr]
+        mov     eax, [PCR+PcSelfPcr]
 if DBG
-        cmp     byte ptr [eax]+PcPrcbData+PbSkipTick, 0
+        cmp     byte ptr [eax+PcPrcbData+PbSkipTick], 0
         jnz     kutp_skiptick
 endif
         push    ebx                     ; we will destroy ebx
-        inc     dword ptr [eax]+PcPrcbData+PbInterruptCount
-        mov     ebx, [eax]+PcPrcbData+PbCurrentThread ; (ebx)->current thread
-        mov     ecx, ThApcState+AsProcess[ebx]
+        inc     dword ptr [eax+PcPrcbData+PbInterruptCount]
+        mov     ebx, [eax+PcPrcbData+PbCurrentThread] ; (ebx)->current thread
+        mov     ecx, [ebx+ThApcState+AsProcess]
                                         ; (ecx)->current thread's process
 
-        test    dword ptr [ebp]+TsEFlags,EFLAGS_V86_MASK
+        test    dword ptr [ebp+TsEFlags],EFLAGS_V86_MASK
         jne     Kutp20                  ; if ne, user mode
 
-        test    byte ptr [ebp]+TsSegCs, MODE_MASK ; test if prev mode was kernel
+        test    byte ptr [ebp+TsSegCs], MODE_MASK ; test if prev mode was kernel
         jne     Kutp20                  ; if ne, user mode
 
 ;
 ; Update the total time spent in kernel mode
 ;
 
-        inc     dword ptr [eax].PcPrcbData.PbKernelTime
+        inc     dword ptr [eax+PcPrcbData+PbKernelTime]
         cmp     byte ptr [esp+8], DISPATCH_LEVEL
         jc      short Kutp4             ; OldIrql<2, then kernel
         ja      short Kutp3             ; OldIrql>2, then interrupt
 
-        cmp     byte ptr PCR[PcPrcbData.PbDpcRoutineActive], 0
+        cmp     byte ptr [PCR+PcPrcbData+PbDpcRoutineActive], 0
         jz      short Kutp4             ; Executing Dpc?, no then thread time
 
-        inc     dword ptr [eax].PcPrcbData.PbDpcTime
+        inc     dword ptr [eax+PcPrcbData+PbDpcTime]
 if DBG
 ;
 ; Check for dpcs which run for too long
 ;
 
-        inc     dword ptr [eax].PcPrcbData.PbDebugDpcTime
+        inc     dword ptr [eax+PcPrcbData+PbDebugDpcTime]
         mov     edx, _KiDPCTimeout
-        cmp     dword ptr [eax].PcPrcbData.PbDebugDpcTime, edx
+        cmp     dword ptr [eax+PcPrcbData+PbDebugDpcTime], edx
         jc      Kutp50                  ; Jump if not over limit
 
 ;
@@ -366,8 +366,8 @@ if DBG
         je      short Kutp6             ; if eq, no debugger, continue
         stdCall _DbgBreakPoint          ; break into debugger
 
-Kutp6:  mov     eax, PCR[PcSelfPcr]     ; restore PCR address
-        mov     dword ptr [eax].PcPrcbData.PbDebugDpcTime, 0 ; Reset Time
+Kutp6:  mov     eax, [PCR+PcSelfPcr]     ; restore PCR address
+        mov     dword ptr [eax+PcPrcbData+PbDebugDpcTime], 0 ; Reset Time
 endif
         jmp     Kutp50
 
@@ -377,7 +377,7 @@ Kutp3:
 ; Update the time spent at interrupt time for this processor
 ;
 
-        inc     dword ptr [eax].PcPrcbData.PbInterruptTime
+        inc     dword ptr [eax+PcPrcbData+PbInterruptTime]
         jmp     Kutp50
 
 ALIGN 4
@@ -387,7 +387,7 @@ Kutp4:
 ; Update the time spent in kernel mode for the current thread and the current
 ; thread's process.
 ;
-        inc     dword ptr [ebx]+ThKernelTime
+        inc     dword ptr [ebx+ThKernelTime]
         jmp     Kutp50
 
 
@@ -397,13 +397,13 @@ Kutp4:
 
 ALIGN 4
 Kutp20:
-        inc     dword ptr [eax].PcPrcbData.PbUserTime
+        inc     dword ptr [eax+PcPrcbData+PbUserTime]
 ;
 ; Update the time spend in user mode for the current thread and the current
 ; thread's process.
 ;
 
-        inc     dword ptr [ebx]+ThUserTime
+        inc     dword ptr [ebx+ThUserTime]
 
 ;
 ; Update the DPC request rate which is computed as the average between
@@ -411,13 +411,13 @@ Kutp20:
 ;
 
 ALIGN 4
-Kutp50: mov     ecx, [eax].PcPrcbData.PbDpcCount ; get current DPC count
-        mov     edx, [eax].PcPrcbData.PbDpcLastCount ; get last DPC count
-        mov     [eax].PcPrcbData.PbDpcLastCount, ecx ; set last DPC count
+Kutp50: mov     ecx, [eax+PcPrcbData+PbDpcCount] ; get current DPC count
+        mov     edx, [eax+PcPrcbData+PbDpcLastCount] ; get last DPC count
+        mov     [eax+PcPrcbData+PbDpcLastCount], ecx ; set last DPC count
         sub     ecx, edx                ; compute count during interval
-        add     ecx, [eax].PcPrcbData.PbDpcRequestRate ; compute sum
+        add     ecx, [eax+PcPrcbData+PbDpcRequestRate] ; compute sum
         shr     ecx, 1                  ; average current and last
-        mov     [eax].PcPrcbData.PbDpcRequestRate, ecx ; set new DPC request rate
+        mov     [eax+PcPrcbData+PbDpcRequestRate], ecx ; set new DPC request rate
 
 ;
 ; If the current DPC queue depth is not zero, a DPC routine is not active,
@@ -426,23 +426,23 @@ Kutp50: mov     ecx, [eax].PcPrcbData.PbDpcCount ; get current DPC count
 ; counter if appropriate.
 ;
 
-        cmp     dword ptr [eax].PcPrcbData.PbDpcQueueDepth, 0 ; check queue depth
+        cmp     dword ptr [eax+PcPrcbData+PbDpcQueueDepth], 0 ; check queue depth
         je      short Kutp53            ; if eq, DPC queue depth is zero
-        cmp     byte ptr [eax].PcPrcbData.PbDpcRoutineActive, 0 ; check if DPC active
+        cmp     byte ptr [eax+PcPrcbData+PbDpcRoutineActive], 0 ; check if DPC active
         jne     short Kutp53            ; if ne, DPC routine active
-        cmp     byte ptr [eax].PcPrcbData.PbDpcInterruptRequested, 0 ; check if interrupt
+        cmp     byte ptr [eax+PcPrcbData+PbDpcInterruptRequested], 0 ; check if interrupt
         jne     short Kutp53            ; if ne, DPC routine active
         mov     ecx, DISPATCH_LEVEL     ; request a dispatch interrupt
         fstCall HalRequestSoftwareInterrupt ;
-        mov     eax, PCR[PcSelfPcr]     ; restore address of current PCR
-        mov     ecx, [eax].PcPrcbData.PbDpcRequestRate ; get DPC request rate
+        mov     eax, [PCR+PcSelfPcr]     ; restore address of current PCR
+        mov     ecx, [eax+PcPrcbData+PbDpcRequestRate] ; get DPC request rate
         mov     edx, _KiAdjustDpcThreshold ; reset initial threshold counter
-        mov     [eax].PcPrcbData.PbAdjustDpcThreshold, edx ;
+        mov     [eax+PcPrcbData+PbAdjustDpcThreshold], edx ;
         cmp     ecx, _KiIdealDpcRate    ; test if current rate less than ideal
         jge     short Kutp55            ; if ge, rate greater or equal ideal
-        cmp     [eax].PcPrcbData.PbMaximumDpcQueueDepth, 1 ; check if depth one
+        cmp     [eax+PcPrcbData+PbMaximumDpcQueueDepth], 1 ; check if depth one
         je      short Kutp55            ; if eq, maximum depth is one
-        dec     dword ptr [eax].PcPrcbData.PbMaximumDpcQueueDepth ; decrement depth
+        dec     dword ptr [eax+PcPrcbData+PbMaximumDpcQueueDepth] ; decrement depth
         jmp     short Kutp55            ;
 
 ;
@@ -452,14 +452,14 @@ Kutp50: mov     ecx, [eax].PcPrcbData.PbDpcCount ; get current DPC count
 ; no above the initial value and reset the adjustment threshold value.
 ;
 
-Kutp53: dec     dword ptr [eax].PcPrcbData.PbAdjustDpcThreshold ; decrement threshold
+Kutp53: dec     dword ptr [eax+PcPrcbData+PbAdjustDpcThreshold] ; decrement threshold
         jnz     short Kutp55            ; if nz, threshold not zero
         mov     ecx, _KiAdjustDpcThreshold ; reset initial threshold counter
-        mov     [eax].PcprcbData.PbAdjustDpcThreshold, ecx ;
+        mov     [eax+PcPrcbData+PbAdjustDpcThreshold], ecx ;
         mov     ecx, _KiMaximumDpcQueueDepth ; get maximum DPC queue depth
-        cmp     ecx, [eax].PcPrcbData.PbMaximumDpcQueueDepth ; check depth
+        cmp     ecx, [eax+PcPrcbData+PbMaximumDpcQueueDepth] ; check depth
         je      short Kutp55            ; if eq, already a maximum level
-        inc     dword ptr [eax].PcPrcbData.PbMaximumDpcQueueDepth ; increment maximum depth
+        inc     dword ptr [eax+PcPrcbData+PbMaximumDpcQueueDepth] ; increment maximum depth
 
 ;
 ; Decrement current thread quantum and check to determine if a quantum end
@@ -467,7 +467,7 @@ Kutp53: dec     dword ptr [eax].PcPrcbData.PbAdjustDpcThreshold ; decrement thre
 ;
 
 ALIGN 4
-Kutp55: sub     byte ptr [ebx]+ThQuantum, CLOCK_QUANTUM_DECREMENT ; decrement quantum
+Kutp55: sub     byte ptr [ebx+ThQuantum], CLOCK_QUANTUM_DECREMENT ; decrement quantum
         jg      Kutp75                      ; if > 0, time remaining on quantum
 
 ;
@@ -475,9 +475,9 @@ Kutp55: sub     byte ptr [ebx]+ThQuantum, CLOCK_QUANTUM_DECREMENT ; decrement qu
 ; processor.
 ;
 
-        cmp     ebx,[eax].PcPrcbData.PbIdleThread ; check if idle thread
+        cmp     ebx,[eax+PcPrcbData+PbIdleThread] ; check if idle thread
         jz      Kutp75                      ; if z, then idle thread
-        mov     byte ptr [eax].PcPrcbData.PbQuantumEnd, 1 ; set quantum end indicator
+        mov     byte ptr [eax+PcPrcbData+PbQuantumEnd], 1 ; set quantum end indicator
         mov     ecx, DISPATCH_LEVEL         ; request dispatch interrupt
         fstCall HalRequestSoftwareInterrupt ;
 Kutp75:                                     ;
@@ -486,7 +486,7 @@ Kutp75:                                     ;
 
 if DBG
 kutp_skiptick:
-        mov     byte ptr [eax]+PcPrcbData+PbSkipTick, 0
+        mov     byte ptr [eax+PcPrcbData+PbSkipTick], 0
         stdRET    _KeUpdateRunTime
 endif
 
@@ -594,7 +594,7 @@ kipsegcs        equ     <word ptr [ebp+TsSegCs]>
 kipeflags       equ     <dword ptr [ebp+TsEFlags]>
 
         mov     ebp, dword ptr [esp+4]  ; (ebp)-> trap frame
-        inc     dword ptr PCR[PcPrcbData+PbInterruptCount]
+        inc     dword ptr [PCR+PcPrcbData+PbInterruptCount]
 
         cmp     _PPerfGlobalGroupMask, 0 ; check if event tracing is on
         je      short kipi03
@@ -653,9 +653,9 @@ endif
 
         mov     ebx, kipieip
         mov     edx,offset FLAT:_KiProfileListHead
-        mov     esi,[edx].LsFlink       ; (esi) -> profile object
+        mov     esi,[edx+LsFlink]       ; (esi) -> profile object
 ifndef NT_UP
-        mov     edi, PCR[PcSetMember]   ; (edi) = current processor
+        mov     edi, [PCR+PcSetMember]   ; (edi) = current processor
 endif
         mov     ecx, [esp+8]            ; (cx) = profile source
         cmp     esi,edx
@@ -691,7 +691,7 @@ endif
         mov     ebx, kipieip            ; (ebx) = sample pc
         mov     ecx, [esp+8]            ; (cx) = profile source
 ifndef NT_UP
-        mov     edi, PCR[PcSetMember]   ; (edi) = current processor
+        mov     edi, [PCR+PcSetMember]   ; (edi) = current processor
 endif
 
 
@@ -700,7 +700,7 @@ endif
 ;
 
 ALIGN 4
-kipi20: mov     esi,[esi].LsFlink       ; (esi) -> profile object
+kipi20: mov     esi,[esi+LsFlink]       ; (esi) -> profile object
         cmp     esi,edx
         jne     kipi10                  ; not end of list, repeat
 
@@ -711,10 +711,10 @@ kipi20: mov     esi,[esi].LsFlink       ; (esi) -> profile object
 ;
 
 ALIGN 4
-kipi30: mov     eax,PCR[PcPrcbData+PbCurrentThread] ; (eax)-> current thread
-        mov     eax,ThApcState+AsProcess[eax]       ; (eax)-> current process
-        lea     edx,[eax]+PrProfileListHead         ; (edx)-> listhead
-        mov     esi,[edx].LsFlink                   ; (esi)-> profile object
+kipi30: mov     eax,[PCR+PcPrcbData+PbCurrentThread] ; (eax)-> current thread
+        mov     eax,[eax+ThApcState+AsProcess]       ; (eax)-> current process
+        lea     edx,[eax+PrProfileListHead]         ; (edx)-> listhead
+        mov     esi,[edx+LsFlink]                   ; (esi)-> profile object
         cmp     esi,edx
         je      kipi60                              ; process list end, return
 
@@ -747,7 +747,7 @@ kipi40: cmp     [esi+PfSegment-PfProfileListEntry],word ptr 0 ; flat object?
         cmp     cx,word ptr [esi+PfSource-PfProfileListEntry]       ; == source?
         jne     kipi50                                      ; no, skip entry
 ifndef NT_UP
-        mov     edi,PCR[PcSetMember]                        ; (edi) = set member
+        mov     edi,[PCR+PcSetMember]                        ; (edi) = set member
         test    edi,[esi+PfAffinity-PfProfileListEntry]     ; affinity match?
         jz      kipi50                                      ; no, skip entry
 endif
@@ -771,7 +771,7 @@ endif
 ;
 
 ALIGN 4
-kipi50: mov     esi,[esi].LsFlink       ; (esi) -> profile object
+kipi50: mov     esi,[esi+LsFlink]       ; (esi) -> profile object
         cmp     esi,edx
         jne     kipi40                  ; not end of list, repeat
 
@@ -816,7 +816,7 @@ kipi110:
         cmp     cx,word ptr [esi+PfSource-PfProfileListEntry]       ; == source?
         jne     kipi120                                     ; no, skip entry
 ifndef NT_UP
-        mov     edi,PCR[PcSetMember]                        ; (edi) = set member
+        mov     edi,[PCR+PcSetMember]                        ; (edi) = set member
         test    edi,[esi+PfAffinity-PfProfileListEntry]     ; affinity match?
         jnz     kipi120                                     ; no, skip entry
 endif
@@ -840,7 +840,7 @@ endif
 
 ALIGN 4
 kipi120:
-        mov     esi,[esi].LsFlink       ; (esi) -> profile object
+        mov     esi,[esi+LsFlink]       ; (esi) -> profile object
         cmp     esi,edx
         jne     kipi110                 ; not end of list, repeat
 
@@ -849,4 +849,3 @@ kipi120:
 stdENDP _KeProfileInterruptWithSource
 _TEXT$00   ends
         end
-

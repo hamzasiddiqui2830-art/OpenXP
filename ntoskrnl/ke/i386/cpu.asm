@@ -1,6 +1,5 @@
-```
+
     title  "Processor type and stepping detection"
-```
 
 ;++
 ;

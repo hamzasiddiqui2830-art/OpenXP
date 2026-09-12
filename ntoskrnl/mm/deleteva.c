@@ -244,13 +244,13 @@ Environment:
 
     if ((Vad == NULL) ||
         (Vad->u.VadFlags.PrivateMemory) ||
-        (Vad->FirstPrototypePteArgument == NULL)) {
+        (Vad->FirstPrototypePte == NULL)) {
 
         ProtoPte = NULL;
         LastProtoPte = NULL;
     }
     else {
-        ProtoPte = Vad->FirstPrototypePteArgument;
+        ProtoPte = Vad->FirstPrototypePte;
         LastProtoPte = (PMMPTE) 4;
     }
 
@@ -592,8 +592,8 @@ restart:
     
                             if (CloneDescriptor == NULL) {
                                 DbgPrintEx (DPFLTR_MM_ID, DPFLTR_ERROR_LEVEL, 
-                                    "0PrototypePteArgument %p Clone desc %p %p\n",
-                                    PrototypePteArgument, CloneDescriptor, PointerPte);
+                                    "0PrototypePte %p Clone desc %p %p\n",
+                                    PrototypePte, CloneDescriptor, PointerPte);
                                 ASSERT (FALSE);
                             }
                         }
@@ -902,7 +902,7 @@ Environment:
 
         CloneDescriptor = NULL;
 
-        if (Pfn1->u3.e1.PrototypePteArgument == 1) {
+        if (Pfn1->u3.e1.PrototypePte == 1) {
 
             CloneBlock = (PMMCLONE_BLOCK)Pfn1->PteAddress;
 
@@ -1295,7 +1295,7 @@ Environment:
     Pfn1 = MI_PFN_ELEMENT (PageFrameIndex);
     WsPfnIndex = Pfn1->u1.WsIndex;
 
-    ASSERT (Pfn1->u3.e1.PrototypePteArgument == 0);
+    ASSERT (Pfn1->u3.e1.PrototypePte == 0);
 
     if ((PMMPTE)((ULONG_PTR)Pfn1->PteAddress & ~0x1) != PointerPte) {
         KeBugCheckEx (MEMORY_MANAGEMENT,

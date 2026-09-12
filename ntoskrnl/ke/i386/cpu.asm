@@ -22,9 +22,7 @@
 ;
 ;--
 
-```
     .xlist
-```
 
 include i386\cpu.inc
 include ks386.inc
@@ -95,7 +93,7 @@ ASSUME  DS:FLAT, ES:FLAT, SS:NOTHING, FS:NOTHING, GS:NOTHING
 ;--
 cPublicProc _KiSetProcessorType,0
 
-```
+
     mov     byte ptr PCR[PcPrcbData + PbCpuID], 0
 
     push    edi
@@ -116,13 +114,13 @@ cPublicProc _KiSetProcessorType,0
     pop     ecx                     ; get flags into eax
     cmp     ebx, ecx                ; did bit stay flipped?
     jne     short cpu_has_cpuid     ; Yes, go use CPUID
-```
+
 
 cpuid_unsupported:
 pop     ebx                     ; Get flags into eax
 push    ebx                     ; Save original flags
 
-```
+
     mov     ecx, ebx
     xor     ecx, EFLAGS_AC          ; flip AC bit
     push    ecx
@@ -131,7 +129,7 @@ push    ebx                     ; Save original flags
     pop     ecx                     ; get flags into eax
     cmp     ebx, ecx                ; did bit stay flipped?
     je      short cpu_is_386        ; No, then this is a 386
-```
+
 
 cpu_is_486:
 mov     byte ptr PCR[PcPrcbData + PbCpuType], 4h    ; Save CPU Type
@@ -148,7 +146,7 @@ or      ebx, EFLAGS_ID
 push    ebx
 popfd                           ; Make sure ID bit is set
 
-```
+
     mov     ecx, PCR[PcIdt]         ; Address of IDT
     push    dword ptr [ecx+30h]     ; Save Trap06 handler incase
     push    dword ptr [ecx+34h]     ; the CPUID instruction faults
@@ -257,11 +255,11 @@ popfd                           ; Make sure ID bit is set
                                     ; Family 6, ExtendedModel is valid
     and     ebx, 0F00h              ; (bh) = CpuType
     jmp     short extended_model
-```
+
 
 cpu_non_genuineintel:
 
-```
+
     mov     eax, 1                  ; get the family and stepping
     cpuid
 
@@ -270,17 +268,17 @@ cpu_non_genuineintel:
     mov     ecx, eax
 
     and     edx, 0F00h              ; get the Family
-```
+
 
 cpu_not_family_6:
 cmp     edx, 0F00h              ; (edx) = 00000000000000000000ffff00000000
 jne     short cpu_not_extended  ; Family less than F
 
-```
+
     and     ebx, 0FF00000h          ; (ebx) = 0000FFFFFFFF00000000000000000000
     shr     ebx, 12                 ; (ebx) = 0000000000000000FFFFFFFF00000000
     add     ebx, edx                ; (ebx) = 0000000000000000XXXXXXXX00000000
-```
+
 
 extended_model:
 mov     ah, al                  ; (eax) = RRRRFFFFFFFFMMMMmmmmssssmmmmssss
@@ -288,9 +286,9 @@ shr     eax, 4                  ; (eax) = 0000RRRRFFFFFFFFMMMMmmmmssssmmmm
 mov     al, cl                  ; (eax) = 0000RRRRFFFFFFFFMMMMmmmmmmmmssss
 and     eax, 0FF0Fh             ; (eax) = 0000000000000000EEEEEEEE0000ssss
 
-```
+
     jmp     short cpu_save_signature
-```
+
 
 cpu_not_extended:
 and     eax, 0F0h               ; (eax) = Model
@@ -298,9 +296,9 @@ shl     eax, 4
 mov     al, bl
 and     eax, 0F0Fh              ; (eax) = Model[15:8] | Step[7:0]
 
-```
+
     and     ebx, 0F00h              ; (bh) = CpuType
-```
+
 
 cpu_save_signature:
 mov     byte ptr PCR[PcPrcbData + PbCpuID], 1       ; Has ID support
@@ -348,10 +346,10 @@ stdENDP _KiSetProcessorType
 
 CpuIdTrap6Handler   proc
 
-```
+
     mov     dword ptr [esp + IretEip],offset cpuid_trap
     iretd
-```
+
 
 CpuIdTrap6Handler  endp
 
@@ -378,18 +376,18 @@ CpuIdTrap6Handler  endp
 ;
 ;--
 
-```
+
     public  Get386Stepping
-```
+
 
 Get386Stepping  proc
 
-```
+
     call    MultiplyTest            ; Perform multiplication test
     jnc     short G3s00             ; if nc, muttest is ok
     mov     ax, 0
     ret
-```
+
 
 G3s00:
 call    Check386B0              ; Check for B0 stepping
@@ -430,27 +428,27 @@ Get386Stepping  endp
 ;
 ;--
 
-```
+
     public  Get486Stepping
-```
+
 
 Get486Stepping          proc
 
-```
+
     call    Check486AStepping       ; Check for A stepping
     jnc     short G4s00             ; if nc, it is NOT A stepping
 
     mov     ax, 0                   ; set to A stepping
     ret
-```
+
 
 G4s00:  call    Check486BStepping       ; Check for B stepping
 jnc     short G4s10             ; if nc, it is NOT a B stepping
 
-```
+
     mov     ax, 100h                ; set to B stepping
     ret
-```
+
 
 ;
 ; Before we test for 486 C/D step, we need to make sure NPX is present.
@@ -461,10 +459,10 @@ call    _KiIsNpxPresent         ; Check if cpu has coprocessor support?
 or      ax, ax
 jz      short G4s15             ; it is actually 486sx
 
-```
+
     call    Check486CStepping       ; Check for C stepping
     jnc     short G4s20             ; if nc, it is NOT a C stepping
-```
+
 
 G4s15:
 mov     ax, 200h                ; set to C stepping
@@ -508,13 +506,13 @@ mov     eax, cr0                ; reset ET bit in cr0
 and     eax, NOT CR0_ET
 mov     cr0, eax
 
-```
+
     mov     eax, cr0                ; get cr0 back
     test    eax, CR0_ET             ; if ET bit still set?
     jnz     short cas10             ; if nz, yes, still set, it's NOT A step
     stc
     ret
-```
+
 
 cas10:  clc
 ret
@@ -549,7 +547,7 @@ Check486AStepping       endp
 public  Check486BStepping
 Check486BStepping       proc
 
-```
+
     push    ebx
 
     mov     ebx, PCR[PcIdt]           ; Address of IDT
@@ -560,7 +558,7 @@ Check486BStepping       proc
     mov     word ptr [ebx+30h], ax  ; Set LowWord
     shr     eax, 16
     mov     word ptr [ebx+36h], ax  ; Set HighWord
-```
+
 
 c4bs50  db      0fh, 21h, 0e0h          ; mov eax, DR4
 nop
@@ -574,12 +572,12 @@ c4bs60: stc                             ; it's B step
 c4bs70: pop     dword ptr [ebx+34h]     ; restore old int 6 vector
 pop     dword ptr [ebx+30h]
 
-```
+
     pop     ebx
     ret
 
     ret
-```
+
 
 Check486BStepping       endp
 
@@ -607,10 +605,10 @@ Check486BStepping       endp
 
 Temporary486Int6        proc
 
-```
+
     mov     dword ptr [esp + IretEip],offset c4bs60 ; set EIP to stc instruction
     iretd
-```
+
 
 Temporary486Int6        endp
 
@@ -652,13 +650,13 @@ RealLongSt1     equ     [ebp - 10]
 PseudoDenormal  equ     [ebp - 20]
 FscaleResult    equ     [ebp - 30]
 
-```
+
     public  Check486CStepping
-```
+
 
 Check486CStepping       proc
 
-```
+
     push    ebp
     mov     ebp, esp
     sub     esp, 30                 ; Allocate space for temp real variables
@@ -666,7 +664,7 @@ Check486CStepping       proc
     mov     eax, cr0                ; Don't trap while doing math
     and     eax, NOT (CR0_ET+CR0_MP+CR0_TS+CR0_EM)
     mov     cr0, eax
-```
+
 
 ;
 ; Initialize the local FP variables to predefined values.
@@ -682,13 +680,13 @@ Check486CStepping       proc
 ;                original significand and an exponent of 0...01.
 ;
 
-```
+
     mov     dword ptr RealLongSt1, REALLONG_LOW
     mov     dword ptr RealLongSt1 + 4, REALLONG_HIGH
     mov     dword ptr PseudoDenormal, PSEUDO_DENORMAL_LOW
     mov     dword ptr PseudoDenormal + 4, PSEUDO_DENORMAL_MID
     mov     word ptr PseudoDenormal + 8, PSEUDO_DENORMAL_HIGH
-```
+
 
 .387
 fnstcw  FpControl               ; Get FP control word
@@ -696,7 +694,7 @@ fwait
 or      word ptr FpControl, 0FFh ; Mask all the FP exceptions
 fldcw   FpControl               ; Set FP control
 
-```
+
     fld     qword ptr RealLongSt1   ; 0 < ST(1) = RealLongSt1 < 1
     fld     tbyte ptr PseudoDenormal; Denormalized operand. Note, i486
                                     ; won't report denormal exception
@@ -709,7 +707,7 @@ fldcw   FpControl               ; Set FP control
     jz      short c4ds00            ; if z, no, it is C step
     clc
     jmp     short c4ds10
-```
+
 
 c4ds00: stc
 c4ds10: mov     esp, ebp
@@ -751,7 +749,7 @@ Check486CStepping       endp
 
 Check386B0      proc
 
-```
+
     push    ebx
 
     mov     ebx, PCR[PcIdt]           ; Address of IDT
@@ -762,7 +760,7 @@ Check386B0      proc
     mov     word ptr [ebx+30h], ax  ; Set LowWord
     shr     eax, 16
     mov     word ptr [ebx+36h], ax  ; Set HighWord
-```
+
 
 ;
 ; Attempt execution of Extract Bit String instruction.  Execution on
@@ -777,11 +775,11 @@ Check386B0      proc
 ; to handle newer steppings with an unknown instruction length.
 ;
 
-```
+
     xor     eax,eax
     mov     edx,eax
     mov     ecx,0ff00h              ; Extract length (CL) == 0, (CX) != 0
-```
+
 
 b1c50   db      0fh, 0a6h, 0cah         ; xbts cx,dx,ax,cl
 nop
@@ -795,10 +793,10 @@ b1c60:  clc
 b1c70:  pop     dword ptr [ebx+34h]     ; restore old int 6 vector
 pop     dword ptr [ebx+30h]
 
-```
+
     pop     ebx
     ret
-```
+
 
 Check386B0      endp
 
@@ -826,10 +824,10 @@ Check386B0      endp
 
 TemporaryInt6    proc
 
-```
+
     mov     dword ptr [esp + IretEip],offset b1c60 ; set IP to clc instruction
     iretd
-```
+
 
 TemporaryInt6   endp
 
@@ -867,7 +865,7 @@ TemporaryInt6   endp
 Check386D1      proc
 push    ebx
 
-```
+
     mov     ebx, PCR[PcIdt]           ; Address of IDT
     push    dword ptr [ebx+08h]
     push    dword ptr [ebx+0ch]     ; Save Trap01 handler
@@ -876,7 +874,7 @@ push    ebx
     mov     word ptr [ebx+08h], ax  ; Set LowWord
     shr     eax, 16
     mov     word ptr [ebx+0eh], ax  ; Set HighWord
-```
+
 
 ;
 ; Attempt execution of rep movsb instruction with the Trace Flag set.
@@ -887,7 +885,7 @@ push    ebx
 ; instruction.  Examination of (CX) will reveal the stepping.
 ;
 
-```
+
     sub     esp,4                   ; make room for target of movsb
     mov     esi, offset TemporaryInt1 ; (ds:esi) -> some present data
     mov     edi,esp
@@ -896,7 +894,7 @@ push    ebx
     or      dword ptr [esp], EFLAGS_TF
     popfd                           ; cause a single step trap
     rep movsb
-```
+
 
 d1c60:  add     esp,4                   ; clean off stack
 pop     dword ptr [ebx+0ch]     ; restore old int 1 vector
@@ -932,11 +930,11 @@ Check386D1      endp
 
 TemporaryInt1   proc
 
-```
+
     and     dword ptr [esp + IretEFlags],not EFLAGS_TF ; clear caller's Trace Flag
     mov     dword ptr [esp + IretEip],offset d1c60     ; set IP to next instruction
     iretd
-```
+
 
 TemporaryInt1   endp
 
@@ -967,9 +965,9 @@ TemporaryInt1   endp
 
 MultiplyTest    proc
 
-```
+
     xor     cx,cx                   ; 64K times is a nice round number
-```
+
 
 mlt00:  push    cx
 call    Multiply                ; does this chip's multiply work?
@@ -1009,7 +1007,7 @@ MultiplyTest    endp
 
 Multiply        proc
 
-```
+
     mov     ecx, MULTIPLIER
     mov     eax, MULTIPLICAND
     mul     ecx
@@ -1023,7 +1021,7 @@ Multiply        proc
     jnz     short mlpx              ;   N: exit with error
 
     clc                             ; indicate success
-```
+
 
 mlpx:
 ret
@@ -1058,13 +1056,13 @@ Multiply        endp
 
 cPublicProc _KiIsNpxPresent,0
 
-```
+
     push    ebp                     ; Save caller's bp
     mov     eax, cr0
     and     eax, NOT (CR0_ET+CR0_MP+CR0_TS+CR0_EM)
     mov     cr0, eax
     xor     edx, edx
-```
+
 
 .287
 fninit                          ; Initialize NPX
@@ -1075,7 +1073,7 @@ fnstsw  word ptr [ebp]          ; Retrieve status - must use non-wait
 cmp     byte ptr [ebp], 0       ; All bits cleared by fninit?
 jne     Inp10
 
-```
+
     or      eax, CR0_ET
     mov     edx, 1
 
@@ -1083,7 +1081,7 @@ jne     Inp10
     jbe     Inp10
 
     or      eax, CR0_NE
-```
+
 
 Inp10:
 or      eax, CR0_EM+CR0_TS      ; During Kernel Initialization set
@@ -1120,7 +1118,7 @@ stdENDP _KiIsNpxPresent
 ;--
 cPublicProc _CPUID,5
 
-```
+
 push    ebx
 push    esi
 
@@ -1144,7 +1142,7 @@ pop     esi
 pop     ebx
 
 stdRET  _CPUID
-```
+
 
 stdENDP _CPUID
 

@@ -176,12 +176,12 @@ MmAllocatePagesForMdlEx (
     );
 
 VOID
-MmLockPagableSectionByHandle (
+MmLockPAGEABLESectionByHandle (
     __in PVOID ImageSectionHandle
     );
 
 VOID
-MmUnlockPagableImageSection (
+MmUnlockPAGEABLEImageSection (
     __in PVOID ImageSectionHandle
     );
 
@@ -204,7 +204,7 @@ MmUnlockPagableImageSection (
 #pragma alloc_text(PAGE, MmAllocateNonCachedMemory)
 #pragma alloc_text(PAGE, MmFreeNonCachedMemory)
 #pragma alloc_text(PAGE, MmLockPagedPool)
-#pragma alloc_text(PAGE, MmLockPagableSectionByHandle)
+#pragma alloc_text(PAGE, MmLockPAGEABLESectionByHandle)
 #pragma alloc_text(PAGE, MmLockPageableSectionByHandle)
 #pragma alloc_text(PAGE, MiZeroAwePageWorker)
 #pragma alloc_text(PAGE, MmAllocatePagesForMdl)
@@ -9659,7 +9659,7 @@ Environment:
 
     LOCK_PFN (OldIrql);
 
-    if ((SPFN_NUMBER)NumberOfPages > MI_NONPAGABLE_MEMORY_AVAILABLE()) {
+    if ((SPFN_NUMBER)NumberOfPages > MI_NONPAGEABLE_MEMORY_AVAILABLE()) {
         UNLOCK_PFN (OldIrql);
         MiReturnCommitment (NumberOfPages);
         MiReleaseSystemPtes (PointerPte, (ULONG)NumberOfPages, SystemPteSpace);
@@ -10487,7 +10487,7 @@ Environment:
     // be recalculated later while holding the lock.
     //
 
-    MaxPages = MI_NONPAGABLE_MEMORY_AVAILABLE() - 1024;
+    MaxPages = MI_NONPAGEABLE_MEMORY_AVAILABLE() - 1024;
 
     if ((SPFN_NUMBER)MaxPages <= 0) {
         SizeInPages = 0;
@@ -10583,7 +10583,7 @@ Environment:
 
     MiDeferredUnlockPages (MI_DEFER_PFN_HELD);
 
-    MaxPages = MI_NONPAGABLE_MEMORY_AVAILABLE() - 1024;
+    MaxPages = MI_NONPAGEABLE_MEMORY_AVAILABLE() - 1024;
 
     if ((SPFN_NUMBER)MaxPages <= 0) {
         SizeInPages = 0;
@@ -12940,7 +12940,7 @@ Environment:
 
 
 VOID
-MmLockPagableSectionByHandle (
+MmLockPAGEABLESectionByHandle (
     __in PVOID ImageSectionHandle
     )
 {
@@ -13911,7 +13911,7 @@ Return Value:
 }
 
 VOID
-MmUnlockPagableImageSection (
+MmUnlockPAGEABLEImageSection (
     __in PVOID ImageSectionHandle
     )
 {

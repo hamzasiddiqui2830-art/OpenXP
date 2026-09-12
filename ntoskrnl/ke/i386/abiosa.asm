@@ -129,16 +129,16 @@ endm
 
 COPY_CALL_FRAME macro FramePtr
 
-        mov     [FramePtr].TsEax,eax
-        mov     [FramePtr].TsEbx,ebx
-        mov     [FramePtr].TsEcx,ecx
-        mov     [FramePtr].TsEdx,edx
-        mov     [FramePtr].TsEsi,esi
-        mov     [FramePtr].TsEdi,edi
-        mov     [FramePtr].TsEbp,ebp
-        mov     [FramePtr].TsHardwareEsp,esp
-        mov     [FramePtr].TsSegFs,fs
-        mov     [FramePtr].TsSegCs,cs
+        mov     dword ptr [FramePtr].TsEax,eax
+        mov     dword ptr [FramePtr].TsEbx,ebx
+        mov     dword ptr [FramePtr].TsEcx,ecx
+        mov     dword ptr [FramePtr].TsEdx,edx
+        mov     dword ptr [FramePtr].TsEsi,esi
+        mov     dword ptr [FramePtr].TsEdi,edi
+        mov     dword ptr [FramePtr].TsEbp,ebp
+        mov     dword ptr [FramePtr].TsHardwareEsp,esp
+        mov     word ptr [FramePtr].TsSegFs,fs
+        mov     word ptr [FramePtr].TsSegCs,cs
 endm
         page ,132
         subttl  "Abios Support Code"

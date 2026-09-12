@@ -76,10 +76,10 @@ STACK32_TO_STACK16      macro
         mov     eax, [eax]+ThStackLimit ; get thread stack base
         mov     edx, eax
         mov     ecx, _KiStack16GdtEntry
-        mov     word ptr [ecx].KgdtBaseLow, ax
+        mov     word ptr [ecx+KgdtBaseLow], ax
         shr     eax, 16
-        mov     byte ptr [ecx].KgdtBaseMid, al
-        mov     byte ptr [ecx].KgdtBaseHi, ah
+        mov     byte ptr [ecx+KgdtBaseMid], al
+        mov     byte ptr [ecx+KgdtBaseHi], ah
         cli
         sub     esp, edx
         mov     eax, KGDT_STACK16
@@ -129,16 +129,16 @@ endm
 
 COPY_CALL_FRAME macro FramePtr
 
-        mov     dword ptr [FramePtr].TsEax,eax
-        mov     dword ptr [FramePtr].TsEbx,ebx
-        mov     dword ptr [FramePtr].TsEcx,ecx
-        mov     dword ptr [FramePtr].TsEdx,edx
-        mov     dword ptr [FramePtr].TsEsi,esi
-        mov     dword ptr [FramePtr].TsEdi,edi
-        mov     dword ptr [FramePtr].TsEbp,ebp
-        mov     dword ptr [FramePtr].TsHardwareEsp,esp
-        mov     word ptr [FramePtr].TsSegFs,fs
-        mov     word ptr [FramePtr].TsSegCs,cs
+        mov     dword ptr [FramePtr+TsEax],eax
+        mov     dword ptr [FramePtr+TsEbx],ebx
+        mov     dword ptr [FramePtr+TsEcx],ecx
+        mov     dword ptr [FramePtr+TsEdx],edx
+        mov     dword ptr [FramePtr+TsEsi],esi
+        mov     dword ptr [FramePtr+TsEdi],edi
+        mov     dword ptr [FramePtr+TsEbp],ebp
+        mov     dword ptr [FramePtr+TsHardwareEsp],esp
+        mov     word ptr [FramePtr+TsSegFs],fs
+        mov     word ptr [FramePtr+TsSegCs],cs
 endm
         page ,132
         subttl  "Abios Support Code"
@@ -401,21 +401,21 @@ endif
         ; Load context to call with
         ;
 
-        push    word ptr [ebx].CsEFlags
-        push    word ptr [ebx].CsSegCs
-        push    word ptr [ebx].CsEip
+        push    word ptr [ebx+CsEFlags]
+        push    word ptr [ebx+CsSegCs]
+        push    word ptr [ebx+CsEip]
 
-        mov     eax, [ebx].CsEax
-        mov     ecx, [ebx].CsEcx
-        mov     edx, [ebx].CsEdx
-        mov     edi, [ebx].CsEdi
-        mov     esi, [ebx].CsEsi
-        mov     ebp, [ebx].CsEbp
-        push    [ebx].CsSegGs
-        push    [ebx].CsSegFs
-        push    [ebx].CsSegEs
-        push    [ebx].CsSegDs
-        mov     ebx, [ebx].CsEbx
+        mov     eax, [ebx+CsEax]
+        mov     ecx, [ebx+CsEcx]
+        mov     edx, [ebx+CsEdx]
+        mov     edi, [ebx+CsEdi]
+        mov     esi, [ebx+CsEsi]
+        mov     ebp, [ebx+CsEbp]
+        push    dword ptr [ebx+CsSegGs]
+        push    dword ptr [ebx+CsSegFs]
+        push    dword ptr [ebx+CsSegEs]
+        push    dword ptr [ebx+CsSegDs]
+        mov     ebx, [ebx+CsEbx]
         pop     ds
         pop     es
         pop     fs
@@ -493,19 +493,19 @@ Kbf50:
     ;
 
         mov     eax, dword ptr [esp+44+LocalStack]     ; (eax) = Context Record
-        pop     [eax].CsEflags
-        pop     [eax].CsEax
-        pop     [eax].CsSegGs
-        pop     [eax].CsSegFs
-        pop     [eax].CsSegEs
-        pop     [eax].CsSegDs
+        pop     [eax+CsEflags]
+        pop     [eax+CsEax]
+        pop     [eax+CsSegGs]
+        pop     [eax+CsSegFs]
+        pop     [eax+CsSegEs]
+        pop     [eax+CsSegDs]
 
-        mov     [eax].CsEbx, ebx
-        mov     [eax].CsEcx, ecx
-        mov     [eax].CsEdx, edx
-        mov     [eax].CsEdi, edi
-        mov     [eax].CsEsi, esi
-        mov     [eax].CsEbp, ebp
+        mov     [eax+CsEbx], ebx
+        mov     [eax+CsEcx], ecx
+        mov     [eax+CsEdx], edx
+        mov     [eax+CsEdi], edi
+        mov     [eax+CsEsi], esi
+        mov     [eax+CsEbp], ebp
 
 ;
 ; Restore regs & return

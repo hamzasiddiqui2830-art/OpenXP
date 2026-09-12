@@ -1,7 +1,8 @@
 
 /*++
 
-Copyright (c) 2000  Microsoft Corporation
+Copyright (c) OpenXP 
+
 
 Module Name:
 
@@ -12,16 +13,17 @@ Abstract:
     This module contains the private (internal) platform specific header file
     for the kernel.
 
-Author:
-
-    David N. Cutler (davec) 17-May-2000
-
-Revision History:
-
 --*/
 
 #if !defined(_KIX86_)
 #define _KIX86_
+
+//
+// Define get current ready summary macro.
+//
+
+#define KiGetCurrentReadySummary()                                           \
+    (KAFFINITY)__readfsdword(FIELD_OFFSET(KPCR, PrcbData.ReadySummary))
 
 //
 // VOID
@@ -85,7 +87,7 @@ KiFlushNPXState (
     );
 
 //
-// Kix86FxSave(NpxFame) - performs an FxSave to the address specificied
+// Kix86FxSave(NpxFame) - performs an FxSave to the address specified
 //
 
 __inline
@@ -104,7 +106,7 @@ Kix86FxSave(
 }
 
 //
-// Kix86FnSave(NpxFame) - performs an FxSave to the address specificied
+// Kix86FnSave(NpxFame) - performs an FxSave to the address specified
 //
 
 __inline
@@ -173,6 +175,33 @@ KiSetHardwareTrigger (
     VOID
     );
 
+//
+// Debug register support
+//
+
+extern const ULONG KiDebugRegisterTrapOffsets [];
+extern const ULONG KiDebugRegisterContextOffsets [];
+
+BOOLEAN
+FASTCALL
+KiRecordDr7 (
+    IN OUT PULONG Dr7Ptr,
+    IN OUT PUCHAR Mask OPTIONAL
+    );
+
+BOOLEAN
+FASTCALL
+KiProcessDebugRegister (
+    IN OUT PKTRAP_FRAME TrapFrame,
+    IN ULONG Register
+    );
+
+ULONG
+FASTCALL
+KiUpdateDr7 (
+    IN ULONG Dr7
+    );
+
 #ifdef DBGMP
 
 VOID
@@ -190,6 +219,13 @@ KiIpiSignalPacketDoneAndStall (
     );
 
 extern KIRQL KiProfileIrql;
+
+//
+// Context size (as written to user stacks)
+//
+
+#define CONTEXT_ALIGNED_SIZE ((sizeof(CONTEXT) + CONTEXT_ROUND) & ~CONTEXT_ROUND)
+C_ASSERT ((CONTEXT_ALIGNED_SIZE & CONTEXT_ROUND) == 0);
 
 //
 // PAE definitions.
@@ -260,3 +296,4 @@ extern LONG64 KiMtrrResBitMask;
 extern UCHAR KiMtrrMaxRangeShift;
 
 #endif // _KIX86_
+

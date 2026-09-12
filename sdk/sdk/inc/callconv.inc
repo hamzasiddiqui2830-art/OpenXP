@@ -1,8 +1,6 @@
 ;
-; Copyright (c) Microsoft Corporation. All rights reserved.
+; Copyright (c) OpenXP
 ;
-; You may only use this code if you agree to the terms of the Windows Research Kernel Source Code License agreement (see License.txt).
-; If you do not agree to the terms, do not use the code.
 ;
 
 ;****************************CallConv.Inc************************************
@@ -82,15 +80,22 @@ endif
 PUBLICP macro   Func,N
 
         ifb    <N>
+
             public  @CatStr(Func,<@>,<0>)
+
         else
+
             PUBLICP2 Func,%(N*4)
+
         endif
+
 endm
+
 
 PUBLICP2 macro   Func,N
 
         public  @CatStr(Func,<@>,%N)
+
 endm
 
 ;----------------------------------------------------------------------------
@@ -113,8 +118,11 @@ EXTRNP macro   Func,N,Thunk,FastCall
 
         ifb    <N>
 
-            IFNDEF @CatStr(Func,<@>,<0>)
-                extrn @CatStr(Func,<@>,<0>):NEAR
+            Local SymbolName
+            SymbolName TEXTEQU @CatStr(Func,<@>,<0>)
+
+            IFNDEF &SymbolName&
+                extrn &SymbolName&:NEAR
             ENDIF
 
         else
@@ -122,9 +130,13 @@ EXTRNP macro   Func,N,Thunk,FastCall
             ifb <FastCall>
 
                 ifb <Thunk>
+
                     EXTRNP2 Func,%(N*4)
+
                 else
+
                     EXTRNTHUNK Func,%(N*4)
+
                 endif
 
             else
@@ -133,27 +145,43 @@ EXTRNP macro   Func,N,Thunk,FastCall
                 cFCallName = (N*4)
 
                 ifb <Thunk>
+
                     EXTRNP2 @CatStr(<@>,Func),%(N*4)
+
                 else
+
                     EXTRNTHUNK @CatStr(<@>,Func),%(N*4)
+
                 endif
 
             endif
+
         endif
+
 endm
+
 
 EXTRNP2 macro   Func,N
 
-        IFNDEF @CatStr(Func,<@>,%N)
-            extrn @CatStr(Func,<@>,%N):NEAR
+        Local SymbolName
+
+        SymbolName TEXTEQU @CatStr(Func,<@>,%N)
+
+        IFNDEF &SymbolName&
+            extrn &SymbolName&:NEAR
         ENDIF
 
 endm
 
+
 EXTRNTHUNK macro   Func,N
 
-        IFNDEF @CatStr(<__imp_>,Func,<@>,%N)
-            extrn @CatStr(<__imp_>,Func,<@>,%N):DWORD
+        Local SymbolName
+
+        SymbolName TEXTEQU @CatStr(<__imp_>,Func,<@>,%N)
+
+        IFNDEF &SymbolName&
+            extrn &SymbolName&:DWORD
         ENDIF
 
 endm
@@ -165,12 +193,17 @@ endm
 LABELP macro   Func,N
 
         ifb <N>
+
             @CatStr(Func,<@>,<0>) label near
+
         else
+
             LABELP2 Func,%(N*4)
+
         endif
 
 endm
+
 
 LABELP2 macro   Func,N
 
@@ -221,12 +254,17 @@ endm
 cPublicProc macro Func,N,ArgList
 
         align   dword
+
         PUBLICP Func,N
 
         ifb <N>
+
             stdPROC Func,0,<ArgList>
+
         else
+
             stdPROC Func,N,<ArgList>
+
         endif
 
 endm
@@ -254,9 +292,13 @@ endm
 stdPROCF macro   Func,N,ArgList
 
         if N gt 2
+
             ProcNameF Func,Func,%(N*4),%((N-2)*4)
+
         else
+
             ProcNameF Func,Func,%(N*4),0
+
         endif
 
         Func        proc    ArgList
@@ -278,9 +320,13 @@ cPublicFastCall macro Func,N,ArgList
         PUBLICP @CatStr(<@>,Func),N
 
         ifb <N>
+
             stdPROCF @CatStr(<@>,Func),0,<ArgList>
+
         else
+
             stdPROCF @CatStr(<@>,Func),N,<ArgList>
+
         endif
 
 endm
@@ -292,6 +338,7 @@ endm
 fstRET macro   Func
 
         cByteName TEXTEQU @CatStr(<cByte>,<@>,Func)
+
         ret cByteName
 
 endm
@@ -303,6 +350,7 @@ endm
 stdRET macro   Func
 
         cByteName TEXTEQU @CatStr(<cByte>,Func)
+
         ret cByteName
 
 endm
@@ -349,13 +397,22 @@ endm
 
 ;----------------------------------------------------------------------------
 ; stdCallCall
+;
+; If the imported __imp_ symbol exists, call through the import address.
+;
+; Otherwise call the normal decorated symbol directly.
+;
 ;----------------------------------------------------------------------------
 
 stdCallCall macro Func,N
 
-        IFDEF @CatStr(<__imp_>,Func,<@>,%N)
+        Local ImpName
 
-            call dword ptr [@CatStr(<__imp_>,Func,<@>,%N)]
+        ImpName TEXTEQU @CatStr(<__imp_>,Func,<@>,%N)
+
+        IFDEF &ImpName&
+
+            call dword ptr [&ImpName&]
 
         ELSE
 
@@ -370,9 +427,11 @@ endm
 ;----------------------------------------------------------------------------
 
 stdCall macro   Func,ArgList
+
         Local   Bytes
 
         RevPush <ArgList>,Bytes
+
         Bytes = Bytes*4
 
         stdCallCall Func,%(Bytes)
@@ -384,19 +443,23 @@ endm
 ;----------------------------------------------------------------------------
 
 fstCall macro   Func,ArgList
+
         Local   Bytes
 
         RevPush <ArgList>,Bytes
+
         Bytes = Bytes*4
 
         if Bytes eq 0
 
             cFCallName TEXTEQU @CatStr(<cFCall@>,Func)
-            stdCallCall @CatStr(<@>,Func),cFCallName
+
+            stdCallCall @CatStr(<@>,Func),%&cFCallName&
 
         else
 
             ; must have 2 register params
+
             stdCallCall @CatStr(<@>,Func),%(Bytes+8)
 
         endif

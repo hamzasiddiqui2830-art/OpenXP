@@ -1127,7 +1127,7 @@ typedef struct _MI_FLUSH_ARRAY {
 
 
 VOID
-MTAPI
+NTAPI
 MiFlushComplete (
     IN PVOID Context,
     IN PIO_STATUS_BLOCK IoStatus,

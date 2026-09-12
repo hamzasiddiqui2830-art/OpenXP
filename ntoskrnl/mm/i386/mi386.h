@@ -476,6 +476,9 @@ extern PMMPTE MiInitialSystemPageDirectory;
 #define MI_IS_CACHING_DISABLED(PPTE) ((PPTE)->u.Hard.CacheDisable == 1)
 #endif
 
+#define MI_SET_PFN_DELETED(PPFN) \
+    PPFN->PteAddress = (PMMPTE)(((ULONG_PTR)(PPFN->PteAddress)) | 0x1);
+
 #define IMAGE_FILE_MACHINE_NATIVE 0x014c
 
 #ifndef MM_SESSION_SPACE_DEFAULT
@@ -501,8 +504,29 @@ extern PMMPTE MiInitialSystemPageDirectory;
        (OUTPTE).u.Soft.PageFileHigh = (OFFSET); \
        (OUTPTE).u.Soft.PageFileLow = (FILEINFO);
 
+#define GET_PAGING_FILE_NUMBER(PTE) ((((PTE).u.Long) >> 1) & 0x0000000F)
 #define GET_PAGING_FILE_OFFSET(PTE) ((((PTE).u.Long) >> 12) & 0x000FFFFF)
 #endif
+#define MI_IS_PHYSICAL_ADDRESS(Va) \
+    ((MiGetPdeAddress(Va)->u.Long & 0x81) == 0x81)
+
+#define MI_WRITE_VALID_PTE(_PointerPte, _PteContents)       \
+            ASSERT ((_PointerPte)->u.Hard.Valid == 0);      \
+            ASSERT ((_PteContents).u.Hard.Valid == 1);      \
+            MI_INSERT_VALID_PTE(_PointerPte);               \
+            MI_LOG_PTE_CHANGE (_PointerPte, _PteContents);  \
+            (*(_PointerPte) = (_PteContents))
+
+#define MI_WRITE_INVALID_PTE(_PointerPte, _PteContents)     \
+            ASSERT ((_PteContents).u.Hard.Valid == 0);      \
+            MI_REMOVE_PTE(_PointerPte);                     \
+            MI_LOG_PTE_CHANGE (_PointerPte, _PteContents);  \
+            (*(_PointerPte) = (_PteContents))
+
+#define MI_WRITE_ZERO_PTE(_PointerPte)                      \
+            MI_REMOVE_PTE(_PointerPte);                     \
+            MI_LOG_PTE_CHANGE (_PointerPte, ZeroPte);       \
+            (_PointerPte)->u.Long = 0;
 
 extern ULONG_PTR MmBootImageSize;
 extern ULONG MiMaximumWorkingSet;

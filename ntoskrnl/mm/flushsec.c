@@ -39,6 +39,7 @@ MiFlushDirtyBitsToPfn (
 extern POBJECT_TYPE IoFileObjectType;
 
 NTSTATUS
+NTAPI
 NtFlushVirtualMemory (
     __in HANDLE ProcessHandle,
     __inout PVOID *BaseAddress,
@@ -1126,6 +1127,7 @@ typedef struct _MI_FLUSH_ARRAY {
 
 
 VOID
+MTAPI
 MiFlushComplete (
     IN PVOID Context,
     IN PIO_STATUS_BLOCK IoStatus,

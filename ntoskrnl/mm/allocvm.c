@@ -50,6 +50,7 @@ SIZE_T MmTotalProcessCommit;        // Only used for debugging
 
 
 NTSTATUS
+NTAPI
 NtAllocateVirtualMemory(
     __in HANDLE ProcessHandle,
     __inout PVOID *BaseAddress,

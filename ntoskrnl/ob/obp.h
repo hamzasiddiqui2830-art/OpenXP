@@ -22,6 +22,7 @@ Abstract:
 #pragma warning(disable:4115)   // named type definition in parentheses
 #pragma warning(disable:4053)   // one void operand
 #pragma warning(disable:4706)   // assignment within conditional
+#pragma warning(disable:4456)   // declaration hides previous local declaration
 
 #include "ntos.h"
 #include "seopaque.h"

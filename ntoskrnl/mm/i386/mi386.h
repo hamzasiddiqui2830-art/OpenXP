@@ -64,6 +64,15 @@ Abstract:
 #define MM_SYSTEM_CACHE_WORKING_SET ((ULONG)0xC0C00000)
 #define MM_SYSTEM_CACHE_START ((ULONG)0xC1000000)
 #define MM_SYSTEM_CACHE_END ((ULONG)0xE1000000)
+extern ULONG_PTR MiUseMaximumSystemSpace;
+
+extern ULONG_PTR MiUseMaximumSystemSpaceEnd;
+
+extern ULONG MiMaximumSystemCacheSizeExtra;
+
+extern PVOID MiSystemCacheStartExtra;
+
+extern PVOID MiSystemCacheEndExtra;
 #define MM_SYSTEM_CACHE_END_EXTRA ((ULONG)0xC0000000)
 #define MM_DEFAULT_PAGED_POOL_START ((ULONG)0xE1000000)
 #define MM_LOWEST_NONPAGED_SYSTEM_START ((PVOID)0xEB000000)

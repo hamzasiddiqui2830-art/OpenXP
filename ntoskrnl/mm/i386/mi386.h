@@ -516,6 +516,17 @@ extern PMMPTE MiInitialSystemPageDirectory;
 #define GET_PAGING_FILE_NUMBER(PTE) ((((PTE).u.Long) >> 1) & 0x0000000F)
 #define GET_PAGING_FILE_OFFSET(PTE) ((((PTE).u.Long) >> 12) & 0x000FFFFF)
 #endif
+#define MI_CAPTURE_DIRTY_BIT_TO_PFN(PPTE,PPFN)                      \
+         ASSERT (KeGetCurrentIrql() > APC_LEVEL);                   \
+         if (((PPFN)->u3.e1.Modified == 0) &&                       \
+            ((PPTE)->u.Hard.Dirty != 0)) {                          \
+             MI_SET_MODIFIED (PPFN, 1, 0x18);                       \
+             if (((PPFN)->OriginalPte.u.Soft.Prototype == 0) &&     \
+                          ((PPFN)->u3.e1.WriteInProgress == 0)) {   \
+                 MiReleasePageFileSpace ((PPFN)->OriginalPte);      \
+                 (PPFN)->OriginalPte.u.Soft.PageFileHigh = 0;       \
+             }                                                      \
+         }
 #define MI_IS_PHYSICAL_ADDRESS(Va) \
     ((MiGetPdeAddress(Va)->u.Long & 0x81) == 0x81)
 

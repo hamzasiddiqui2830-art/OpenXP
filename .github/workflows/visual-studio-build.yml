@@ -14,6 +14,11 @@ jobs:
     - name: Checkout OpenXP
       uses: actions/checkout@v4
 
+    - name: Apply MASM 14.51 compatibility fixes
+      shell: pwsh
+      run: python tools/apply_masm_1451_fixes.py
+      working-directory: ${{ github.workspace }}
+
     - name: Setup MSVC x86 environment
       uses: ilammy/msvc-dev-cmd@v1
       with:
@@ -46,6 +51,11 @@ jobs:
     steps:
     - name: Checkout OpenXP
       uses: actions/checkout@v4
+
+    - name: Apply MASM 14.51 compatibility fixes
+      shell: pwsh
+      run: python tools/apply_masm_1451_fixes.py
+      working-directory: ${{ github.workspace }}
 
     - name: Setup MSVC x64 environment
       uses: ilammy/msvc-dev-cmd@v1

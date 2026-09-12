@@ -230,16 +230,16 @@ a:      mov     ebx,dr0
 ;
 
         mov     edi,dword ptr fs:[PcPrcb]
-        mov     ebx,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr0
-        mov     ecx,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr1
+        mov     ebx,[edi]+PbProcessorState+PsSpecialRegisters+SrKernelDr0
+        mov     ecx,[edi]+PbProcessorState+PsSpecialRegisters+SrKernelDr1
         mov     dr0,ebx
         mov     dr1,ecx
-        mov     ebx,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr2
-        mov     ecx,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr3
+        mov     ebx,[edi]+PbProcessorState+PsSpecialRegisters+SrKernelDr2
+        mov     ecx,[edi]+PbProcessorState+PsSpecialRegisters+SrKernelDr3
         mov     dr2,ebx
         mov     dr3,ecx
-        mov     ebx,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr6
-        mov     ecx,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr7
+        mov     ebx,[edi]+PbProcessorState+PsSpecialRegisters+SrKernelDr6
+        mov     ecx,[edi]+PbProcessorState+PsSpecialRegisters+SrKernelDr7
         mov     dr6,ebx
         mov     dr7,ecx
 

@@ -82,6 +82,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI
 NtExtendSection(
     __in HANDLE SectionHandle,
     __inout PLARGE_INTEGER NewSectionSize

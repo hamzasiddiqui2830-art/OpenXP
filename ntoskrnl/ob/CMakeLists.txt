@@ -40,7 +40,7 @@ target_compile_definitions(${TARGET_NAME} PRIVATE
 )
 
 if(MSVC)
-    target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX)
+    target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX /Gz)
 else()
     target_compile_options(${TARGET_NAME} PRIVATE -Wall -Werror)
 endif()

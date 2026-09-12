@@ -12,11 +12,6 @@ Abstract:
     This module contains routines which provide support for the
     kernel debugger.
 
-Author:
-
-    Lou Perazzoli (loup) 02-Aug-1990
-    Landy Wang (landyw) 02-June-1997
-
 Revision History:
 
 --*/
@@ -430,7 +425,8 @@ Environment:
 
     KiFlushSingleTb (BaseAddress);
 
-    return (PVOID64)((ULONG_PTR)BaseAddress + BYTE_OFFSET(PhysicalAddress.LowPart));
+    return (PVOID64)((ULONG64)(ULONG_PTR)BaseAddress +
+                 (ULONG64)BYTE_OFFSET(PhysicalAddress.LowPart));
 }
 
 VOID
@@ -799,7 +795,16 @@ UNLOCK_WORKING_SET (Thread, Ws);
             LOCK_PFN (PfnIrql);
         }
 
-        VirtualAddress = (PVOID) (ULONG_PTR) MiDbgTranslatePhysicalAddress (PhysicalAddress, Flags);
+#if defined(_X86_)
+
+    VirtualAddress = (PVOID)(ULONG_PTR)
+                     (ULONG64)MiDbgTranslatePhysicalAddress (PhysicalAddress, Flags);
+
+#else
+
+    VirtualAddress = (PVOID)MiDbgTranslatePhysicalAddress (PhysicalAddress, Flags);
+
+#endif
 
         if (VirtualAddress == NULL) {
             if (PfnHeld == TRUE) {

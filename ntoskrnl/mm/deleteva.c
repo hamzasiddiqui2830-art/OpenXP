@@ -808,7 +808,7 @@ MiDeletePte (
     IN PVOID VirtualAddress,
     IN ULONG AddressSpaceDeletion,
     IN PEPROCESS CurrentProcess,
-    IN PMMPTE PrototypePte,
+    IN PMMPTE PrototypePteArgument,
     IN PMMPTE_FLUSH_LIST PteFlushList OPTIONAL,
     IN KIRQL OldIrql
     )
@@ -841,7 +841,7 @@ Arguments:
 
     CurrentProcess - Supplies a pointer to the current process.
 
-    PrototypePte - Supplies a pointer to the prototype PTE which currently
+    PrototypePteArgument - Supplies a pointer to the prototype PTE which currently
                    or originally mapped this page.  This is used to determine
                    if the PTE is a fork PTE and should have its reference block
                    decremented.
@@ -950,7 +950,7 @@ Environment:
 
             if (PointerPte <= MiHighestUserPte) {
 
-                if (PrototypePte != Pfn1->PteAddress) {
+                if (PrototypePteArgument != Pfn1->PteAddress) {
 
                     //
                     // Locate the clone descriptor within the clone tree.
@@ -978,7 +978,7 @@ Environment:
                             KeBugCheckEx (MEMORY_MANAGEMENT,
                                           0x400, 
                                           (ULONG_PTR) PointerPte,
-                                          (ULONG_PTR) PrototypePte,
+                                          (ULONG_PTR) PrototypePteArgument,
                                             (ULONG_PTR) Pfn1->PteAddress);
                         }
                     }

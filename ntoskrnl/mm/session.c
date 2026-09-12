@@ -901,7 +901,7 @@ Environment:
 
     LOCK_PFN (OldIrql);
 
-    if ((SPFN_NUMBER)(ResidentPages + MI_SESSION_SPACE_WORKING_SET_MINIMUM) > MI_NONPAGABLE_MEMORY_AVAILABLE()) {
+    if ((SPFN_NUMBER)(ResidentPages + MI_SESSION_SPACE_WORKING_SET_MINIMUM) > MI_NONPAGEABLE_MEMORY_AVAILABLE()) {
 
         UNLOCK_PFN (OldIrql);
 
@@ -2931,7 +2931,7 @@ Environment:
     // Check to make sure the physical pages are available.
     //
 
-    if ((SPFN_NUMBER)SizeInPages > MI_NONPAGABLE_MEMORY_AVAILABLE() - 20) {
+    if ((SPFN_NUMBER)SizeInPages > MI_NONPAGEABLE_MEMORY_AVAILABLE() - 20) {
         UNLOCK_PFN (OldIrql);
         MiReturnCommitment (SizeInPages);
         MM_BUMP_SESSION_FAILURES (MM_SESSION_FAILURE_NO_RESIDENT);

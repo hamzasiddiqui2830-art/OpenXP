@@ -1,5 +1,4 @@
 # mm Module CMakeLists.txt
-# Converted from legacy sources.inc
 
 set(MODULE_NAME mm)
 set(TARGET_NAME ntosmm)
@@ -72,10 +71,9 @@ add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})
 target_include_directories(${TARGET_NAME} PRIVATE
     ${REACTOS_SOURCE_DIR}/ntoskrnl/mm
     ${REACTOS_SOURCE_DIR}/ntoskrnl
-    ${REACTOS_SOURCE_DIR}/inc
-    ${REACTOS_SOURCE_DIR}/ke
-    ${REACTOS_SOURCE_DIR}/kd64
     ${REACTOS_SOURCE_DIR}/ntoskrnl/inc
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ke
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/kd64
 )
 
 target_compile_definitions(${TARGET_NAME} PRIVATE

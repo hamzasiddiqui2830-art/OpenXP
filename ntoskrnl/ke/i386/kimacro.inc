@@ -130,7 +130,7 @@ ife FPO
         mov     ebx,[ebp]+TsEbp
         mov     edi,[ebp]+TsEip
         mov     [ebp]+TsDbgArgPointer,edx
-        mov     [ebp]+TsDbgArgMark,0BADB0D00h
+        mov     dword ptr [ebp]+TsDbgArgMark,0BADB0D00h
         mov     [ebp]+TsDbgEbp,ebx
         mov     [ebp]+TsDbgEip,edi
 endif

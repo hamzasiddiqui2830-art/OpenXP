@@ -325,6 +325,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI
 NtCreatePagingFile (
     __in PUNICODE_STRING PageFileName,
     __in PLARGE_INTEGER MinimumSize,

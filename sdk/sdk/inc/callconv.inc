@@ -1,6 +1,8 @@
 ;
-; Copyright (c) OpenXP
+; Copyright (c) Microsoft Corporation. All rights reserved.
 ;
+; You may only use this code if you agree to the terms of the Windows Research Kernel Source Code License agreement (see License.txt).
+; If you do not agree to the terms, do not use the code.
 ;
 
 ;****************************CallConv.Inc************************************
@@ -11,10 +13,11 @@
 ;
 ;       This macro simply concatenates all arguments into one string.
 ;
+;
 ;****************************************************************************
 
 ComposeInst macro   Inst,p1,p2,p3,p4,p5,p6,p7,p8,p9
-        @CatStr(Inst,p1,p2,p3,p4,p5,p6,p7,p8,p9)
+        &Inst   p1&p2&p3&p4&p5&p6&p7&p8&p9
 endm
 
 ;****************************Public Macro************************************
@@ -23,6 +26,7 @@ endm
 ;
 ;       This macro count the number of arguments in the ArgList and returns
 ;       the value in cCount.
+;
 ;
 ;****************************************************************************
 
@@ -41,6 +45,7 @@ endm
 ;
 ;       This macro pushes the arguments in ArgList in the reverse order
 ;       and returns the number of arguments in cCount.
+;
 ;
 ;****************************************************************************
 
@@ -63,301 +68,182 @@ RevPush macro   ArgList,cCount
         endm
 endm
 
-;**************************** Calling convention macros *********************
+;****************************Public Macro************************************
+;
+;   The following sections contain calling-convention related macros for:
+;
+;   PUBLICP     Func,N
+;       to define a public label
+;
+;   EXTRNP      Func,N,Thunk
+;       to define a external near label
+;
+;   LABELP      Func,N
+;       to label an address as a routine entry point
+;
+;   stdPROC       Func,N,ArgList
+;       to declare a routine header
+;
+;   ProcName    Name,Func,N
+;       to rename a function Func to Name. Using it in conjunction with
+;       normal function declaration (with the new name) will solve an error
+;       caused by a long parameter list routine that exhausts page width.
+;
+;   stdRET        Func
+;       to return from Func routines (declared with stdPROC or ProcName.)
+;
+;   stdENDP     Func
+;       to declare the end of routine (declared with stdPROC or ProcName.)
+;
+;   endMod      Func
+;       to declare the end of module with an entry point at Func (declared
+;       with stdPROC or ProcName.)
+;
+;   stdCall     Func,ArgList
+;       to call to a routine--Func--with the arguments pushed on the stack
+;
+;   MovAddr     dest,Func,n
+;       to move the address of the routine--Func--into dest.
+;
+;   Note that for the standard calling convention all the function names,
+;   Func, are automatically converted to Func@N where N is the number of
+;   bytes (decimal) in the argument list.
+;
+;
+;****************************************************************************
 
 if      @Version GE 600
         option  nokeyword:<stdcall>
 endif
 
-;----------------------------------------------------------------------------
-; PUBLICP
-;
-; Standard-call public symbol:
-;
-;       Func@N
-;----------------------------------------------------------------------------
-
 PUBLICP macro   Func,N
 
         ifb    <N>
-
-            public  @CatStr(Func,<@>,<0>)
-
+            public      Func&@0
         else
-
-            PUBLICP2 Func,%(N*4)
-
+            PUBLICP2    Func,%(N*4)
         endif
-
 endm
-
 
 PUBLICP2 macro   Func,N
 
-        public  @CatStr(Func,<@>,%N)
-
+        public  Func&@&N
 endm
 
-;----------------------------------------------------------------------------
-; EXTRNP
-;
-; Standard-call external symbol:
-;
-;       Func@N
-;
-; Fast-call external symbol:
-;
-;       @Func@N
-;
-; Also records the number of stack bytes used by the fast-call function in:
-;
-;       cFCall@Func
-;----------------------------------------------------------------------------
-
-EXTRNP macro   Func,N,Thunk,FastCall
-
+EXTRNP  macro   Func,N,Thunk,FastCall
         ifb    <N>
-
-            Local SymbolName
-            SymbolName TEXTEQU @CatStr(Func,<@>,<0>)
-
-            IFNDEF &SymbolName&
-                extrn &SymbolName&:NEAR
+            IFNDEF  Func&@0
+                extrn       Func&@0:NEAR
             ENDIF
-
         else
-
-            ifb <FastCall>
-
-                ifb <Thunk>
-
-                    EXTRNP2 Func,%(N*4)
-
+            ifb     <FastCall>
+                ifb     <Thunk>
+                    EXTRNP2     Func,%(N*4)
                 else
-
-                    EXTRNTHUNK Func,%(N*4)
-
+                    EXTRNTHUNK  Func,%(N*4)
                 endif
-
             else
-
-                cFCallName TEXTEQU @CatStr(<cFCall@>,Func)
-                cFCallName = (N*4)
-
-                ifb <Thunk>
-
-                    EXTRNP2 @CatStr(<@>,Func),%(N*4)
-
+                cFCall&@&Func equ   (N*4)
+                ifb     <Thunk>
+                    EXTRNP2     &@&Func,%(N*4)
                 else
-
-                    EXTRNTHUNK @CatStr(<@>,Func),%(N*4)
-
+                    EXTRNTHUNK  &@&Func,%(N*4)
                 endif
-
             endif
-
         endif
-
 endm
-
 
 EXTRNP2 macro   Func,N
-
-        Local SymbolName
-
-        SymbolName TEXTEQU @CatStr(Func,<@>,%N)
-
-        IFNDEF &SymbolName&
-            extrn &SymbolName&:NEAR
+        IFNDEF  Func&@&N
+            extrn   Func&@&N:NEAR
         ENDIF
-
 endm
-
 
 EXTRNTHUNK macro   Func,N
-
-        Local SymbolName
-
-        SymbolName TEXTEQU @CatStr(<__imp_>,Func,<@>,%N)
-
-        IFNDEF &SymbolName&
-            extrn &SymbolName&:DWORD
+        IFNDEF  __imp_&Func&@&N
+            extrn       __imp_&Func&@&N:DWORD
         ENDIF
-
 endm
 
-;----------------------------------------------------------------------------
-; LABELP
-;----------------------------------------------------------------------------
+LABELP  macro   Func,N
 
-LABELP macro   Func,N
-
-        ifb <N>
-
-            @CatStr(Func,<@>,<0>) label near
-
+        ifb    <N>
+            Func&@0 label   near
         else
-
             LABELP2 Func,%(N*4)
-
         endif
-
 endm
-
 
 LABELP2 macro   Func,N
 
-        @CatStr(Func,<@>,%N) label near
+Func&@&N    label   near
 
 endm
-
-;----------------------------------------------------------------------------
-; ProcName
-;----------------------------------------------------------------------------
 
 ProcName macro  Name,Func,N
 
         ifb <N>
-
-            cByteName TEXTEQU @CatStr(<cByte>,Func)
-            cByteName = 0
-
-            Name TEXTEQU @CatStr(Func,<@>,<0>)
-
+            cByte&Func  equ     0
+            Name        equ     <Func&@0>
         else
-
-            cByteName TEXTEQU @CatStr(<cByte>,Func)
-            cByteName = N
-
-            Name TEXTEQU @CatStr(Func,<@>,%N)
-
+            cByte&Func  equ     N
+            Name        equ     <Func&@&N>
         endif
-
 endm
 
-;----------------------------------------------------------------------------
-; stdPROC
-;----------------------------------------------------------------------------
-
-stdPROC macro   Func,N,ArgList
+stdPROC   macro   Func,N,ArgList
 
         ProcName    Func,Func,%(N*4)
 
         Func        proc    ArgList
-
 endm
-
-;----------------------------------------------------------------------------
-; cPublicProc
-;----------------------------------------------------------------------------
 
 cPublicProc macro Func,N,ArgList
-
         align   dword
-
         PUBLICP Func,N
-
         ifb <N>
-
             stdPROC Func,0,<ArgList>
-
         else
-
             stdPROC Func,N,<ArgList>
-
         endif
-
 endm
-
-;----------------------------------------------------------------------------
-; ProcNameF
-;----------------------------------------------------------------------------
 
 ProcNameF macro  Name,Func,N,M
 
-        cByteName TEXTEQU @CatStr(<cByte>,Func)
-        cByteName = M
-
-        cFCallName TEXTEQU @CatStr(<cFCall>,Func)
-        cFCallName = N
-
-        Name TEXTEQU @CatStr(Func,<@>,%N)
+        cByte&Func  equ     M
+        cFCall&Func equ     N
+        Name        equ     <Func&@&N>
 
 endm
 
-;----------------------------------------------------------------------------
-; stdPROCF
-;----------------------------------------------------------------------------
-
-stdPROCF macro   Func,N,ArgList
+stdPROCF  macro   Func,N,ArgList
 
         if N gt 2
-
-            ProcNameF Func,Func,%(N*4),%((N-2)*4)
-
+            ProcNameF   Func,Func,%(N*4),%((N-2)*4)
         else
-
-            ProcNameF Func,Func,%(N*4),0
-
+            ProcNameF   Func,Func,%(N*4),0
         endif
 
         Func        proc    ArgList
-
 endm
-
-;----------------------------------------------------------------------------
-; cPublicFastCall
-;
-; Public fast-call symbol:
-;
-;       @Func@N
-;----------------------------------------------------------------------------
 
 cPublicFastCall macro Func,N,ArgList
-
         align   dword
-
-        PUBLICP @CatStr(<@>,Func),N
-
+        PUBLICP &@&Func,N
         ifb <N>
-
-            stdPROCF @CatStr(<@>,Func),0,<ArgList>
-
+            stdPROCF &@&Func,0,<ArgList>
         else
-
-            stdPROCF @CatStr(<@>,Func),N,<ArgList>
-
+            stdPROCF &@&Func,N,<ArgList>
         endif
-
 endm
 
-;----------------------------------------------------------------------------
-; fstRET
-;----------------------------------------------------------------------------
-
-fstRET macro   Func
-
-        cByteName TEXTEQU @CatStr(<cByte>,<@>,Func)
-
-        ret cByteName
-
+fstRET  macro   Func
+        ret     cByte&@&Func
 endm
 
-;----------------------------------------------------------------------------
-; stdRET
-;----------------------------------------------------------------------------
-
-stdRET macro   Func
-
-        cByteName TEXTEQU @CatStr(<cByte>,Func)
-
-        ret cByteName
-
+stdRET  macro   Func
+        ret     cByte&Func
 endm
-
-;----------------------------------------------------------------------------
-; cPublicFpo
-;----------------------------------------------------------------------------
 
 cPublicFpo macro FpoLocals, FpoParams
 
@@ -365,113 +251,57 @@ cPublicFpo macro FpoLocals, FpoParams
 
 endm
 
-;----------------------------------------------------------------------------
-; fstENDP
-;----------------------------------------------------------------------------
 
 fstENDP macro   Func
 
-        @CatStr(<@>,Func) endp
-
+        &@&Func    endp
 endm
-
-;----------------------------------------------------------------------------
-; stdENDP
-;----------------------------------------------------------------------------
 
 stdENDP macro   Func
 
-        Func endp
-
+        Func    endp
 endm
 
-;----------------------------------------------------------------------------
-; endMod
-;----------------------------------------------------------------------------
+endMod  macro   Func
 
-endMod macro   Func
-
-        end Func
-
+        end     Func
 endm
 
-;----------------------------------------------------------------------------
-; stdCallCall
-;
-; If the imported __imp_ symbol exists, call through the import address.
-;
-; Otherwise call the normal decorated symbol directly.
-;
-;----------------------------------------------------------------------------
-
-stdCallCall macro Func,N
-
-        Local ImpName
-
-        ImpName TEXTEQU @CatStr(<__imp_>,Func,<@>,%N)
-
-        IFDEF &ImpName&
-
-            call dword ptr [&ImpName&]
-
-        ELSE
-
-            call @CatStr(Func,<@>,%N)
-
-        ENDIF
-
+stdCallCall macro  Func,N
+    IFDEF   __imp_&Func&@&N
+        call    dword ptr [__imp_&Func&@&N]
+    ELSE
+        call    Func&@&N
+    ENDIF
 endm
 
-;----------------------------------------------------------------------------
-; stdCall
-;----------------------------------------------------------------------------
 
 stdCall macro   Func,ArgList
-
         Local   Bytes
 
         RevPush <ArgList>,Bytes
-
         Bytes = Bytes*4
 
-        stdCallCall Func,%(Bytes)
-
+        stdCallCall   Func,%(Bytes)
 endm
 
-;----------------------------------------------------------------------------
-; fstCall
-;----------------------------------------------------------------------------
-
 fstCall macro   Func,ArgList
-
         Local   Bytes
 
         RevPush <ArgList>,Bytes
-
         Bytes = Bytes*4
 
         if Bytes eq 0
-
-            cFCallName TEXTEQU @CatStr(<cFCall@>,Func)
-
-            stdCallCall @CatStr(<@>,Func),%&cFCallName&
-
+            stdCallCall   &@&Func,%cFCall&@&Func
         else
-
             ; must have 2 register params
-
-            stdCallCall @CatStr(<@>,Func),%(Bytes+8)
-
+            stdCallCall   &@&Func,%(Bytes+8)
         endif
-
 endm
 
-;----------------------------------------------------------------------------
-; MovAddr
-;----------------------------------------------------------------------------
 
 MovAddr macro   dest,addr,n
 
         ComposeInst <mov >,dest,<,offset FLAT:>,addr,<@>,n
-
 endm
+

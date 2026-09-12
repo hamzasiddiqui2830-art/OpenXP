@@ -1707,7 +1707,7 @@ Environment:
             if (j > SizeInPages) {
                 j = SizeInPages;
             }
-            if (MI_NONPAGABLE_MEMORY_AVAILABLE() >= (SPFN_NUMBER)j) {
+            if (MI_NONPAGEABLE_MEMORY_AVAILABLE() >= (SPFN_NUMBER)j) {
                 MI_DECREMENT_RESIDENT_AVAILABLE (j, MM_RESAVAIL_ALLOCATE_EXPANSION_NONPAGED_POOL);
             }
             else {
@@ -3869,7 +3869,7 @@ Return Value:
     LOCK_PFN2 (OldIrql);
 
     if ((MmAvailablePages < MM_MEDIUM_LIMIT) ||
-        (MI_NONPAGABLE_MEMORY_AVAILABLE() <= 1)) {
+        (MI_NONPAGEABLE_MEMORY_AVAILABLE() <= 1)) {
 
         UNLOCK_PFN2 (OldIrql);
         return STATUS_NO_MEMORY;
@@ -4815,7 +4815,7 @@ Environment:
 
     MiDeferredUnlockPages (MI_DEFER_PFN_HELD);
 
-    if ((SPFN_NUMBER)SizeInPages > MI_NONPAGABLE_MEMORY_AVAILABLE()) {
+    if ((SPFN_NUMBER)SizeInPages > MI_NONPAGEABLE_MEMORY_AVAILABLE()) {
         UNLOCK_PFN (OldIrql);
         goto Failed;
     }
@@ -5475,7 +5475,7 @@ Environment:
 
     MiDeferredUnlockPages (MI_DEFER_PFN_HELD);
 
-    if ((SPFN_NUMBER)SizeInPages > MI_NONPAGABLE_MEMORY_AVAILABLE()) {
+    if ((SPFN_NUMBER)SizeInPages > MI_NONPAGEABLE_MEMORY_AVAILABLE()) {
         UNLOCK_PFN (OldIrql);
         return 0;
     }

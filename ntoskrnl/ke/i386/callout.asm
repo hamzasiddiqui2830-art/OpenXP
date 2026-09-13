@@ -25,6 +25,7 @@ include irqli386.inc
 
         extrn   _KiServiceExit:PROC
         extrn   _KeUserCallbackDispatcher:DWORD
+        extrn   _MmGrowKernelStack@4:PROC
 
         EXTRNP  KeBugCheck2,6
         EXTRNP  MmGrowKernelStack,1

@@ -28,6 +28,8 @@ include mac386.inc
         EXTRNP  Kei386EoiHelper
         EXTRNP  HalRequestSoftwareInterrupt,1,IMPORT,FASTCALL
         EXTRNP  HalEndSystemInterrupt,2,IMPORT
+        extrn   __imp__HalEndSystemInterrupt@8:DWORD
+        extrn   __imp__Kei386EoiHelper@0:DWORD
         extern  _ExpInterlockedPopEntrySListEnd@0:PROC
         extrn   _ExpInterlockedPopEntrySListResume@0:PROC
         extrn   _KeTimeIncrement:DWORD
@@ -234,7 +236,7 @@ kust15:                                 ;
         mov     [ecx+PbTimerRequest], esp ; set timer request
         mov     [ecx+PbTimerHand], ebx  ; set timer hand value
         mov     ecx, DISPATCH_LEVEL     ; request dispatch interrupt
-        fstCall HalRequestSoftwareInterrupt,ecx
+        fstCall _HalRequestSoftwareInterrupt@4, ecx
 
 ;
 ; If the debugger is enabled, check if a break is requested.
@@ -267,10 +269,10 @@ kust40:
         inc     dword ptr [PCR+PcPrcbData+PbInterruptCount]
         INTERRUPT_EXIT
 
-kust45: stdCall KdPollBreakIn
+kust45: stdCall _KdPollBreakIn@0
         or      al,al
         jz      short kust30
-        stdCall DbgBreakPointWithStatus,<DBG_STATUS_CONTROL_C>
+        stdCall _DbgBreakPointWithStatus@4,<DBG_STATUS_CONTROL_C>
         jmp     short kust30
 
 if DBG
@@ -433,7 +435,7 @@ Kutp50: mov     ecx, [eax+PcPrcbData+PbDpcCount] ; get current DPC count
         cmp     byte ptr [eax+PcPrcbData+PbDpcInterruptRequested], 0 ; check if interrupt
         jne     short Kutp53            ; if ne, DPC routine active
         mov     ecx, DISPATCH_LEVEL     ; request a dispatch interrupt
-        fstCall HalRequestSoftwareInterrupt,ecx
+		fstCall _HalRequestSoftwareInterrupt@4, ecx
         mov     eax, [PCR+PcSelfPcr]     ; restore address of current PCR
         mov     ecx, [eax+PcPrcbData+PbDpcRequestRate] ; get DPC request rate
         mov     edx, _KiAdjustDpcThreshold ; reset initial threshold counter
@@ -479,7 +481,7 @@ Kutp55: sub     byte ptr [ebx+ThQuantum], CLOCK_QUANTUM_DECREMENT ; decrement qu
         jz      Kutp75                      ; if z, then idle thread
         mov     byte ptr [eax+PcPrcbData+PbQuantumEnd], 1 ; set quantum end indicator
         mov     ecx, DISPATCH_LEVEL         ; request dispatch interrupt
-        fstCall HalRequestSoftwareInterrupt,ecx
+        fstCall _HalRequestSoftwareInterrupt@4, ecx
 Kutp75:                                     ;
         pop     ebx                         ;
         stdRET    _KeUpdateRunTime          ;
@@ -602,7 +604,7 @@ kipeflags       equ     <dword ptr [ebp+TsEFlags]>
         ;; add profile interrupt to perfinfo
         mov        ecx, [esp+8]
         mov        edx,kipieip
-        fstCall    PerfProfileInterrupt,ecx,edx
+        fstCall _PerfProfileInterrupt@8, ecx, edx
         mov     ebp, dword ptr [esp+4]  ; (ebp)-> trap frame
 
 ;
@@ -617,7 +619,7 @@ kipi03:
         cmp     kipieip, offset FLAT:_ExpInterlockedPopEntrySListEnd@0
         ja      kipi04
         mov     ecx, ebp
-        fstCall KiCheckForSListAddress,ecx
+        fstCall _KiCheckForSListAddress@4, ecx
 
 kipi04:
 

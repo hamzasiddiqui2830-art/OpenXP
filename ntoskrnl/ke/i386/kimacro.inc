@@ -124,12 +124,12 @@ SET_DEBUG_DATA  MACRO
         ; and is used at the end of above macros.  It is safe to destroy ebx, edi.
         ;
 
-        MOV     EBX, [EBP]+TsEbp
-        MOV     EDI, [EBP]+TsEip
-        MOV     [EBP]+TsDbgArgPointer, EDX
-        MOV     [EBP]+TsDbgArgMark, 0BADB0D00h
-        MOV     [EBP]+TsDbgEbp, EBX
-        MOV     [EBP]+TsDbgEip, EDI
+        MOV     EBX, [EBP+TsEbp]              ; FIXED: displacement inside brackets
+        MOV     EDI, [EBP+TsEip]
+        MOV     [EBP+TsDbgArgPointer], EDX
+        MOV     [EBP+TsDbgArgMark], 0BADB0D00h
+        MOV     [EBP+TsDbgEbp], EBX
+        MOV     [EBP+TsDbgEip], EDI
     ENDIF
 
 ENDM

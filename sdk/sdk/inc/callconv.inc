@@ -211,6 +211,7 @@ ProcNameF macro  Name,Func,N,M
         cFCall&Func equ     N
         Name        equ     <@&Func@&N>
 endm
+
 stdPROCF  macro   Func,N,ArgList
 
         if N gt 2
@@ -245,7 +246,6 @@ cPublicFpo macro FpoLocals, FpoParams
 .FPO ( FpoParams, FpoLocals, 0, 0, 0, 0 )
 
 endm
-
 
 fstENDP macro   Func
         @&Func  endp

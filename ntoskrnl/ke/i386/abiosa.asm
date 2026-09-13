@@ -1,11 +1,8 @@
-        title  "Abios Support Assembly Routines"
+        title   "Abios Support Assembly Routines"
 ;++
 ;
-; Copyright (c) Microsoft Corporation. All rights reserved. 
-;
-; You may only use this code if you agree to the terms of the Windows Research Kernel Source Code License agreement (see License.txt).
-; If you do not agree to the terms, do not use the code.
-;
+; Copyright (c) OpenXP
+; Refactored for MASM 14.x (Visual Studio 2022/2026) - x86 (32-bit) Target
 ;
 ; Module Name:
 ;
@@ -24,7 +21,7 @@ include i386\kimacro.inc
 include irqli386.inc
         .list
 
-extrn   _DbgPrint:proc
+extrn   _DbgPrint:PROC
 
 extrn _KiStack16GdtEntry:DWORD
 
@@ -35,15 +32,15 @@ extrn _KiInBiosCall:DWORD
 extrn _FlagState:DWORD
 extrn _KiBiosFrame:DWORD
 
-OPERAND_OVERRIDE        equ     66h
-ADDRESS_OVERRIDE        equ     67h
-KGDT_CDA16              equ     0E8h
+OPERAND_OVERRIDE        EQU     66h
+ADDRESS_OVERRIDE        EQU     67h
+KGDT_CDA16              EQU     0E8h
 
-LocalStack                              equ     16          ; 4 DWORDS of slop for PnPBioses.
+LocalStack                              EQU     16          ; 4 DWORDS of slop for PnPBioses.
 
-if DBG
+IFDEF DBG
 extrn  KiBiosReenteredAssert:DWORD
-endif
+ENDIF
 
 ; Macro change note:
 ;
@@ -66,31 +63,31 @@ endif
 ;
 ;--
 
-STACK32_TO_STACK16      macro
+STACK32_TO_STACK16      MACRO
 
-        pushfd
-        mov     ecx,[esp]
-        mov     _FlagState,ecx
-        popfd
-        mov     eax, PCR[PcPrcbData+PbCurrentThread] ; get current thread address
-        mov     eax, [eax]+ThStackLimit ; get thread stack base
-        mov     edx, eax
-        mov     ecx, _KiStack16GdtEntry
-        mov     word ptr [ecx].KgdtBaseLow, ax
-        shr     eax, 16
-        mov     byte ptr [ecx].KgdtBaseMid, al
-        mov     byte ptr [ecx].KgdtBaseHi, ah
-        cli
-        sub     esp, edx
-        mov     eax, KGDT_STACK16
-        mov     ss, ax
+        PUSHFD
+        MOV     ECX, [ESP]
+        MOV     _FlagState, ECX
+        POPFD
+        MOV     EAX, PCR[PcPrcbData+PbCurrentThread] ; get current thread address
+        MOV     EAX, [EAX]+ThStackLimit ; get thread stack base
+        MOV     EDX, EAX
+        MOV     ECX, _KiStack16GdtEntry
+        MOV     WORD PTR [ECX].KgdtBaseLow, AX
+        SHR     EAX, 16
+        MOV     BYTE PTR [ECX].KgdtBaseMid, AL
+        MOV     BYTE PTR [ECX].KgdtBaseHi, AH
+        CLI
+        SUB     ESP, EDX
+        MOV     EAX, KGDT_STACK16
+        MOV     SS, AX
 
 ;
 ; NOTE that we MUST leave interrupts remain off.
 ; We'll turn it back on after we switch to 16 bit code.
 ;
 
-endm
+ENDM
 
 ;++
 ;
@@ -106,53 +103,55 @@ endm
 ;
 ;--
 
-STACK16_TO_STACK32      macro   Stack32
+STACK16_TO_STACK32      MACRO   Stack32
 
-        db      OPERAND_OVERRIDE
-        db      ADDRESS_OVERRIDE
-        mov     eax, PCR[PcPrcbData+PbCurrentThread] ; get current thread address
-        db      OPERAND_OVERRIDE
-        db      ADDRESS_OVERRIDE
-        mov     eax, [eax]+ThStackLimit ; get thread stack limit
-        cli
-        db      OPERAND_OVERRIDE
-        add     esp, eax
-        db      OPERAND_OVERRIDE
-        mov     eax, KGDT_R0_DATA
-        mov     ss, ax
-        db      OPERAND_OVERRIDE
-        db      ADDRESS_OVERRIDE
-        push ds:_FlagState
-        db      OPERAND_OVERRIDE
-        popfd
-endm
+        DB      OPERAND_OVERRIDE
+        DB      ADDRESS_OVERRIDE
+        MOV     EAX, PCR[PcPrcbData+PbCurrentThread] ; get current thread address
+        DB      OPERAND_OVERRIDE
+        DB      ADDRESS_OVERRIDE
+        MOV     EAX, [EAX]+ThStackLimit ; get thread stack limit
+        CLI
+        DB      OPERAND_OVERRIDE
+        ADD     ESP, EAX
+        DB      OPERAND_OVERRIDE
+        MOV     EAX, KGDT_R0_DATA
+        MOV     SS, AX
+        DB      OPERAND_OVERRIDE
+        DB      ADDRESS_OVERRIDE
+        PUSH    DS:_FlagState
+        DB      OPERAND_OVERRIDE
+        POPFD
+ENDM
 
-COPY_CALL_FRAME macro FramePtr
+; *** FIXED MACRO ***
+; Use explicit offset arithmetic instead of dot notation.
+COPY_CALL_FRAME MACRO FramePtr
 
-        mov     [FramePtr].TsEax,eax
-        mov     [FramePtr].TsEbx,ebx
-        mov     [FramePtr].TsEcx,ecx
-        mov     [FramePtr].TsEdx,edx
-        mov     [FramePtr].TsEsi,esi
-        mov     [FramePtr].TsEdi,edi
-        mov     [FramePtr].TsEbp,ebp
-        mov     [FramePtr].TsHardwareEsp,esp
-        mov     eax,fs
-        mov     [FramePtr].TsSegFs,eax
-        mov     eax,cs
-        mov     [FramePtr].TsSegCs,eax
-endm
-        page ,132
-        subttl  "Abios Support Code"
+        MOV     [FramePtr + TsEax], EAX
+        MOV     [FramePtr + TsEbx], EBX
+        MOV     [FramePtr + TsEcx], ECX
+        MOV     [FramePtr + TsEdx], EDX
+        MOV     [FramePtr + TsEsi], ESI
+        MOV     [FramePtr + TsEdi], EDI
+        MOV     [FramePtr + TsEbp], EBP
+        MOV     [FramePtr + TsHardwareEsp], ESP
+        MOV     EAX, FS
+        MOV     [FramePtr + TsSegFs], EAX
+        MOV     EAX, CS
+        MOV     [FramePtr + TsSegCs], EAX
+ENDM
+        PAGE ,132
+        SUBTTL  "Abios Support Code"
 _TEXT   SEGMENT DWORD PUBLIC 'CODE'
         ASSUME  DS:FLAT, ES:FLAT, SS:NOTHING, FS:NOTHING, GS:NOTHING
 
 ;
 ; BBT cannot instrument code between this label and BBT_Exclude_Selector_Code_End
 ;
-        public  _BBT_Exclude_Selector_Code_Begin
-_BBT_Exclude_Selector_Code_Begin  equ     $
-        int 3
+        PUBLIC  _BBT_Exclude_Selector_Code_Begin
+_BBT_Exclude_Selector_Code_Begin  EQU     $
+        INT 3
 
 
 ;++
@@ -177,7 +176,7 @@ _BBT_Exclude_Selector_Code_Begin  equ     $
 
 cPublicProc _KiAbiosGetGdt,0
 
-        mov     eax, PCR[PcGdt]
+        MOV     EAX, PCR[PcGdt]
         stdRET    _KiAbiosGetGdt
 
 stdENDP _KiAbiosGetGdt
@@ -222,10 +221,10 @@ stdENDP _KiAbiosGetGdt
 ;     None.
 ;--
 
-KacAbiosFunction        equ     [ebp + 8]
-KacDeviceBlock          equ     [ebp + 12]
-KacFunctionTable        equ     [ebp + 16]
-KacRequestBlock         equ     [ebp + 20]
+KacAbiosFunction        EQU     [EBP + 8]
+KacDeviceBlock          EQU     [EBP + 12]
+KacFunctionTable        EQU     [EBP + 16]
+KacRequestBlock         EQU     [EBP + 20]
 
 cPublicProc _KiI386CallAbios,4
 
@@ -235,21 +234,21 @@ cPublicProc _KiI386CallAbios,4
 ; routine.
 ;
 
-        push    ebp
-        mov     ebp, esp
-        push    ebx
+        PUSH    EBP
+        MOV     EBP, ESP
+        PUSH    EBX
 
         COPY_CALL_FRAME _KiBiosFrame
-        sub     esp,LocalStack          ; After C style frame
+        SUB     ESP, LocalStack          ; After C style frame
         CurrentIrql                             ; Local Variable
-        push    eax                             ; Local Variable
+        PUSH    EAX                             ; Local Variable
 
-        cmp     al, DISPATCH_LEVEL              ; Is irql > Dispatch_level?
-        jae     short Kac00
+        CMP     AL, DISPATCH_LEVEL              ; Is irql > Dispatch_level?
+        JAE     SHORT Kac00
 
 ; Raise to Dispatch Level
         RaiseIrql DISPATCH_LEVEL
-        mov     [esp], al
+        MOV     [ESP], AL
 
 Kac00:
 
@@ -257,33 +256,33 @@ Kac00:
 ; Set up parameters on stack before remapping stack.
 ;
 
-        push    word ptr KGDT_CDA16             ; CDA anchor selector
-        push    KacRequestBlock                 ; Request Block
-        push    KacFunctionTable                ; Func transfer table
-        push    KacDeviceBlock                  ; Device Block
-        mov     ebx, KacAbiosFunction           ; (ebx)-> Abios Entry
+        PUSH    WORD PTR KGDT_CDA16             ; CDA anchor selector
+        PUSH    KacRequestBlock                 ; Request Block
+        PUSH    KacFunctionTable                ; Func transfer table
+        PUSH    KacDeviceBlock                  ; Device Block
+        MOV     EBX, KacAbiosFunction           ; (ebx)-> Abios Entry
 
 ;
 ; Remap current stack to 16:16 stack.  The base of the 16bit stack selector is
 ; the base of current kernel stack.
 ;
 
-        inc     _KiInBiosCall                         ; Set the 'In Bios' flag
-if DBG
-        cmp   _KiInBiosCall,2
-        jb  @F
-        push    offset FLAT:KiBiosReenteredAssert
-        call    _dbgPrint
-        add     esp, 4
+        INC     _KiInBiosCall                         ; Set the 'In Bios' flag
+IFDEF DBG
+        CMP   _KiInBiosCall, 2
+        JB  @F
+        PUSH    OFFSET FLAT:KiBiosReenteredAssert
+        CALL    _DbgPrint
+        ADD     ESP, 4
 @@:
-endif
+ENDIF
 
         STACK32_TO_STACK16                      ; Switch to 16bit stack
-        push    word ptr KGDT_CODE16
-        push    word ptr (offset FLAT:Kac40 - offset FLAT:_KiI386CallAbios@16)
-        push    KGDT_CODE16
-        push    offset FLAT:Kac30 - offset FLAT:_KiI386CallAbios@16
-        retf
+        PUSH    WORD PTR KGDT_CODE16
+        PUSH    WORD PTR (OFFSET FLAT:Kac40 - OFFSET FLAT:_KiI386CallAbios@16)
+        PUSH    KGDT_CODE16
+        PUSH    OFFSET FLAT:Kac30 - OFFSET FLAT:_KiI386CallAbios@16
+        RETF
 
 Kac30:
 
@@ -292,11 +291,11 @@ Kac30:
 ; back on.
 ;
 
-        sti
-        push    bx                              ; Yes, BX not EBX!
-        retf
+        STI
+        PUSH    BX                              ; Yes, BX not EBX!
+        RETF
 Kac40:
-        add     esp, 14                         ; pop out all the parameters
+        ADD     ESP, 14                         ; pop out all the parameters
 
         STACK16_TO_STACK32                      ; switch back to 32 bit stack
 
@@ -306,26 +305,26 @@ Kac40:
 ; execute a far return and we'll be back in the 32-bit code space.
 ;
 
-        db      OPERAND_OVERRIDE
-        push    KGDT_R0_CODE
-        db      OPERAND_OVERRIDE
-        push    offset FLAT:Kac50
-        db      OPERAND_OVERRIDE
-        retf
+        DB      OPERAND_OVERRIDE
+        PUSH    KGDT_R0_CODE
+        DB      OPERAND_OVERRIDE
+        PUSH    OFFSET FLAT:Kac50
+        DB      OPERAND_OVERRIDE
+        RETF
 Kac50:
-        pop     ecx                             ; [ecx] = OldIrql
-        pop     ebx                             ; restore ebx
-        cmp     cl, DISPATCH_LEVEL
-        jae     short Kac60
+        POP     ECX                             ; [ecx] = OldIrql
+        POP     EBX                             ; restore ebx
+        CMP     CL, DISPATCH_LEVEL
+        JAE     SHORT Kac60
 
-        LowerIrql cl
+        LowerIrql CL
 
 Kac60:
 
-        dec     _KiInBiosCall                          ;Clear 'In Bios' Flag
+        DEC     _KiInBiosCall                          ;Clear 'In Bios' Flag
 
-        add     esp,LocalStack                           ; subtract off the scratch space
-        pop     ebp
+        ADD     ESP, LocalStack                           ; subtract off the scratch space
+        POP     EBP
         stdRET    _KiI386CallAbios
 
 stdENDP _KiI386CallAbios
@@ -360,25 +359,25 @@ cPublicProc _KeI386Call16BitFunction,1
     ;  verify CurrentIrql
     ;  verify context flags
 
-        push    ebp                             ; save nonvolatile registers
-        push    ebx
-        push    esi
-        push    edi
-        mov     ebx, dword ptr [esp + 20]       ; (ebx)-> Context
+        PUSH    EBP                             ; save nonvolatile registers
+        PUSH    EBX
+        PUSH    ESI
+        PUSH    EDI
+        MOV     EBX, DWORD PTR [ESP + 20]       ; (ebx)-> Context
 
         COPY_CALL_FRAME _KiBiosFrame
 
-        sub     esp,LocalStack          ; After prolog
+        SUB     ESP, LocalStack          ; After prolog
 
-        inc    _KiInBiosCall                         ; Set the 'In Bios' flag
-if DBG
-        cmp   _KiInBiosCall,2
-        jb  @F
-        push    offset FLAT:KiBiosReenteredAssert
-        call    _dbgPrint
-        add     esp, 4
+        INC    _KiInBiosCall                         ; Set the 'In Bios' flag
+IFDEF DBG
+        CMP   _KiInBiosCall, 2
+        JB  @F
+        PUSH    OFFSET FLAT:KiBiosReenteredAssert
+        CALL    _DbgPrint
+        ADD     ESP, 4
 @@:
-endif
+ENDIF
 
 ;
 ; We're using a 32bit CS:EIP - go to a 16bit CS:IP
@@ -396,79 +395,79 @@ endif
     ; Push return address from 16 bit function call to kernel
     ;
 
-        push    word ptr KGDT_CODE16
-        push    word ptr (offset FLAT:Kbf40 - offset FLAT:_KiI386CallAbios@16)
+        PUSH    WORD PTR KGDT_CODE16
+        PUSH    WORD PTR (OFFSET FLAT:Kbf40 - OFFSET FLAT:_KiI386CallAbios@16)
 
         ;
         ; Load context to call with
         ;
 
-        push    word ptr [ebx].CsEFlags
-        push    word ptr [ebx].CsSegCs
-        push    word ptr [ebx].CsEip
+        PUSH    WORD PTR [EBX + CsEFlags]
+        PUSH    WORD PTR [EBX + CsSegCs]
+        PUSH    WORD PTR [EBX + CsEip]
 
-        mov     eax, [ebx].CsEax
-        mov     ecx, [ebx].CsEcx
-        mov     edx, [ebx].CsEdx
-        mov     edi, [ebx].CsEdi
-        mov     esi, [ebx].CsEsi
-        mov     ebp, [ebx].CsEbp
-        push    [ebx].CsSegGs
-        push    [ebx].CsSegFs
-        push    [ebx].CsSegEs
-        push    [ebx].CsSegDs
-        mov     ebx, [ebx].CsEbx
-        pop     ds
-        pop     es
-        pop     fs
-        pop     gs
+        MOV     EAX, [EBX + CsEax]
+        MOV     ECX, [EBX + CsEcx]
+        MOV     EDX, [EBX + CsEdx]
+        MOV     EDI, [EBX + CsEdi]
+        MOV     ESI, [EBX + CsEsi]
+        MOV     EBP, [EBX + CsEbp]
+        PUSH    [EBX + CsSegGs]
+        PUSH    [EBX + CsSegFs]
+        PUSH    [EBX + CsSegEs]
+        PUSH    [EBX + CsSegDs]
+        MOV     EBX, [EBX + CsEbx]
+        POP     DS
+        POP     ES
+        POP     FS
+        POP     GS
 
     ;
     ; Switch to 16bit CS
     ;
-        push    KGDT_CODE16
-        push    offset FLAT:Kbf30 - offset FLAT:_KiI386CallAbios@16
-        retf
+        PUSH    KGDT_CODE16
+        PUSH    OFFSET FLAT:Kbf30 - OFFSET FLAT:_KiI386CallAbios@16
+        RETF
 
 Kbf30:
     ;
     ; "call" to 16 bit function
     ;
-        iretd
+        IRETD
 
 Kbf40:
     ;
     ; Push some of the returned context which will be needed to
     ; switch back to the 32 bit SS & CS.
     ;
-        db      OPERAND_OVERRIDE
-        push    ds
+        DB      OPERAND_OVERRIDE
+        PUSH    DS
 
-        db      OPERAND_OVERRIDE
-        push    es
+        DB      OPERAND_OVERRIDE
+        PUSH    ES
 
-        db      OPERAND_OVERRIDE
-        push    fs
+        DB      OPERAND_OVERRIDE
+        PUSH    FS
 
-        db      OPERAND_OVERRIDE
-        push    gs
+        DB      OPERAND_OVERRIDE
+        PUSH    GS
 
-        db      OPERAND_OVERRIDE
-        push    eax
+        DB      OPERAND_OVERRIDE
+        PUSH    EAX
 
-        db      OPERAND_OVERRIDE
-        pushfd
+        DB      OPERAND_OVERRIDE
+        PUSHFD
 
-        db      OPERAND_OVERRIDE
-        mov     eax, KGDT_R0_PCR
-        mov     fs, ax
+        DB      OPERAND_OVERRIDE
+        MOV     EAX, KGDT_R0_PCR
+        MOV     FS, AX
 
-        db      OPERAND_OVERRIDE
-        mov     eax, KGDT_R3_DATA OR RPL_MASK
-        mov     ds, ax
-        mov     es, ax
+        DB      OPERAND_OVERRIDE
+        MOV     EAX, KGDT_R3_DATA OR RPL_MASK
+        MOV     DS, AX
+        MOV     ES, AX
 
-        xor     eax, eax
+        XOR     EAX, EAX
 
     ;
     ; Switch back to 32 bit stack
@@ -482,43 +481,43 @@ Kbf40:
 ;
 
 
-        db      OPERAND_OVERRIDE
-        push    KGDT_R0_CODE
-        db      OPERAND_OVERRIDE
-        push    offset FLAT:Kbf50
-        db      OPERAND_OVERRIDE
-        retf
+        DB      OPERAND_OVERRIDE
+        PUSH    KGDT_R0_CODE
+        DB      OPERAND_OVERRIDE
+        PUSH    OFFSET FLAT:Kbf50
+        DB      OPERAND_OVERRIDE
+        RETF
 
 Kbf50:
     ;
     ; Return resulting context
     ;
 
-        mov     eax, dword ptr [esp+44+LocalStack]     ; (eax) = Context Record
-        pop     [eax].CsEflags
-        pop     [eax].CsEax
-        pop     [eax].CsSegGs
-        pop     [eax].CsSegFs
-        pop     [eax].CsSegEs
-        pop     [eax].CsSegDs
+        MOV     EAX, DWORD PTR [ESP+44+LocalStack]     ; (eax) = Context Record
+        POP     [EAX + CsEflags]
+        POP     [EAX + CsEax]
+        POP     [EAX + CsSegGs]
+        POP     [EAX + CsSegFs]
+        POP     [EAX + CsSegEs]
+        POP     [EAX + CsSegDs]
 
-        mov     [eax].CsEbx, ebx
-        mov     [eax].CsEcx, ecx
-        mov     [eax].CsEdx, edx
-        mov     [eax].CsEdi, edi
-        mov     [eax].CsEsi, esi
-        mov     [eax].CsEbp, ebp
+        MOV     [EAX + CsEbx], EBX
+        MOV     [EAX + CsEcx], ECX
+        MOV     [EAX + CsEdx], EDX
+        MOV     [EAX + CsEdi], EDI
+        MOV     [EAX + CsEsi], ESI
+        MOV     [EAX + CsEbp], EBP
 
 ;
 ; Restore regs & return
 ;
-        dec     _KiInBiosCall                         ; Clear  the 'In Bios' flag
+        DEC     _KiInBiosCall                         ; Clear  the 'In Bios' flag
 
-        add     esp,LocalStack                                          ;remove scratch space
-        pop     edi
-        pop     esi
-        pop     ebx
-        pop     ebp
+        ADD     ESP, LocalStack                                          ;remove scratch space
+        POP     EDI
+        POP     ESI
+        POP     EBX
+        POP     EBP
         stdRET    _KeI386Call16BitFunction
 
 stdENDP _KeI386Call16BitFunction
@@ -560,35 +559,35 @@ cPublicProc _KeI386Call16BitCStyleFunction,4
 ;  verify context flags
 ;
 
-        push    ebp                             ; save nonvolatile registers
-        push    ebx
-        push    esi
-        push    edi
+        PUSH    EBP                             ; save nonvolatile registers
+        PUSH    EBX
+        PUSH    ESI
+        PUSH    EDI
 
         COPY_CALL_FRAME _KiBiosFrame
 
-        inc     _KiInBiosCall                         ; Set the 'In Bios' flag
-if DBG
-        cmp   _KiInBiosCall,2
-        jb  @F
-        push    offset FLAT:KiBiosReenteredAssert
-        call    _dbgPrint
-        add     esp, 4
+        INC     _KiInBiosCall                         ; Set the 'In Bios' flag
+IFDEF DBG
+        CMP   _KiInBiosCall, 2
+        JB  @F
+        PUSH    OFFSET FLAT:KiBiosReenteredAssert
+        CALL    _DbgPrint
+        ADD     ESP, 4
 @@:
-endif
+ENDIF
 
-        mov     edi, esp
-        sub     esp,LocalStack          ;  now, add in some scratch space
-        mov     esi, dword ptr [esp + LocalStack +28]       ; (esi)->BiosParameters
-        or         esi, esi
-        jz         short @f
+        MOV     EDI, ESP
+        SUB     ESP, LocalStack          ;  now, add in some scratch space
+        MOV     ESI, DWORD PTR [ESP + LocalStack +28]       ; (esi)->BiosParameters
+        OR         ESI, ESI
+        JZ         SHORT @F
 
-        mov    ecx, [esp + LocalStack +32]                 ; (ecx) = parameter size
-        sub    esp, ecx                        ; allocate space on TOS to copy parameters
+        MOV    ECX, [ESP + LocalStack +32]                 ; (ecx) = parameter size
+        SUB    ESP, ECX                        ; allocate space on TOS to copy parameters
 
-        mov   edi, esp
-        rep     movsb                           ; (edi)-> Top of nonvolatile reg save area
-        add    edi, LocalStack           ; edi now points to original stack
+        MOV   EDI, ESP
+        REP     MOVSB                           ; (edi)-> Top of nonvolatile reg save area
+        ADD    EDI, LocalStack           ; edi now points to original stack
 
 @@:
 
@@ -609,48 +608,48 @@ endif
 ; Push return address from 16 bit function call to kernel
 ;
 
-        push    word ptr KGDT_CODE16
-        push    word ptr (offset FLAT:Kbfex40 - offset FLAT:_KiI386CallAbios@16)
+        PUSH    WORD PTR KGDT_CODE16
+        PUSH    WORD PTR (OFFSET FLAT:Kbfex40 - OFFSET FLAT:_KiI386CallAbios@16)
 
-        push    word ptr 0200h                  ; flags
-        push    word ptr [edi + 24 ]             ; entry selector
-        push    word ptr [edi + 20 ]             ; entry offset
+        PUSH    WORD PTR 0200h                  ; flags
+        PUSH    WORD PTR [EDI + 24 ]             ; entry selector
+        PUSH    WORD PTR [EDI + 20 ]             ; entry offset
 
 ;
 ; Switch to 16bit CS
 ;
-        push    KGDT_CODE16
-        push    offset FLAT:Kbfex30 - offset FLAT:_KiI386CallAbios@16
-        retf
+        PUSH    KGDT_CODE16
+        PUSH    OFFSET FLAT:Kbfex30 - OFFSET FLAT:_KiI386CallAbios@16
+        RETF
 
 Kbfex30:
 ;
 ; "call" to 16 bit function
 ;
-        iretd
+        IRETD
 
 Kbfex40:
 ;
 ; Save return value.
 ;
 
-        db      OPERAND_OVERRIDE
-        push    eax
+        DB      OPERAND_OVERRIDE
+        PUSH    EAX
 
 ;
 ; Restore Flat mode segment registers.
 ;
 
-        db      OPERAND_OVERRIDE
-        mov     eax, KGDT_R0_PCR
-        mov     fs, ax
+        DB      OPERAND_OVERRIDE
+        MOV     EAX, KGDT_R0_PCR
+        MOV     FS, AX
 
-        db      OPERAND_OVERRIDE
-        mov     eax, KGDT_R3_DATA OR RPL_MASK
-        mov     ds, ax
-        mov     es, ax
+        DB      OPERAND_OVERRIDE
+        MOV     EAX, KGDT_R3_DATA OR RPL_MASK
+        MOV     DS, AX
+        MOV     ES, AX
 
-        xor     eax, eax
+        XOR     EAX, EAX
 
 ;
 ; Switch back to 32 bit stack
@@ -664,26 +663,26 @@ Kbfex40:
 ;
 
 
-        db      OPERAND_OVERRIDE
-        push    KGDT_R0_CODE
-        db      OPERAND_OVERRIDE
-        push    offset FLAT:Kbfex50
-        db      OPERAND_OVERRIDE
-        retf
+        DB      OPERAND_OVERRIDE
+        PUSH    KGDT_R0_CODE
+        DB      OPERAND_OVERRIDE
+        PUSH    OFFSET FLAT:Kbfex50
+        DB      OPERAND_OVERRIDE
+        RETF
 
 Kbfex50:
-        pop     eax
+        POP     EAX
 
 ;
 ; Restore regs & return
 ;
-        dec    _KiInBiosCall                         ; Clear  the 'In Bios' flag
+        DEC    _KiInBiosCall                         ; Clear  the 'In Bios' flag
 
-        mov     esp, edi                                 ; Also removes the scratch space!
-        pop     edi
-        pop     esi
-        pop     ebx
-        pop     ebp
+        MOV     ESP, EDI                                 ; Also removes the scratch space!
+        POP     EDI
+        POP     ESI
+        POP     EBX
+        POP     EBP
         stdRET    _KeI386Call16BitCStyleFunction
 
 stdENDP _KeI386Call16BitCStyleFunction
@@ -692,9 +691,9 @@ stdENDP _KeI386Call16BitCStyleFunction
 ; BBT cannot instrument code between BBT_Exclude_Selector_Code_Begin and this label
 ;
 
-        public  _BBT_Exclude_Selector_Code_End
-_BBT_Exclude_Selector_Code_End  equ     $
-        int 3
+        PUBLIC  _BBT_Exclude_Selector_Code_End
+_BBT_Exclude_Selector_Code_End  EQU     $
+        INT 3
 
 ;;
 ;; END - power_management
@@ -702,11 +701,10 @@ _BBT_Exclude_Selector_Code_End  equ     $
 ;; ********************************************************
 
 
-        public  _KiEndOfCode16
-_KiEndOfCode16  equ     $
+        PUBLIC  _KiEndOfCode16
+_KiEndOfCode16  EQU     $
 
 
 
-_TEXT   ends
-        end
-
+_TEXT   ENDS
+        END

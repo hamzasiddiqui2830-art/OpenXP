@@ -525,7 +525,7 @@ Check486BStepping       proc
         shr     eax, 16
         mov     word ptr [ebx+36h], ax  ; Set HighWord
 
-c4bs50: db      0fh, 21h, 0e0h          ; mov eax, DR4
+        db      0fh, 21h, 0e0h          ; mov eax, DR4
         nop
         nop
         nop
@@ -728,7 +728,7 @@ Check386B0      proc
         mov     edx,eax
         mov     ecx,0ff00h              ; Extract length (CL) == 0, (CX) != 0
 
-b1c50:  db      0fh, 0a6h, 0cah         ; xbts cx,dx,ax,cl
+        db      0fh, 0a6h, 0cah         ; xbts cx,dx,ax,cl
         nop
         nop
         nop
@@ -992,7 +992,7 @@ cPublicProc _KiIsNpxPresent,0
         and     eax, NOT (CR0_ET+CR0_MP+CR0_TS+CR0_EM)
         mov     cr0, eax
         xor     edx, edx
-.287
+        .287
         fninit                          ; Initialize NPX
         mov     ecx, 5A5A5A5Ah          ; Put non-zero value
         push    ecx                     ;   into the memory we are going to use
@@ -1112,10 +1112,10 @@ stdENDP _RDTSC
 ; Return Value:
 ;
 ;--
-cPublicFastCall _RDMSR, 1
-    rdmsr
-    fstRET  _RDMSR
-fstENDP _RDMSR
+        cPublicFastCall RDMSR, 1
+        rdmsr
+        fstRET  RDMSR
+        fstENDP RDMSR
 
 
 ;++

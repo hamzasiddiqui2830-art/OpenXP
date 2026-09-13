@@ -80,12 +80,12 @@ endif
 _TEXT$00   SEGMENT PARA PUBLIC 'CODE'
         ASSUME  DS:FLAT, ES:FLAT, SS:NOTHING, FS:NOTHING, GS:NOTHING
 
-cPublicFastCall KiRDTSC, 1
+        cPublicFastCall KiRDTSC, 1
         rdtsc                   ; read the timestamp counter
         mov     [ecx], eax      ; return the low 32 bits
         mov     [ecx+4], edx    ; return the high 32 bits
         fstRET  KiRDTSC
-fstENDP KiRDTSC
+        fstENDP KiRDTSC
 
         page ,132
         subttl  "Swap Context"

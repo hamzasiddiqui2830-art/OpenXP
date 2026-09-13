@@ -25,10 +25,8 @@ include irqli386.inc
 
         extrn   _KiServiceExit:PROC
         extrn   _KeUserCallbackDispatcher:DWORD
-        extrn   _MmGrowKernelStack@4:PROC
 
         EXTRNP  KeBugCheck2,6
-        EXTRNP  MmGrowKernelStack,1
 
 _TEXT   SEGMENT DWORD PUBLIC 'CODE'
         ASSUME  DS:FLAT, ES:FLAT, SS:FLAT, FS:NOTHING, GS:NOTHING
@@ -131,7 +129,7 @@ Kcb07:  lea     eax,[esp-KERNEL_LARGE_STACK_COMMIT] ; compute bottom address
         cmp     eax,dword ptr [ebx+ThStackLimit]  ; check if limit exceeded
         jae     short Kcb10             ; if ae, limit not exceeded
         push    esp                     ; push current stack pointer
-        call    _MmGrowKernelStack@4    ; attempt to grow kernel stack
+        call    MmGrowKernelStack    ; attempt to grow kernel stack
         or      eax, eax                ; check for successful completion
         jne     Kcb20                   ; if ne, attempt to grow failed
 

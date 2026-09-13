@@ -1112,10 +1112,10 @@ stdENDP _RDTSC
 ; Return Value:
 ;
 ;--
-        cPublicFastCall RDMSR, 1
+        cPublicFastCall _RDMSR, 1
         rdmsr
-        fstRET  RDMSR
-        fstENDP RDMSR
+        fstRET  _RDMSR
+        fstENDP _RDMSR
 
 
 ;++

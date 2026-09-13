@@ -79,15 +79,21 @@ EXTRNP  macro   Func,N,Thunk,FastCall
                 EXTRNTHUNK Func, %(N*4)
             ENDIF
         ELSE
-            cFCall&@&Func EQU (N*4)
+            ; Fastcall: build decorated name via text equate
+            cFCall&Func EQU (N*4)
             IFB <Thunk>
-                EXTRNP2 &@&Func, %(N*4)
+                IFNDEF @&Func&@%(N*4)
+                    EXTRN @&Func&@%(N*4):NEAR
+                ENDIF
             ELSE
-                EXTRNTHUNK &@&Func, %(N*4)
+                IFNDEF __imp_@&Func&@%(N*4)
+                    EXTRN __imp_@&Func&@%(N*4):DWORD
+                ENDIF
             ENDIF
         ENDIF
     ENDIF
 endm
+
 
 EXTRNP2 macro Func, N
     IFNDEF Func&@&N
@@ -155,16 +161,16 @@ endm
 
 cPublicFastCall macro Func,N,ArgList
     ALIGN DWORD
-    PUBLICP &@&Func, N
+    PUBLICP @&Func, N
     IFB <N>
-        stdPROCF &@&Func, 0, <ArgList>
+        stdPROCF @&Func, 0, <ArgList>
     ELSE
-        stdPROCF &@&Func, N, <ArgList>
+        stdPROCF @&Func, N, <ArgList>
     ENDIF
 endm
 
 fstRET  macro   Func
-    ret     cByte&@&Func
+    ret     cByte&Func
 endm
 
 stdRET macro Func
@@ -178,7 +184,7 @@ cPublicFpo macro FpoLocals, FpoParams
 endm
 
 fstENDP macro   Func
-    &@&Func endp
+    @&Func endp
 endm
 
 stdENDP macro Func
@@ -211,9 +217,9 @@ fstCall macro   Func,ArgList
     Bytes = Bytes*4
 
     IF Bytes eq 0
-        stdCallCall &@&Func, %cFCall&@&Func
+        stdCallCall @&Func, %cFCall&Func
     ELSE
-        stdCallCall &@&Func, %(Bytes+8)
+        stdCallCall @&Func, %(Bytes+8)
     ENDIF
 endm
 

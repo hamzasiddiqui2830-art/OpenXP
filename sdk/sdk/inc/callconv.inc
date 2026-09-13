@@ -131,8 +131,10 @@ PUBLICP2 macro   Func,N
 endm
 
 EXTRNP  macro   Func,N,Thunk,FastCall
+        Local   SymbolName
+        Local   CallName
+
         ifb     <N>
-            Local SymbolName
             SymbolName TEXTEQU @CatStr(Func,<@>,<0>)
             IFNDEF &SymbolName&
                 extrn   &SymbolName&:NEAR
@@ -145,7 +147,6 @@ EXTRNP  macro   Func,N,Thunk,FastCall
                     EXTRNTHUNK  Func,%(N*4)
                 endif
             else
-                Local CallName
                 CallName TEXTEQU @CatStr(<@>,Func)
                 cFCall&CallName equ (N*4)
 

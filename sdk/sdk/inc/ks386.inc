@@ -1,1415 +1,1166 @@
 ;
 ; Copyright (c) OpenXP.
+; Refactored for MASM 14.x (Visual Studio 2022/2026) - x86 (32-bit) Target
 ;
-;
-;
-;  Attempt to fix A2166 on MASM 14.0x
-;
-OPTION OLDSTRUCTS
-;
+
 ;  Pointer size in bytes
-;
+SizeofPointer equ 4
 
-SizeofPointer equ 00004H
-
-;
 ;  Process State Enumerated Type Values
-;
+ProcessInMemory equ 0
+ProcessOutOfMemory equ 1
+ProcessInTransition equ 2
 
-ProcessInMemory equ 00000H
-ProcessOutOfMemory equ 00001H
-ProcessInTransition equ 00002H
-
-;
 ;  Thread State Enumerated Type Values
-;
+Initialized equ 0
+Ready equ 1
+Running equ 2
+Standby equ 3
+Terminated equ 4
+Waiting equ 5
 
-Initialized equ 00000H
-Ready equ 00001H
-Running equ 00002H
-Standby equ 00003H
-Terminated equ 00004H
-Waiting equ 00005H
-
-;
 ;  Wait Reason and Wait Type Enumerated Type Values
-;
+WrExecutive equ 0
+WrMutex equ 1Dh
+WrDispatchInt equ 1Fh
+WrQuantumEnd equ 1Eh
+WrEventPair equ 0Eh
+WaitAny equ 1
+WaitAll equ 0
 
-WrExecutive equ 00000H
-WrMutex equ 0001DH
-WrDispatchInt equ 0001FH
-WrQuantumEnd equ 0001EH
-WrEventPair equ 0000EH
-WaitAny equ 00001H
-WaitAll equ 00000H
-
-;
 ;  Apc State Structure Offset Definitions
-;
+AsApcListHead equ 0
+AsProcess equ 10h
+AsKernelApcInProgress equ 14h
+AsKernelApcPending equ 15h
+AsUserApcPending equ 16h
 
-AsApcListHead equ 00000H
-AsProcess equ 00010H
-AsKernelApcInProgress equ 00014H
-AsKernelApcPending equ 00015H
-AsUserApcPending equ 00016H
-
-;
 ;  Bugcheck Code Definitions
-;
+APC_INDEX_MISMATCH equ 1
+ATTEMPTED_SWITCH_FROM_DPC equ 0B8h
+DATA_BUS_ERROR equ 2Eh
+DATA_COHERENCY_EXCEPTION equ 55h
+HAL1_INITIALIZATION_FAILED equ 61h
+INSTRUCTION_BUS_ERROR equ 2Fh
+INSTRUCTION_COHERENCY_EXCEPTION equ 56h
+INTERRUPT_EXCEPTION_NOT_HANDLED equ 3Dh
+INTERRUPT_UNWIND_ATTEMPTED equ 3Ch
+INVALID_AFFINITY_SET equ 3
+INVALID_DATA_ACCESS_TRAP equ 4
+IRQL_GT_ZERO_AT_SYSTEM_SERVICE equ 4Ah
+IRQL_NOT_LESS_OR_EQUAL equ 0Ah
+KMODE_EXCEPTION_NOT_HANDLED equ 1Eh
+NMI_HARDWARE_FAILURE equ 80h
+NO_USER_MODE_CONTEXT equ 0Eh
+PAGE_FAULT_WITH_INTERRUPTS_OFF equ 49h
+PANIC_STACK_SWITCH equ 2Bh
+SPIN_LOCK_INIT_FAILURE equ 81h
+SYSTEM_EXIT_OWNED_MUTEX equ 39h
+SYSTEM_SERVICE_EXCEPTION equ 3Bh
+SYSTEM_UNWIND_PREVIOUS_USER equ 3Ah
+TRAP_CAUSE_UNKNOWN equ 12h
+UNEXPECTED_KERNEL_MODE_TRAP equ 7Fh
+HARDWARE_INTERRUPT_STORM equ 0F2h
+RECURSIVE_MACHINE_CHECK equ 0FBh
+RECURSIVE_NMI equ 111h
 
-APC_INDEX_MISMATCH equ 00001H
-ATTEMPTED_SWITCH_FROM_DPC equ 000B8H
-DATA_BUS_ERROR equ 0002EH
-DATA_COHERENCY_EXCEPTION equ 00055H
-HAL1_INITIALIZATION_FAILED equ 00061H
-INSTRUCTION_BUS_ERROR equ 0002FH
-INSTRUCTION_COHERENCY_EXCEPTION equ 00056H
-INTERRUPT_EXCEPTION_NOT_HANDLED equ 0003DH
-INTERRUPT_UNWIND_ATTEMPTED equ 0003CH
-INVALID_AFFINITY_SET equ 00003H
-INVALID_DATA_ACCESS_TRAP equ 00004H
-IRQL_GT_ZERO_AT_SYSTEM_SERVICE equ 0004AH
-IRQL_NOT_LESS_OR_EQUAL equ 0000AH
-KMODE_EXCEPTION_NOT_HANDLED equ 0001EH
-NMI_HARDWARE_FAILURE equ 00080H
-NO_USER_MODE_CONTEXT equ 0000EH
-PAGE_FAULT_WITH_INTERRUPTS_OFF equ 00049H
-PANIC_STACK_SWITCH equ 0002BH
-SPIN_LOCK_INIT_FAILURE equ 00081H
-SYSTEM_EXIT_OWNED_MUTEX equ 00039H
-SYSTEM_SERVICE_EXCEPTION equ 0003BH
-SYSTEM_UNWIND_PREVIOUS_USER equ 0003AH
-TRAP_CAUSE_UNKNOWN equ 00012H
-UNEXPECTED_KERNEL_MODE_TRAP equ 0007FH
-HARDWARE_INTERRUPT_STORM equ 000F2H
-RECURSIVE_MACHINE_CHECK equ 000FBH
-RECURSIVE_NMI equ 00111H
-
-;
 ;  Breakpoint type definitions
-;
+DBG_STATUS_CONTROL_C equ 1
+STATUS_ASSERTION_FAILURE equ 0C0000420h
 
-DBG_STATUS_CONTROL_C equ 00001H
-STATUS_ASSERTION_FAILURE equ 0C0000420H
-
-;
 ;  Client Id Structure Offset Definitions
-;
+CidUniqueProcess equ 0
+CidUniqueThread equ 4
 
-CidUniqueProcess equ 00000H
-CidUniqueThread equ 00004H
-
-;
 ;  Critical Section Structure Offset Definitions
-;
+CsDebugInfo equ 0
+CsLockCount equ 4
+CsRecursionCount equ 8
+CsOwningThread equ 0Ch
+CsLockSemaphore equ 10h
+CsSpinCount equ 14h
 
-CsDebugInfo equ 00000H
-CsLockCount equ 00004H
-CsRecursionCount equ 00008H
-CsOwningThread equ 0000CH
-CsLockSemaphore equ 00010H
-CsSpinCount equ 00014H
-
-;
 ;  Critical Section Debug Information Structure Offset Definitions
-;
+CsType equ 0
+CsCreatorBackTraceIndex equ 2
+CsCriticalSection equ 4
+CsProcessLocksList equ 8
+CsEntryCount equ 10h
+CsContentionCount equ 14h
 
-CsType equ 00000H
-CsCreatorBackTraceIndex equ 00002H
-CsCriticalSection equ 00004H
-CsProcessLocksList equ 00008H
-CsEntryCount equ 00010H
-CsContentionCount equ 00014H
-
-;
 ;  Exception Record Offset, Flag, and Enumerated Type Definitions
-;
+EXCEPTION_NONCONTINUABLE equ 1
+EXCEPTION_UNWINDING equ 2
+EXCEPTION_EXIT_UNWIND equ 4
+EXCEPTION_STACK_INVALID equ 8
+EXCEPTION_NESTED_CALL equ 10h
+EXCEPTION_TARGET_UNWIND equ 20h
+EXCEPTION_COLLIDED_UNWIND equ 40h
+EXCEPTION_UNWIND equ 66h
+EXCEPTION_EXECUTE_HANDLER equ 1
+EXCEPTION_CONTINUE_SEARCH equ 0
+EXCEPTION_CONTINUE_EXECUTION equ 0FFFFFFFFh
+EXCEPTION_CHAIN_END equ 0FFFFFFFFh
+FIXED_NTVDMSTATE_LINEAR equ 714h
 
-EXCEPTION_NONCONTINUABLE equ 00001H
-EXCEPTION_UNWINDING equ 00002H
-EXCEPTION_EXIT_UNWIND equ 00004H
-EXCEPTION_STACK_INVALID equ 00008H
-EXCEPTION_NESTED_CALL equ 00010H
-EXCEPTION_TARGET_UNWIND equ 00020H
-EXCEPTION_COLLIDED_UNWIND equ 00040H
-EXCEPTION_UNWIND equ 00066H
-EXCEPTION_EXECUTE_HANDLER equ 00001H
-EXCEPTION_CONTINUE_SEARCH equ 00000H
-EXCEPTION_CONTINUE_EXECUTION equ 0FFFFFFFFH
-EXCEPTION_CHAIN_END equ 0FFFFFFFFH
-FIXED_NTVDMSTATE_LINEAR equ 00714H
+ExceptionContinueExecution equ 0
+ExceptionContinueSearch equ 1
+ExceptionNestedException equ 2
+ExceptionCollidedUnwind equ 3
 
-ExceptionContinueExecution equ 00000H
-ExceptionContinueSearch equ 00001H
-ExceptionNestedException equ 00002H
-ExceptionCollidedUnwind equ 00003H
+ErExceptionCode equ 0
+ErExceptionFlags equ 4
+ErExceptionRecord equ 8
+ErExceptionAddress equ 0Ch
+ErNumberParameters equ 10h
+ErExceptionInformation equ 14h
+ExceptionRecordLength equ 50h
 
-ErExceptionCode equ 00000H
-ErExceptionFlags equ 00004H
-ErExceptionRecord equ 00008H
-ErExceptionAddress equ 0000CH
-ErNumberParameters equ 00010H
-ErExceptionInformation equ 00014H
-ExceptionRecordLength equ 00050H
-
-;
 ;  Fast Mutex Structure Offset Definitions
-;
+FmCount equ 0
+FmOwner equ 4
+FmContention equ 8
+FmGate equ 0Ch
+FmOldIrql equ 1Ch
 
-FmCount equ 00000H
-FmOwner equ 00004H
-FmContention equ 00008H
-FmGate equ 0000CH
-FmOldIrql equ 0001CH
-
-;
 ;  Interrupt Priority Request Level Definitions
-;
+PASSIVE_LEVEL equ 0
+APC_LEVEL equ 1
+DISPATCH_LEVEL equ 2
+CLOCK1_LEVEL equ 1Ch
+CLOCK2_LEVEL equ 1Ch
+IPI_LEVEL equ 1Dh
+POWER_LEVEL equ 1Eh
+PROFILE_LEVEL equ 1Bh
+HIGH_LEVEL equ 1Fh
 
-PASSIVE_LEVEL equ 00000H
-APC_LEVEL equ 00001H
-DISPATCH_LEVEL equ 00002H
-CLOCK1_LEVEL equ 0001CH
-CLOCK2_LEVEL equ 0001CH
-IPI_LEVEL equ 0001DH
-POWER_LEVEL equ 0001EH
-PROFILE_LEVEL equ 0001BH
-HIGH_LEVEL equ 0001FH
-ifdef NT_UP
-SYNCH_LEVEL equ 00002H
-else
-SYNCH_LEVEL equ 0001BH
-endif
+IFDEF NT_UP
+    SYNCH_LEVEL equ 2
+ELSE
+    SYNCH_LEVEL equ 1Bh
+ENDIF
 
-;
 ;  Large Integer Structure Offset Definitions
-;
+LiLowPart equ 0
+LiHighPart equ 4
 
-LiLowPart equ 00000H
-LiHighPart equ 00004H
-
-;
 ;  List Entry Structure Offset Definitions
-;
+LsFlink equ 0
+LsBlink equ 4
 
-LsFlink equ 00000H
-LsBlink equ 00004H
-
-;
 ;  String Structure Offset Definitions
-;
+StrLength equ 0
+StrMaximumLength equ 2
+StrBuffer equ 4
 
-StrLength equ 00000H
-StrMaximumLength equ 00002H
-StrBuffer equ 00004H
-
-;
 ;  System Time Structure Offset Definitions
-;
+StLowTime equ 0
+StHigh1Time equ 4
+StHigh2Time equ 8
 
-StLowTime equ 00000H
-StHigh1Time equ 00004H
-StHigh2Time equ 00008H
-
-;
 ;  User Shared Data Structure Offset Definitions
-;
+UsTickCountMultiplier equ 4
+UsInterruptTime equ 8
+UsSystemTime equ 14h
+UsTimeZoneBias equ 20h
+UsImageNumberLow equ 2Ch
+UsImageNumberHigh equ 2Eh
+UsNtSystemRoot equ 30h
+UsMaxStackTraceDepth equ 238h
+UsCryptoExponent equ 23Ch
+UsTimeZoneId equ 240h
+UsLargePageMinimum equ 244h
+UsReserved2 equ 248h
+UsNtProductType equ 264h
+UsProductTypeIsValid equ 268h
+UsNtMajorVersion equ 26Ch
+UsNtMinorVersion equ 270h
+UsProcessorFeatures equ 274h
+UsReserved1 equ 2B4h
+UsReserved3 equ 2B8h
+UsTimeSlip equ 2BCh
+UsAlternativeArchitecture equ 2C0h
+UsSystemExpirationDate equ 2C8h
+UsSuiteMask equ 2D0h
+UsKdDebuggerEnabled equ 2D4h
+UsActiveConsoleId equ 2D8h
+UsDismountCount equ 2DCh
+UsComPlusPackage equ 2E0h
+UsLastSystemRITEventTickCount equ 2E4h
+UsNumberOfPhysicalPages equ 2E8h
+UsSafeBootMode equ 2ECh
+UsTraceLogging equ 2F0h
+UsTestRetInstruction equ 2F8h
+UsSystemCall equ 300h
+UsSystemCallReturn equ 304h
+UsSystemCallPad equ 308h
+UsTickCount equ 320h
+UsTickCountQuad equ 320h
+UsWow64SharedInformation equ 334h
 
-UsTickCountMultiplier equ 00004H
-UsInterruptTime equ 00008H
-UsSystemTime equ 00014H
-UsTimeZoneBias equ 00020H
-UsImageNumberLow equ 0002CH
-UsImageNumberHigh equ 0002EH
-UsNtSystemRoot equ 00030H
-UsMaxStackTraceDepth equ 00238H
-UsCryptoExponent equ 0023CH
-UsTimeZoneId equ 00240H
-UsLargePageMinimum equ 00244H
-UsReserved2 equ 00248H
-UsNtProductType equ 00264H
-UsProductTypeIsValid equ 00268H
-UsNtMajorVersion equ 0026CH
-UsNtMinorVersion equ 00270H
-UsProcessorFeatures equ 00274H
-UsReserved1 equ 002B4H
-UsReserved3 equ 002B8H
-UsTimeSlip equ 002BCH
-UsAlternativeArchitecture equ 002C0H
-UsSystemExpirationDate equ 002C8H
-UsSuiteMask equ 002D0H
-UsKdDebuggerEnabled equ 002D4H
-UsActiveConsoleId equ 002D8H
-UsDismountCount equ 002DCH
-UsComPlusPackage equ 002E0H
-UsLastSystemRITEventTickCount equ 002E4H
-UsNumberOfPhysicalPages equ 002E8H
-UsSafeBootMode equ 002ECH
-UsTraceLogging equ 002F0H
-UsTestRetInstruction equ 002F8H
-UsSystemCall equ 00300H
-UsSystemCallReturn equ 00304H
-UsSystemCallPad equ 00308H
-UsTickCount equ 00320H
-UsTickCountQuad equ 00320H
-UsWow64SharedInformation equ 00334H
-
-;
 ;  Time Structure Offset Definitions
-;
+TmLowTime equ 0
+TmHighTime equ 4
 
-TmLowTime equ 00000H
-TmHighTime equ 00004H
-
-;
 ;  Thread Switch Counter Offset Definitions
-;
+TwFindAny equ 0
+TwFindIdeal equ 4
+TwFindLast equ 8
+TwIdleAny equ 0Ch
+TwIdleCurrent equ 10h
+TwIdleIdeal equ 14h
+TwIdleLast equ 18h
+TwPreemptAny equ 1Ch
+TwPreemptCurrent equ 20h
+TwPreemptLast equ 24h
+TwSwitchToIdle equ 28h
 
-TwFindAny equ 00000H
-TwFindIdeal equ 00004H
-TwFindLast equ 00008H
-TwIdleAny equ 0000CH
-TwIdleCurrent equ 00010H
-TwIdleIdeal equ 00014H
-TwIdleLast equ 00018H
-TwPreemptAny equ 0001CH
-TwPreemptCurrent equ 00020H
-TwPreemptLast equ 00024H
-TwSwitchToIdle equ 00028H
-
-;
 ;  Status Code Definitions
-;
+STATUS_ACCESS_VIOLATION equ 0C0000005h
+STATUS_ARRAY_BOUNDS_EXCEEDED equ 0C000008Ch
+STATUS_BAD_COMPRESSION_BUFFER equ 0C0000242h
+STATUS_BREAKPOINT equ 80000003h
+STATUS_CALLBACK_POP_STACK equ 0C0000423h
+STATUS_DATATYPE_MISALIGNMENT equ 80000002h
+STATUS_FLOAT_DENORMAL_OPERAND equ 0C000008Dh
+STATUS_FLOAT_DIVIDE_BY_ZERO equ 0C000008Eh
+STATUS_FLOAT_INEXACT_RESULT equ 0C000008Fh
+STATUS_FLOAT_INVALID_OPERATION equ 0C0000090h
+STATUS_FLOAT_OVERFLOW equ 0C0000091h
+STATUS_FLOAT_STACK_CHECK equ 0C0000092h
+STATUS_FLOAT_UNDERFLOW equ 0C0000093h
+STATUS_FLOAT_MULTIPLE_FAULTS equ 0C00002B4h
+STATUS_FLOAT_MULTIPLE_TRAPS equ 0C00002B5h
+STATUS_GUARD_PAGE_VIOLATION equ 80000001h
+STATUS_ILLEGAL_FLOAT_CONTEXT equ 0C000014Ah
+STATUS_ILLEGAL_INSTRUCTION equ 0C000001Dh
+STATUS_INSTRUCTION_MISALIGNMENT equ 0C00000AAh
+STATUS_INVALID_HANDLE equ 0C0000008h
+STATUS_INVALID_LOCK_SEQUENCE equ 0C000001Eh
+STATUS_INVALID_OWNER equ 0C000005Ah
+STATUS_INVALID_PARAMETER equ 0C000000Dh
+STATUS_INVALID_PARAMETER_1 equ 0C00000EFh
+STATUS_INVALID_SYSTEM_SERVICE equ 0C000001Ch
+STATUS_INTEGER_DIVIDE_BY_ZERO equ 0C0000094h
+STATUS_INTEGER_OVERFLOW equ 0C0000095h
+STATUS_IN_PAGE_ERROR equ 0C0000006h
+STATUS_KERNEL_APC equ 100h
+STATUS_LONGJUMP equ 80000026h
+STATUS_NO_CALLBACK_ACTIVE equ 0C0000258h
+STATUS_NO_EVENT_PAIR equ 0C000014Eh
+STATUS_PRIVILEGED_INSTRUCTION equ 0C0000096h
+STATUS_SINGLE_STEP equ 80000004h
+STATUS_STACK_BUFFER_OVERRUN equ 0C0000409h
+STATUS_STACK_OVERFLOW equ 0C00000FDh
+STATUS_SUCCESS equ 0
+STATUS_THREAD_IS_TERMINATING equ 0C000004Bh
+STATUS_TIMEOUT equ 102h
+STATUS_UNWIND equ 0C0000027h
+STATUS_UNWIND_CONSOLIDATE equ 80000029h
+STATUS_USER_APC equ 0C0h
+STATUS_WAKE_SYSTEM_DEBUGGER equ 80000007h
 
-STATUS_ACCESS_VIOLATION equ 0C0000005H
-STATUS_ARRAY_BOUNDS_EXCEEDED equ 0C000008CH
-STATUS_BAD_COMPRESSION_BUFFER equ 0C0000242H
-STATUS_BREAKPOINT equ 080000003H
-STATUS_CALLBACK_POP_STACK equ 0C0000423H
-STATUS_DATATYPE_MISALIGNMENT equ 080000002H
-STATUS_FLOAT_DENORMAL_OPERAND equ 0C000008DH
-STATUS_FLOAT_DIVIDE_BY_ZERO equ 0C000008EH
-STATUS_FLOAT_INEXACT_RESULT equ 0C000008FH
-STATUS_FLOAT_INVALID_OPERATION equ 0C0000090H
-STATUS_FLOAT_OVERFLOW equ 0C0000091H
-STATUS_FLOAT_STACK_CHECK equ 0C0000092H
-STATUS_FLOAT_UNDERFLOW equ 0C0000093H
-STATUS_FLOAT_MULTIPLE_FAULTS equ 0C00002B4H
-STATUS_FLOAT_MULTIPLE_TRAPS equ 0C00002B5H
-STATUS_GUARD_PAGE_VIOLATION equ 080000001H
-STATUS_ILLEGAL_FLOAT_CONTEXT equ 0C000014AH
-STATUS_ILLEGAL_INSTRUCTION equ 0C000001DH
-STATUS_INSTRUCTION_MISALIGNMENT equ 0C00000AAH
-STATUS_INVALID_HANDLE equ 0C0000008H
-STATUS_INVALID_LOCK_SEQUENCE equ 0C000001EH
-STATUS_INVALID_OWNER equ 0C000005AH
-STATUS_INVALID_PARAMETER equ 0C000000DH
-STATUS_INVALID_PARAMETER_1 equ 0C00000EFH
-STATUS_INVALID_SYSTEM_SERVICE equ 0C000001CH
-STATUS_INTEGER_DIVIDE_BY_ZERO equ 0C0000094H
-STATUS_INTEGER_OVERFLOW equ 0C0000095H
-STATUS_IN_PAGE_ERROR equ 0C0000006H
-STATUS_KERNEL_APC equ 00100H
-STATUS_LONGJUMP equ 080000026H
-STATUS_NO_CALLBACK_ACTIVE equ 0C0000258H
-STATUS_NO_EVENT_PAIR equ 0C000014EH
-STATUS_PRIVILEGED_INSTRUCTION equ 0C0000096H
-STATUS_SINGLE_STEP equ 080000004H
-STATUS_STACK_BUFFER_OVERRUN equ 0C0000409H
-STATUS_STACK_OVERFLOW equ 0C00000FDH
-STATUS_SUCCESS equ 00000H
-STATUS_THREAD_IS_TERMINATING equ 0C000004BH
-STATUS_TIMEOUT equ 00102H
-STATUS_UNWIND equ 0C0000027H
-STATUS_UNWIND_CONSOLIDATE equ 080000029H
-STATUS_USER_APC equ 000C0H
-STATUS_WAKE_SYSTEM_DEBUGGER equ 080000007H
-
-;
 ;  APC Object Structure Offset Definitions
-;
+ApType equ 0
+ApSize equ 2
+ApThread equ 8
+ApApcListEntry equ 0Ch
+ApKernelRoutine equ 14h
+ApRundownRoutine equ 18h
+ApNormalRoutine equ 1Ch
+ApNormalContext equ 20h
+ApSystemArgument1 equ 24h
+ApSystemArgument2 equ 28h
+ApApcStateIndex equ 2Ch
+ApApcMode equ 2Dh
+ApInserted equ 2Eh
+ApcObjectLength equ 30h
 
-ApType equ 00000H
-ApSize equ 00002H
-ApThread equ 00008H
-ApApcListEntry equ 0000CH
-ApKernelRoutine equ 00014H
-ApRundownRoutine equ 00018H
-ApNormalRoutine equ 0001CH
-ApNormalContext equ 00020H
-ApSystemArgument1 equ 00024H
-ApSystemArgument2 equ 00028H
-ApApcStateIndex equ 0002CH
-ApApcMode equ 0002DH
-ApInserted equ 0002EH
-ApcObjectLength equ 00030H
-
-;
 ;  DPC object Structure Offset Definitions
-;
+DpType equ 0
+DpNumber equ 2
+DpImportance equ 1
+DpDpcListEntry equ 4
+DpDeferredRoutine equ 0Ch
+DpDeferredContext equ 10h
+DpSystemArgument1 equ 14h
+DpSystemArgument2 equ 18h
+DpDpcData equ 1Ch
+DpcObjectLength equ 20h
 
-DpType equ 00000H
-DpNumber equ 00002H
-DpImportance equ 00001H
-DpDpcListEntry equ 00004H
-DpDeferredRoutine equ 0000CH
-DpDeferredContext equ 00010H
-DpSystemArgument1 equ 00014H
-DpSystemArgument2 equ 00018H
-DpDpcData equ 0001CH
-DpcObjectLength equ 00020H
-
-;
 ;  Device Queue Object Structure Offset Definitions
-;
+DvType equ 0
+DvSize equ 2
+DvDeviceListHead equ 4
+DvSpinLock equ 0Ch
+DvBusy equ 10h
+DeviceQueueObjectLength equ 14h
 
-DvType equ 00000H
-DvSize equ 00002H
-DvDeviceListHead equ 00004H
-DvSpinLock equ 0000CH
-DvBusy equ 00010H
-DeviceQueueObjectLength equ 00014H
-
-;
 ;  Device Queue Entry Structure Offset Definitions
-;
+DeDeviceListEntry equ 0
+DeSortKey equ 8
+DeInserted equ 0Ch
+DeviceQueueEntryLength equ 10h
 
-DeDeviceListEntry equ 00000H
-DeSortKey equ 00008H
-DeInserted equ 0000CH
-DeviceQueueEntryLength equ 00010H
-
-;
 ;  Event Object Structure Offset Definitions
-;
+EvType equ 0
+EvSize equ 2
+EvSignalState equ 4
+EvWaitListHead equ 8
+EventObjectLength equ 10h
 
-EvType equ 00000H
-EvSize equ 00002H
-EvSignalState equ 00004H
-EvWaitListHead equ 00008H
-EventObjectLength equ 00010H
-
-;
 ;  Event Pair Object Structure Offset Definitions
-;
+EpType equ 0
+EpSize equ 2
+EpEventLow equ 4
+EpEventHigh equ 14h
 
-EpType equ 00000H
-EpSize equ 00002H
-EpEventLow equ 00004H
-EpEventHigh equ 00014H
-
-;
 ;  Interrupt Object Structure Offset Definitions
-;
+InLevelSensitive equ 0
+InLatched equ 1
 
-InLevelSensitive equ 00000H
-InLatched equ 00001H
+InType equ 0
+InSize equ 2
+InInterruptListEntry equ 4
+InServiceRoutine equ 0Ch
+InServiceContext equ 10h
+InSpinLock equ 14h
+InTickCount equ 18h
+InActualLock equ 1Ch
+InDispatchAddress equ 20h
+InVector equ 24h
+InIrql equ 28h
+InSynchronizeIrql equ 29h
+InFloatingSave equ 2Ah
+InConnected equ 2Bh
+InNumber equ 2Ch
+InShareVector equ 2Dh
+InMode equ 30h
+InServiceCount equ 34h
+InDispatchCount equ 38h
+InDispatchCode equ 3Ch
+InterruptObjectLength equ 1E4h
 
-InType equ 00000H
-InSize equ 00002H
-InInterruptListEntry equ 00004H
-InServiceRoutine equ 0000CH
-InServiceContext equ 00010H
-InSpinLock equ 00014H
-InTickCount equ 00018H
-InActualLock equ 0001CH
-InDispatchAddress equ 00020H
-InVector equ 00024H
-InIrql equ 00028H
-InSynchronizeIrql equ 00029H
-InFloatingSave equ 0002AH
-InConnected equ 0002BH
-InNumber equ 0002CH
-InShareVector equ 0002DH
-InMode equ 00030H
-InServiceCount equ 00034H
-InDispatchCount equ 00038H
-InDispatchCode equ 0003CH
-InterruptObjectLength equ 001E4H
+NORMAL_DISPATCH_LENGTH equ 1A8h
+DISPATCH_LENGTH equ 1A8h
 
-NORMAL_DISPATCH_LENGTH equ 001A8H
-DISPATCH_LENGTH equ 001A8H
-
-;
 ;  Process Object Structure Offset Definitions
-;
+PrType equ 0
+PrSize equ 2
+PrSignalState equ 4
+PrProfileListHead equ 10h
+PrDirectoryTableBase equ 18h
+PrLdtDescriptor equ 20h
+PrIopmOffset equ 30h
+PrInt21Descriptor equ 28h
+PrIopl equ 32h
+PrVdmTrapcHandler equ 4Ch
+PrVdmObjects equ 144h
+PrFlags equ 240h
+PrActiveProcessors equ 34h
+PrKernelTime equ 38h
+PrUserTime equ 3Ch
+PrReadyListHead equ 40h
+PrSwapListEntry equ 48h
+PrThreadListHead equ 50h
+PrProcessLock equ 58h
+PrAffinity equ 5Ch
+PrProcessFlags equ 60h
+PrBasePriority equ 64h
+PrQuantumReset equ 65h
+PrState equ 66h
+PrStackCount equ 6Ch
+KernelProcessObjectLength equ 78h
+ExecutiveProcessObjectLength equ 278h
 
-PrType equ 00000H
-PrSize equ 00002H
-PrSignalState equ 00004H
-PrProfileListHead equ 00010H
-PrDirectoryTableBase equ 00018H
-PrLdtDescriptor equ 00020H
-PrIopmOffset equ 00030H
-PrInt21Descriptor equ 00028H
-PrIopl equ 00032H
-PrVdmTrapcHandler equ 0004CH
-PrVdmObjects equ 00144H
-PrFlags equ 00240H
-PrActiveProcessors equ 00034H
-PrKernelTime equ 00038H
-PrUserTime equ 0003CH
-PrReadyListHead equ 00040H
-PrSwapListEntry equ 00048H
-PrThreadListHead equ 00050H
-PrProcessLock equ 00058H
-PrAffinity equ 0005CH
-PrProcessFlags equ 00060H
-PrBasePriority equ 00064H
-PrQuantumReset equ 00065H
-PrState equ 00066H
-PrStackCount equ 0006CH
-KernelProcessObjectLength equ 00078H
-ExecutiveProcessObjectLength equ 00278H
-
-;
 ;  Profile Object Structure Offset Definitions
-;
+PfType equ 0
+PfSize equ 2
+PfProfileListEntry equ 4
+PfProcess equ 0Ch
+PfRangeBase equ 10h
+PfRangeLimit equ 14h
+PfBucketShift equ 18h
+PfBuffer equ 1Ch
+PfSegment equ 20h
+PfAffinity equ 24h
+PfSource equ 28h
+PfStarted equ 2Ah
+ProfileObjectLength equ 2Ch
 
-PfType equ 00000H
-PfSize equ 00002H
-PfProfileListEntry equ 00004H
-PfProcess equ 0000CH
-PfRangeBase equ 00010H
-PfRangeLimit equ 00014H
-PfBucketShift equ 00018H
-PfBuffer equ 0001CH
-PfSegment equ 00020H
-PfAffinity equ 00024H
-PfSource equ 00028H
-PfStarted equ 0002AH
-ProfileObjectLength equ 0002CH
-
-;
 ;  Queue Object Structure Offset Definitions
-;
+QuType equ 0
+QuSize equ 2
+QuSignalState equ 4
+QuEntryListHead equ 10h
+QuCurrentCount equ 18h
+QuMaximumCount equ 1Ch
+QuThreadListHead equ 20h
+QueueObjectLength equ 28h
 
-QuType equ 00000H
-QuSize equ 00002H
-QuSignalState equ 00004H
-QuEntryListHead equ 00010H
-QuCurrentCount equ 00018H
-QuMaximumCount equ 0001CH
-QuThreadListHead equ 00020H
-QueueObjectLength equ 00028H
-
-;
 ;  Thread Object Structure Offset Definitions
-;
+EeKernelEventPair equ 0
+EtCid equ 1E4h
 
-EeKernelEventPair equ 00000H
-EtCid equ 001E4H
+ThType equ 0
+ThNpxIrql equ 1
+ThSize equ 2
+ThDebugActive equ 3
+ThSignalState equ 4
+ThMutantListHead equ 10h
+ThInitialStack equ 18h
+ThStackLimit equ 1Ch
+ThKernelStack equ 20h
+ThThreadLock equ 24h
+ThApcState equ 28h
+ThApcQueueable equ 3Fh
+ThNextProcessor equ 40h
+ThDeferredProcessor equ 41h
+ThAdjustReason equ 42h
+ThAdjustIncrement equ 43h
+ThApcQueueLock equ 44h
+ThContextSwitches equ 48h
+ThState equ 4Ch
+ThNpxState equ 4Dh
+ThWaitIrql equ 4Eh
+ThWaitMode equ 4Fh
+ThWaitStatus equ 50h
+ThWaitBlockList equ 54h
+ThGateObject equ 54h
+ThAlertable equ 58h
+ThWaitNext equ 59h
+ThWaitReason equ 5Ah
+ThPriority equ 5Bh
+ThEnableStackSwap equ 5Ch
+ThSwapBusy equ 5Dh
+ThAlerted equ 5Eh
+ThWaitListEntry equ 60h
+ThSwapListEntry equ 60h
+ThQueue equ 68h
+ThWaitTime equ 6Ch
+ThCombinedApcDisable equ 70h
+ThKernelApcDisable equ 70h
+ThSpecialApcDisable equ 72h
+ThTeb equ 74h
+ThTimer equ 78h
+ThThreadFlags equ 0A0h
+ThWaitBlock equ 0A8h
+ThSystemAffinityActive equ 0BFh
+ThPreviousMode equ 0D7h
+ThResourceIndex equ 0EFh
+ThLargeStack equ 107h
+ThQueueListEntry equ 108h
+ThTrapFrame equ 110h
+ThCallbackStack equ 114h
+ThServiceTable equ 118h
+ThApcStateIndex equ 11Ch
+ThIdealProcessor equ 11Dh
+ThPreempted equ 11Eh
+ThProcessReadyQueue equ 11Fh
+ThKernelStackResident equ 120h
+ThBasePriority equ 121h
+ThPriorityDecrement equ 122h
+ThSaturation equ 123h
+ThUserAffinity equ 124h
+ThProcess equ 128h
+ThAffinity equ 12Ch
+ThApcStatePointer equ 130h
+ThSavedApcState equ 138h
+ThFreezeCount equ 14Fh
+ThSuspendCount equ 150h
+ThUserIdealProcessor equ 151h
+ThCalloutActive equ 152h
+ThIopl equ 153h
+ThWin32Thread equ 154h
+ThStackBase equ 158h
+ThSuspendApc equ 15Ch
+ThQuantum equ 15Dh
+ThQuantumReset equ 15Fh
+ThKernelTime equ 160h
+ThTlsArray equ 180h
+ThBBTData equ 184h
+ThPowerState equ 18Bh
+ThUserTime equ 18Ch
+ThSuspendSemaphore equ 190h
+ThSListFaultCount equ 1A4h
+ThThreadListEntry equ 1A8h
+ThSListFaultAddress equ 1B0h
 
-ThType equ 00000H
-ThNpxIrql equ 00001H
-ThSize equ 00002H
-ThDebugActive equ 00003H
-ThSignalState equ 00004H
-ThMutantListHead equ 00010H
-ThInitialStack equ 00018H
-ThStackLimit equ 0001CH
-ThKernelStack equ 00020H
-ThThreadLock equ 00024H
-ThApcState equ 00028H
-ThApcQueueable equ 0003FH
-ThNextProcessor equ 00040H
-ThDeferredProcessor equ 00041H
-ThAdjustReason equ 00042H
-ThAdjustIncrement equ 00043H
-ThApcQueueLock equ 00044H
-ThContextSwitches equ 00048H
-ThState equ 0004CH
-ThNpxState equ 0004DH
-ThWaitIrql equ 0004EH
-ThWaitMode equ 0004FH
-ThWaitStatus equ 00050H
-ThWaitBlockList equ 00054H
-ThGateObject equ 00054H
-ThAlertable equ 00058H
-ThWaitNext equ 00059H
-ThWaitReason equ 0005AH
-ThPriority equ 0005BH
-ThEnableStackSwap equ 0005CH
-ThSwapBusy equ 0005DH
-ThAlerted equ 0005EH
-ThWaitListEntry equ 00060H
-ThSwapListEntry equ 00060H
-ThQueue equ 00068H
-ThWaitTime equ 0006CH
-ThCombinedApcDisable equ 00070H
-ThKernelApcDisable equ 00070H
-ThSpecialApcDisable equ 00072H
-ThTeb equ 00074H
-ThTimer equ 00078H
-ThThreadFlags equ 000A0H
-ThWaitBlock equ 000A8H
-ThSystemAffinityActive equ 000BFH
-ThPreviousMode equ 000D7H
-ThResourceIndex equ 000EFH
-ThLargeStack equ 00107H
-ThQueueListEntry equ 00108H
-ThTrapFrame equ 00110H
-ThCallbackStack equ 00114H
-ThServiceTable equ 00118H
-ThApcStateIndex equ 0011CH
-ThIdealProcessor equ 0011DH
-ThPreempted equ 0011EH
-ThProcessReadyQueue equ 0011FH
-ThKernelStackResident equ 00120H
-ThBasePriority equ 00121H
-ThPriorityDecrement equ 00122H
-ThSaturation equ 00123H
-ThUserAffinity equ 00124H
-ThProcess equ 00128H
-ThAffinity equ 0012CH
-ThApcStatePointer equ 00130H
-ThSavedApcState equ 00138H
-ThFreezeCount equ 0014FH
-ThSuspendCount equ 00150H
-ThUserIdealProcessor equ 00151H
-ThCalloutActive equ 00152H
-ThIopl equ 00153H
-ThWin32Thread equ 00154H
-ThStackBase equ 00158H
-ThSuspendApc equ 0015CH
-ThQuantum equ 0015DH
-ThQuantumReset equ 0015FH
-ThKernelTime equ 00160H
-ThTlsArray equ 00180H
-ThBBTData equ 00184H
-ThPowerState equ 0018BH
-ThUserTime equ 0018CH
-ThSuspendSemaphore equ 00190H
-ThSListFaultCount equ 001A4H
-ThThreadListEntry equ 001A8H
-ThSListFaultAddress equ 001B0H
+KI_SLIST_FAULT_COUNT_MAXIMUM equ 400h
+KTHREAD_AUTO_ALIGNMENT_BIT equ 0
 
-KI_SLIST_FAULT_COUNT_MAXIMUM equ 00400H
-KTHREAD_AUTO_ALIGNMENT_BIT equ 00000H
+KernelThreadObjectLength equ 1B8h
+ExecutiveThreadObjectLength equ 250h
 
-KernelThreadObjectLength equ 001B8H
-ExecutiveThreadObjectLength equ 00250H
+NPX_STATE_NOT_LOADED equ 0Ah
+NPX_STATE_LOADED equ 0
 
-NPX_STATE_NOT_LOADED equ 0000AH
-NPX_STATE_LOADED equ 00000H
-
-;
 ;  Timer object Structure Offset Definitions
-;
+TiType equ 0
+TiSize equ 2
+TiInserted equ 3
+TiSignalState equ 4
+TiDueTime equ 10h
+TiTimerListEntry equ 18h
+TiDpc equ 20h
+TiPeriod equ 24h
+TimerObjectLength equ 28h
 
-TiType equ 00000H
-TiSize equ 00002H
-TiInserted equ 00003H
-TiSignalState equ 00004H
-TiDueTime equ 00010H
-TiTimerListEntry equ 00018H
-TiDpc equ 00020H
-TiPeriod equ 00024H
-TimerObjectLength equ 00028H
-
-
-;
 ;  Timer Table Entry Structure Offset Definitions
-;
+TtEntry equ 0
+TtTime equ 8
+TIMER_ENTRY_SIZE equ 10h
+TIMER_TABLE_SIZE equ 200h
 
-TtEntry equ 00000H
-TtTime equ 00008H
-TIMER_ENTRY_SIZE equ 00010H
-TIMER_TABLE_SIZE equ 00200H
-
-;
 ;  Wait Block Structure Offset Definitions
-;
+WbWaitListEntry equ 0
+WbThread equ 8
+WbObject equ 0Ch
+WbNextWaitBlock equ 10h
+WbWaitKey equ 14h
+WbWaitType equ 16h
 
-WbWaitListEntry equ 00000H
-WbThread equ 00008H
-WbObject equ 0000CH
-WbNextWaitBlock equ 00010H
-WbWaitKey equ 00014H
-WbWaitType equ 00016H
-
-;
 ;  Fiber Structure Offset Definitions
-;
+FbFiberData equ 0
+FbExceptionList equ 4
+FbStackBase equ 8
+FbStackLimit equ 0Ch
+FbDeallocationStack equ 10h
+FbFiberContext equ 14h
+FbWx86Tib equ 2E0h
+FbActivationContextStackPointer equ 2E4h
+FbFlsData equ 2E8h
+FbGuaranteedStackBytes equ 2ECh
 
-FbFiberData equ 00000H
-FbExceptionList equ 00004H
-FbStackBase equ 00008H
-FbStackLimit equ 0000CH
-FbDeallocationStack equ 00010H
-FbFiberContext equ 00014H
-FbWx86Tib equ 002E0H
-FbActivationContextStackPointer equ 002E4H
-FbFlsData equ 002E8H
-FbGuaranteedStackBytes equ 002ECH
-
-;
 ;  Process Environment Block Structure Offset Definitions
-;
+PeKernelCallbackTable equ 2Ch
+ProcessEnvironmentBlockLength equ 230h
 
-PeKernelCallbackTable equ 0002CH
-ProcessEnvironmentBlockLength equ 00230H
-
-;
 ;  System Service Descriptor Table Structure Definitions
-;
+NUMBER_SERVICE_TABLES equ 2
+SERVICE_NUMBER_MASK equ 0FFFh
+SERVICE_TABLE_SHIFT equ 8
+SERVICE_TABLE_MASK equ 10h
+SERVICE_TABLE_TEST equ 10h
 
-NUMBER_SERVICE_TABLES equ 00002H
-SERVICE_NUMBER_MASK equ 00FFFH
-SERVICE_TABLE_SHIFT equ 00008H
-SERVICE_TABLE_MASK equ 00010H
-SERVICE_TABLE_TEST equ 00010H
+SdBase equ 0
+SdCount equ 4
+SdLimit equ 8
+SdNumber equ 0Ch
+SdLength equ 10h
 
-SdBase equ 00000H
-SdCount equ 00004H
-SdLimit equ 00008H
-SdNumber equ 0000CH
-SdLength equ 00010H
-
-;
 ;  Thread Environment Block Structure Offset Definitions
-;
+TeExceptionList equ 0
+TeStackBase equ 4
+TeStackLimit equ 8
+TeFiberData equ 10h
+TeSelf equ 18h
+TeEnvironmentPointer equ 1Ch
+TeClientId equ 20h
+TeActiveRpcHandle equ 28h
+TeThreadLocalStoragePointer equ 2Ch
+TeCountOfOwnedCriticalSections equ 38h
+TePeb equ 30h
+TeCsrClientThread equ 3Ch
+TeWOW32Reserved equ 0C0h
+TeSoftFpcr equ 0C8h
+TeExceptionCode equ 1A4h
+TeActivationContextStackPointer equ 1A8h
+TeGdiClientPID equ 6C0h
+TeGdiClientTID equ 6C4h
+TeGdiThreadLocalInfo equ 6C8h
+TeglDispatchTable equ 7C4h
+TeglReserved1 equ 0B68h
+TeglReserved2 equ 0BDCh
+TeglSectionInfo equ 0BE0h
+TeglSection equ 0BE4h
+TeglTable equ 0BE8h
+TeglCurrentRC equ 0BECh
+TeglContext equ 0BF0h
+TeDeallocationStack equ 0E0Ch
+TeTlsSlots equ 0E10h
+TeTlsExpansionSlots equ 0F94h
+TeLastErrorValue equ 34h
+TeVdm equ 0F18h
+TeInstrumentation equ 0F2Ch
+TeGdiBatchCount equ 0F70h
+TeGuaranteedStackBytes equ 0F78h
+TeSafeThunkCall equ 0FB8h
+TeFlsData equ 0FB4h
+ThreadEnvironmentBlockLength equ 0FBCh
+CmThreadEnvironmentBlockOffset equ 1000h
+TLS_MINIMUM_AVAILABLE equ 40h
+TLS_EXPANSION_SLOTS equ 400h
 
-TeExceptionList equ 00000H
-TeStackBase equ 00004H
-TeStackLimit equ 00008H
-TeFiberData equ 00010H
-TeSelf equ 00018H
-TeEnvironmentPointer equ 0001CH
-TeClientId equ 00020H
-TeActiveRpcHandle equ 00028H
-TeThreadLocalStoragePointer equ 0002CH
-TeCountOfOwnedCriticalSections equ 00038H
-TePeb equ 00030H
-TeCsrClientThread equ 0003CH
-TeWOW32Reserved equ 000C0H
-TeSoftFpcr equ 000C8H
-TeExceptionCode equ 001A4H
-TeActivationContextStackPointer equ 001A8H
-TeGdiClientPID equ 006C0H
-TeGdiClientTID equ 006C4H
-TeGdiThreadLocalInfo equ 006C8H
-TeglDispatchTable equ 007C4H
-TeglReserved1 equ 00B68H
-TeglReserved2 equ 00BDCH
-TeglSectionInfo equ 00BE0H
-TeglSection equ 00BE4H
-TeglTable equ 00BE8H
-TeglCurrentRC equ 00BECH
-TeglContext equ 00BF0H
-TeDeallocationStack equ 00E0CH
-TeTlsSlots equ 00E10H
-TeTlsExpansionSlots equ 00F94H
-TeLastErrorValue equ 00034H
-TeVdm equ 00F18H
-TeInstrumentation equ 00F2CH
-TeGdiBatchCount equ 00F70H
-TeGuaranteedStackBytes equ 00F78H
-TeSafeThunkCall equ 00FB8H
-TeFlsData equ 00FB4H
-ThreadEnvironmentBlockLength equ 00FBCH
-CmThreadEnvironmentBlockOffset equ 01000H
-TLS_MINIMUM_AVAILABLE equ 00040H
-TLS_EXPANSION_SLOTS equ 00400H
-
-;
 ;  Lock Queue Structure Offset Definitions
-;
+LOCK_QUEUE_WAIT equ 1
+LOCK_QUEUE_OWNER equ 2
+LOCK_QUEUE_HEADER_SIZE equ 8
 
-LOCK_QUEUE_WAIT equ 00001H
-LOCK_QUEUE_OWNER equ 00002H
-LOCK_QUEUE_HEADER_SIZE equ 00008H
+LockQueueDispatcherLock equ 0
 
-LockQueueDispatcherLock equ 00000H
+LqNext equ 0
+LqLock equ 4
 
-LqNext equ 00000H
-LqLock equ 00004H
+LqhNext equ 0
+LqhLock equ 4
+LqhOldIrql equ 8
 
-LqhNext equ 00000H
-LqhLock equ 00004H
-LqhOldIrql equ 00008H
-
-;
 ;  Performance Definitions
-;
+PERF_CONTEXTSWAP_OFFSET equ 4
+PERF_CONTEXTSWAP_FLAG equ 4
+PERF_INTERRUPT_OFFSET equ 4
+PERF_INTERRUPT_FLAG equ 4000h
+PERF_PROFILE_OFFSET equ 4
+PERF_PROFILE_FLAG equ 2
 
-PERF_CONTEXTSWAP_OFFSET equ 00004H
-PERF_CONTEXTSWAP_FLAG equ 00004H
-PERF_INTERRUPT_OFFSET equ 00004H
-PERF_INTERRUPT_FLAG equ 04000H
-PERF_PROFILE_OFFSET equ 00004H
-PERF_PROFILE_FLAG equ 00002H
-
-;
 ;  Apc Record Structure Offset Definitions
-;
+ArNormalRoutine equ 0
+ArNormalContext equ 4
+ArSystemArgument1 equ 8
+ArSystemArgument2 equ 0Ch
+ApcRecordLength equ 10h
 
-ArNormalRoutine equ 00000H
-ArNormalContext equ 00004H
-ArSystemArgument1 equ 00008H
-ArSystemArgument2 equ 0000CH
-ApcRecordLength equ 00010H
-
-
-;
 ;  Processor Control Registers Structure Offset Definitions
-;
+KI_BEGIN_KERNEL_RESERVED equ 0FFDF0000h
 
-KI_BEGIN_KERNEL_RESERVED equ 0FFDF0000H
-ifdef NT_UP
-    P0PCRADDRESS equ 0FFDFF000H
-    PCR equ ds:[0FFDFF000H]
-else
+IFDEF NT_UP
+    P0PCRADDRESS equ 0FFDFF000h
+    PCR equ ds:[0FFDFF000h]
+ELSE
     PCR equ fs:
-endif
+ENDIF
 
-PcExceptionList equ 00000H
-PcInitialStack equ 00004H
-PcPerfGlobalGroupMask equ 00008H
-PcTssCopy equ 0000CH
-PcContextSwitches equ 00010H
-PcSetMemberCopy equ 00014H
-PcSelfPcr equ 0001CH
-PcPrcb equ 00020H
-PcTeb equ 00018H
-PcIrql equ 00024H
-PcIRR equ 00028H
-PcIrrActive equ 0002CH
-PcIDR equ 00030H
-PcIdt equ 00038H
-PcGdt equ 0003CH
-PcTss equ 00040H
-PcNumber equ 00051H
-PcVdmAlert equ 00054H
-PcSetMember equ 00048H
-PcStallScaleFactor equ 0004CH
-PcHal equ 00094H
-PcPrcbData equ 00120H
-ProcessorControlRegisterLength equ 00FE0H
-TebPeb equ 00030H
-PebBeingDebugged equ 00002H
-PebKernelCallbackTable equ 0002CH
+PcExceptionList equ 0
+PcInitialStack equ 4
+PcPerfGlobalGroupMask equ 8
+PcTssCopy equ 0Ch
+PcContextSwitches equ 10h
+PcSetMemberCopy equ 14h
+PcSelfPcr equ 1Ch
+PcPrcb equ 20h
+PcTeb equ 18h
+PcIrql equ 24h
+PcIRR equ 28h
+PcIrrActive equ 2Ch
+PcIDR equ 30h
+PcIdt equ 38h
+PcGdt equ 3Ch
+PcTss equ 40h
+PcNumber equ 51h
+PcVdmAlert equ 54h
+PcSetMember equ 48h
+PcStallScaleFactor equ 4Ch
+PcHal equ 94h
+PcPrcbData equ 120h
+ProcessorControlRegisterLength equ 0FE0h
+TebPeb equ 30h
+PebBeingDebugged equ 2
+PebKernelCallbackTable equ 2Ch
 
-;
 ;  Defines for user shared data
-;
+USER_SHARED_DATA equ 0FFDF0000h
+MM_SHARED_USER_DATA_VA equ 07FFE0000h
+USERDATA equ ds:[0FFDF0000h]
+PF_XMMI_INSTRUCTIONS_AVAILABLE equ 6
 
-USER_SHARED_DATA equ 0FFDF0000H
-MM_SHARED_USER_DATA_VA equ 07FFE0000H
-USERDATA equ ds:[0FFDF0000H]
-UsTickCountMultiplier equ 00004H
-UsInterruptTime equ 00008H
-UsSystemTime equ 00014H
-UsProcessorFeatures equ 00274H
-UsSystemCall equ 00300H
-UsSystemCallReturn equ 00304H
-
-PF_XMMI_INSTRUCTIONS_AVAILABLE equ 00006H
-
-;
 ;  Tss Structure Offset Definitions
-;
+TssEsp0 equ 4
+TssCR3 equ 1Ch
+TssEip equ 20h
+TssEFlags equ 24h
+TssEax equ 28h
+TssEbx equ 34h
+TssEcx equ 2Ch
+TssEdx equ 30h
+TssEsp equ 38h
+TssEbp equ 3Ch
+TssEsi equ 40h
+TssEdi equ 44h
+TssEs equ 48h
+TssCs equ 4Ch
+TssSs equ 50h
+TssDs equ 54h
+TssFs equ 58h
+TssGs equ 5Ch
+TssLDT equ 60h
+TssIoMapBase equ 66h
+TssIoMaps equ 68h
+TssLength equ 20ACh
 
-TssEsp0 equ 00004H
-TssCR3 equ 0001CH
-TssEip equ 00020H
-TssEFlags equ 00024H
-TssEax equ 00028H
-TssEbx equ 00034H
-TssEcx equ 0002CH
-TssEdx equ 00030H
-TssEsp equ 00038H
-TssEbp equ 0003CH
-TssEsi equ 00040H
-TssEdi equ 00044H
-TssEs equ 00048H
-TssCs equ 0004CH
-TssSs equ 00050H
-TssDs equ 00054H
-TssFs equ 00058H
-TssGs equ 0005CH
-TssLDT equ 00060H
-TssIoMapBase equ 00066H
-TssIoMaps equ 00068H
-TssLength equ 020ACH
-
-;
 ;  Gdt Descriptor Offset Definitions
-;
+KGDT_R3_DATA equ 20h
+KGDT_R3_CODE equ 18h
+KGDT_R0_CODE equ 8
+KGDT_R0_DATA equ 10h
+KGDT_R0_PCR equ 30h
+KGDT_STACK16 equ 0F8h
+KGDT_CODE16 equ 0F0h
+KGDT_TSS equ 28h
+KGDT_R3_TEB equ 38h
+KGDT_DF_TSS equ 50h
+KGDT_NMI_TSS equ 58h
+KGDT_LDT equ 48h
 
-KGDT_R3_DATA equ 00020H
-KGDT_R3_CODE equ 00018H
-KGDT_R0_CODE equ 00008H
-KGDT_R0_DATA equ 00010H
-KGDT_R0_PCR equ 00030H
-KGDT_STACK16 equ 000F8H
-KGDT_CODE16 equ 000F0H
-KGDT_TSS equ 00028H
-KGDT_R3_TEB equ 00038H
-KGDT_DF_TSS equ 00050H
-KGDT_NMI_TSS equ 00058H
-KGDT_LDT equ 00048H
-
-;
 ;  GdtEntry Offset Definitions
-;
+KgdtBaseLow equ 2
+KgdtBaseMid equ 4
+KgdtBaseHi equ 7
+KgdtLimitHi equ 6
+KgdtLimitLow equ 0
 
-KgdtBaseLow equ 00002H
-KgdtBaseMid equ 00004H
-KgdtBaseHi equ 00007H
-KgdtLimitHi equ 00006H
-KgdtLimitLow equ 00000H
-
-
-;
 ;  Processor Block Structure Offset Definitions
-;
+PbCurrentThread equ 4
+PbNextThread equ 8
+PbIdleThread equ 0Ch
+PbNumber equ 10h
+PbSetMember equ 14h
+PbCpuID equ 19h
+PbCpuType equ 18h
+PbCpuStep equ 1Ah
+PbProcessorState equ 1Ch
+PbHalReserved equ 37Ch
+PbLockQueue equ 418h
+PbNpxThread equ 520h
+PbInterruptCount equ 524h
+PbKernelTime equ 528h
+PbUserTime equ 52Ch
+PbDpcTime equ 530h
+PbDebugDpcTime equ 534h
+PbInterruptTime equ 538h
+PbAdjustDpcThreshold equ 53Ch
+PbPageColor equ 540h
+PbSkipTick equ 544h
+PbNodeShiftedColor equ 548h
+PbParentNode equ 54Ch
+PbMultiThreadProcessorSet equ 550h
+PbMultiThreadSetMaster equ 554h
+PbSecondaryColorMask equ 558h
+PbAlignmentFixupCount equ 578h
+PbDcacheFlushCount equ 580h
+PbExceptionDispatchCount equ 584h
+PbFirstLevelTbFills equ 588h
+PbFloatingEmulationCount equ 58Ch
+PbIcacheFlushCount equ 590h
+PbSecondLevelTbFills equ 594h
+PbSystemCalls equ 598h
+PbPPLookasideList equ 5E0h
+PbPPNPagedLookasideList equ 660h
+PbPPPagedLookasideList equ 760h
+PbPacketBarrier equ 860h
+PbReverseStall equ 864h
+PbIpiFrame equ 868h
+PbCurrentPacket equ 8A0h
+PbTargetSet equ 8ACh
+PbWorkerRoutine equ 8B0h
+PbIpiFrozen equ 8B4h
+PbRequestSummary equ 8E0h
+PbSignalDone equ 8E4h
+PbDpcListHead equ 920h
+PbDpcLock equ 928h
+PbDpcQueueDepth equ 92Ch
+PbDpcCount equ 930h
+PbDpcStack equ 948h
+PbMaximumDpcQueueDepth equ 94Ch
+PbDpcRequestRate equ 950h
+PbMinimumDpcRate equ 954h
+PbDpcInterruptRequested equ 958h
+PbDpcThreadRequested equ 959h
+PbDpcRoutineActive equ 95Ah
+PbDpcThreadActive equ 95Bh
+PbPrcbLock equ 95Ch
+PbDpcLastCount equ 960h
+PbTimerHand equ 964h
+PbTimerRequest equ 968h
+PbQuantumEnd equ 981h
+PbIdleSchedule equ 983h
+PbReadySummary equ 9E8h
+PbDispatcherReadyListHead equ 9F0h
+PbDeferredReadyListHead equ 0AF0h
+PbNpxSaveArea equ 0B90h
+PbChainedInterruptList equ 0B20h
+PbPowerState equ 0DA0h
+ProcessorBlockLength equ 0EC0h
 
-PbCurrentThread equ 00004H
-PbNextThread equ 00008H
-PbIdleThread equ 0000CH
-PbNumber equ 00010H
-PbSetMember equ 00014H
-PbCpuID equ 00019H
-PbCpuType equ 00018H
-PbCpuStep equ 0001AH
-PbProcessorState equ 0001CH
-PbHalReserved equ 0037CH
-PbLockQueue equ 00418H
-PbNpxThread equ 00520H
-PbInterruptCount equ 00524H
-PbKernelTime equ 00528H
-PbUserTime equ 0052CH
-PbDpcTime equ 00530H
-PbDebugDpcTime equ 00534H
-PbInterruptTime equ 00538H
-PbAdjustDpcThreshold equ 0053CH
-PbPageColor equ 00540H
-PbSkipTick equ 00544H
-PbNodeShiftedColor equ 00548H
-PbParentNode equ 0054CH
-PbMultiThreadProcessorSet equ 00550H
-PbMultiThreadSetMaster equ 00554H
-PbSecondaryColorMask equ 00558H
-PbAlignmentFixupCount equ 00578H
-PbDcacheFlushCount equ 00580H
-PbExceptionDispatchCount equ 00584H
-PbFirstLevelTbFills equ 00588H
-PbFloatingEmulationCount equ 0058CH
-PbIcacheFlushCount equ 00590H
-PbSecondLevelTbFills equ 00594H
-PbSystemCalls equ 00598H
-PbPPLookasideList equ 005E0H
-PbPPNPagedLookasideList equ 00660H
-PbPPPagedLookasideList equ 00760H
-PbPacketBarrier equ 00860H
-PbReverseStall equ 00864H
-PbIpiFrame equ 00868H
-PbCurrentPacket equ 008A0H
-PbTargetSet equ 008ACH
-PbWorkerRoutine equ 008B0H
-PbIpiFrozen equ 008B4H
-PbRequestSummary equ 008E0H
-PbSignalDone equ 008E4H
-PbDpcListHead equ 00920H
-PbDpcLock equ 00928H
-PbDpcQueueDepth equ 0092CH
-PbDpcCount equ 00930H
-PbDpcStack equ 00948H
-PbMaximumDpcQueueDepth equ 0094CH
-PbDpcRequestRate equ 00950H
-PbMinimumDpcRate equ 00954H
-PbDpcInterruptRequested equ 00958H
-PbDpcThreadRequested equ 00959H
-PbDpcRoutineActive equ 0095AH
-PbDpcThreadActive equ 0095BH
-PbPrcbLock equ 0095CH
-PbDpcLastCount equ 00960H
-PbTimerHand equ 00964H
-PbTimerRequest equ 00968H
-PbQuantumEnd equ 00981H
-PbIdleSchedule equ 00983H
-PbReadySummary equ 009E8H
-PbDispatcherReadyListHead equ 009F0H
-PbDeferredReadyListHead equ 00AF0H
-PbNpxSaveArea equ 00B90H
-PbChainedInterruptList equ 00B20H
-PbPowerState equ 00DA0H
-ProcessorBlockLength equ 00EC0H
-
-;
 ;  Processor Power State Offset Definitions
-;
+PpIdleFunction equ 0
 
-PpIdleFunction equ 00000H
-
-;
 ;  Immediate Interprocessor Command Definitions
-;
+IPI_APC equ 1
+IPI_DPC equ 2
+IPI_FREEZE equ 4
+IPI_PACKET_READY equ 8
+IPI_SYNCH_REQUEST equ 10h
 
-IPI_APC equ 00001H
-IPI_DPC equ 00002H
-IPI_FREEZE equ 00004H
-IPI_PACKET_READY equ 00008H
-IPI_SYNCH_REQUEST equ 00010H
+;  Thread Environment Block Structure Offset Definitions (Alternate Prefixes)
+TbExceptionList equ 0
+TbStackBase equ 4
+TbStackLimit equ 8
+TbEnvironmentPointer equ 1Ch
+TbVersion equ 10h
+TbFiberData equ 10h
+TbArbitraryUserPointer equ 14h
+TbClientId equ 20h
+TbThreadLocalStoragePointer equ 2Ch
+TbCountOfOwnedCriticalSections equ 38h
+TbSystemReserved1 equ 0CCh
+TbVdm equ 0F18h
+TbCsrClientThread equ 3Ch
+TbGdiThreadLocalInfo equ 6C8h
+TbglDispatchTable equ 7C4h
+TbglSectionInfo equ 0BE0h
+TbglSection equ 0BE4h
+TbglTable equ 0BE8h
+TbglCurrentRC equ 0BECh
+TbglContext equ 0BF0h
+TbWOW32Reserved equ 0C0h
+TbExceptionCode equ 1A4h
+TbDeallocationStack equ 0E0Ch
+TbGdiBatchCount equ 0F70h
 
-;
-;  Thread Environment Block Structure Offset Definitions
-;
-
-TbExceptionList equ 00000H
-TbStackBase equ 00004H
-TbStackLimit equ 00008H
-TbEnvironmentPointer equ 0001CH
-TbVersion equ 00010H
-TbFiberData equ 00010H
-TbArbitraryUserPointer equ 00014H
-TbClientId equ 00020H
-TbThreadLocalStoragePointer equ 0002CH
-TbCountOfOwnedCriticalSections equ 00038H
-TbSystemReserved1 equ 000CCH
-TbVdm equ 00F18H
-TbCsrClientThread equ 0003CH
-TbGdiThreadLocalInfo equ 006C8H
-TbglDispatchTable equ 007C4H
-TbglSectionInfo equ 00BE0H
-TbglSection equ 00BE4H
-TbglTable equ 00BE8H
-TbglCurrentRC equ 00BECH
-TbglContext equ 00BF0H
-TbWOW32Reserved equ 000C0H
-TbExceptionCode equ 001A4H
-TbDeallocationStack equ 00E0CH
-TbGdiBatchCount equ 00F70H
-
-;
 ;  Time Fields (TIME_FIELDS) Structure Offset Definitions
-;
+TfSecond equ 0Ah
+TfMinute equ 8
+TfHour equ 6
+TfWeekday equ 0Eh
+TfDay equ 4
+TfMonth equ 2
+TfYear equ 0
+TfMilliseconds equ 0Ch
 
-TfSecond equ 0000AH
-TfMinute equ 00008H
-TfHour equ 00006H
-TfWeekday equ 0000EH
-TfDay equ 00004H
-TfMonth equ 00002H
-TfYear equ 00000H
-TfMilliseconds equ 0000CH
-
-
-;
 ;  constants for system irql and IDT vector conversion
-;
+MAXIMUM_IDTVECTOR equ 0FFh
+MAXIMUM_PRIMARY_VECTOR equ 0FFh
+PRIMARY_VECTOR_BASE equ 30h
+RPL_MASK equ 3
+MODE_MASK equ 1
 
-MAXIMUM_IDTVECTOR equ 000FFH
-MAXIMUM_PRIMARY_VECTOR equ 000FFH
-PRIMARY_VECTOR_BASE equ 00030H
-RPL_MASK equ 00003H
-MODE_MASK equ 00001H
-
-;
 ;  Flags in the CR0 register
-;
+CR0_PG equ 80000000h
+CR0_ET equ 10h
+CR0_TS equ 8
+CR0_EM equ 4
+CR0_MP equ 2
+CR0_PE equ 1
+CR0_CD equ 40000000h
+CR0_NW equ 20000000h
+CR0_AM equ 40000h
+CR0_WP equ 10000h
+CR0_NE equ 20h
 
-CR0_PG equ 080000000H
-CR0_ET equ 00010H
-CR0_TS equ 00008H
-CR0_EM equ 00004H
-CR0_MP equ 00002H
-CR0_PE equ 00001H
-CR0_CD equ 040000000H
-CR0_NW equ 020000000H
-CR0_AM equ 040000H
-CR0_WP equ 010000H
-CR0_NE equ 00020H
-
-;
 ;  Flags in the CR4 register
-;
+CR4_VME equ 1
+CR4_PVI equ 2
+CR4_TSD equ 4
+CR4_DE equ 8
+CR4_PSE equ 10h
+CR4_PAE equ 20h
+CR4_MCE equ 40h
+CR4_PGE equ 80h
+CR4_FXSR equ 200h
+CR4_XMMEXCPT equ 400h
 
-CR4_VME equ 00001H
-CR4_PVI equ 00002H
-CR4_TSD equ 00004H
-CR4_DE equ 00008H
-CR4_PSE equ 00010H
-CR4_PAE equ 00020H
-CR4_MCE equ 00040H
-CR4_PGE equ 00080H
-CR4_FXSR equ 00200H
-CR4_XMMEXCPT equ 00400H
-
-;
 ;  Miscellaneous Definitions
-;
+MAXIMUM_PROCESSORS equ 20h
+INITIAL_STALL_COUNT equ 64h
+IRQL_NOT_GREATER_OR_EQUAL equ 9
+IRQL_NOT_LESS_OR_EQUAL equ 0Ah
+MUTEX_ALREADY_OWNED equ 0BFh
+THREAD_NOT_MUTEX_OWNER equ 11h
+SPIN_LOCK_ALREADY_OWNED equ 0Fh
+SPIN_LOCK_NOT_OWNED equ 10h
+BASE_PRIORITY_THRESHOLD equ 8
+EVENT_PAIR_INCREMENT equ 1
+LOW_REALTIME_PRIORITY equ 10h
+BlackHole equ 0FFFFA000h
+KERNEL_LARGE_STACK_COMMIT equ 3000h
+KERNEL_STACK_SIZE equ 3000h
+DOUBLE_FAULT_STACK_SIZE equ 3000h
+EFLAG_SELECT equ 0C000h
+BREAKPOINT_BREAK equ 0
+CLOCK_QUANTUM_DECREMENT equ 3
+READY_SKIP_QUANTUM equ 2
+THREAD_QUANTUM equ 6
+WAIT_QUANTUM_DECREMENT equ 1
+ROUND_TRIP_DECREMENT_COUNT equ 10h
+KI_EXCEPTION_ACCESS_VIOLATION equ 010000004h
 
-MAXIMUM_PROCESSORS equ 00020H
-INITIAL_STALL_COUNT equ 00064H
-IRQL_NOT_GREATER_OR_EQUAL equ 00009H
-IRQL_NOT_LESS_OR_EQUAL equ 0000AH
-MUTEX_ALREADY_OWNED equ 000BFH
-THREAD_NOT_MUTEX_OWNER equ 00011H
-SPIN_LOCK_ALREADY_OWNED equ 0000FH
-SPIN_LOCK_NOT_OWNED equ 00010H
-BASE_PRIORITY_THRESHOLD equ 00008H
-EVENT_PAIR_INCREMENT equ 00001H
-LOW_REALTIME_PRIORITY equ 00010H
-BlackHole equ 0FFFFA000H
-KERNEL_LARGE_STACK_COMMIT equ 03000H
-KERNEL_STACK_SIZE equ 03000H
-DOUBLE_FAULT_STACK_SIZE equ 03000H
-EFLAG_SELECT equ 0C000H
-BREAKPOINT_BREAK equ 00000H
-IPI_FREEZE equ 00004H
-CLOCK_QUANTUM_DECREMENT equ 00003H
-READY_SKIP_QUANTUM equ 00002H
-THREAD_QUANTUM equ 00006H
-WAIT_QUANTUM_DECREMENT equ 00001H
-ROUND_TRIP_DECREMENT_COUNT equ 00010H
-KI_EXCEPTION_ACCESS_VIOLATION equ 010000004H
-
-;
 ;  Trap Frame Offset Definitions and Length
-;
+TsExceptionList equ 4Ch
+TsPreviousPreviousMode equ 48h
+TsSegGs equ 30h
+TsSegFs equ 50h
+TsSegEs equ 34h
+TsSegDs equ 38h
+TsEdi equ 54h
+TsEsi equ 58h
+TsEbp equ 60h
+TsEbx equ 5Ch
+TsEdx equ 3Ch
+TsEcx equ 40h
+TsEax equ 44h
+TsErrCode equ 64h
+TsEip equ 68h
+TsSegCs equ 6Ch
+TsEflags equ 70h
+TsHardwareEsp equ 74h
+TsHardwareSegSs equ 78h
+TsTempSegCs equ 10h
+TsTempEsp equ 14h
+TsDbgEbp equ 0
+TsDbgEip equ 4
+TsDbgArgMark equ 8
+TsDbgArgPointer equ 0Ch
+TsDr0 equ 18h
+TsDr1 equ 1Ch
+TsDr2 equ 20h
+TsDr3 equ 24h
+TsDr6 equ 28h
+TsDr7 equ 2Ch
+TsV86Es equ 7Ch
+TsV86Ds equ 80h
+TsV86Fs equ 84h
+TsV86Gs equ 88h
+KTRAP_FRAME_LENGTH equ 8Ch
+KTRAP_FRAME_ALIGN equ 4
+FRAME_EDITED equ 0FFF8h
+EFLAGS_ALIGN_CHECK equ 40000h
+EFLAGS_V86_MASK equ 20000h
+EFLAGS_INTERRUPT_MASK equ 200h
+EFLAGS_TF equ 100h
+EFLAGS_VIF equ 80000h
+EFLAGS_VIP equ 100000h
+EFLAGS_USER_SANITIZE equ 03F4DD7h
 
-TsExceptionList equ 0004CH
-TsPreviousPreviousMode equ 00048H
-TsSegGs equ 00030H
-TsSegFs equ 00050H
-TsSegEs equ 00034H
-TsSegDs equ 00038H
-TsEdi equ 00054H
-TsEsi equ 00058H
-TsEbp equ 00060H
-TsEbx equ 0005CH
-TsEdx equ 0003CH
-TsEcx equ 00040H
-TsEax equ 00044H
-TsErrCode equ 00064H
-TsEip equ 00068H
-TsSegCs equ 0006CH
-TsEflags equ 00070H
-TsHardwareEsp equ 00074H
-TsHardwareSegSs equ 00078H
-TsTempSegCs equ 00010H
-TsTempEsp equ 00014H
-TsDbgEbp equ 00000H
-TsDbgEip equ 00004H
-TsDbgArgMark equ 00008H
-TsDbgArgPointer equ 0000CH
-TsDr0 equ 00018H
-TsDr1 equ 0001CH
-TsDr2 equ 00020H
-TsDr3 equ 00024H
-TsDr6 equ 00028H
-TsDr7 equ 0002CH
-TsV86Es equ 0007CH
-TsV86Ds equ 00080H
-TsV86Fs equ 00084H
-TsV86Gs equ 00088H
-KTRAP_FRAME_LENGTH equ 0008CH
-KTRAP_FRAME_ALIGN equ 00004H
-FRAME_EDITED equ 0FFF8H
-EFLAGS_ALIGN_CHECK equ 040000H
-EFLAGS_V86_MASK equ 020000H
-EFLAGS_INTERRUPT_MASK equ 00200H
-EFLAGS_TF equ 00100H
-EFLAGS_VIF equ 080000H
-EFLAGS_VIP equ 0100000H
-EFLAGS_USER_SANITIZE equ 03F4DD7H
-
-;
 ;  Context Frame Offset and Flag Definitions
-;
+CONTEXT_FULL equ 10007h
+CONTEXT_DEBUG_REGISTERS equ 10010h
+CONTEXT_CONTROL equ 10001h
+CONTEXT_FLOATING_POINT equ 10008h
+CONTEXT_INTEGER equ 10002h
+CONTEXT_SEGMENTS equ 10004h
 
-CONTEXT_FULL equ 010007H
-CONTEXT_DEBUG_REGISTERS equ 010010H
-CONTEXT_CONTROL equ 010001H
-CONTEXT_FLOATING_POINT equ 010008H
-CONTEXT_INTEGER equ 010002H
-CONTEXT_SEGMENTS equ 010004H
+CsContextFlags equ 0
+CsDr0 equ 4
+CsDr1 equ 8
+CsDr2 equ 0Ch
+CsDr3 equ 10h
+CsDr6 equ 14h
+CsDr7 equ 18h
+CsFloatSave equ 1Ch
+CsSegGs equ 8Ch
+CsSegFs equ 90h
+CsSegEs equ 94h
+CsSegDs equ 98h
+CsEdi equ 9Ch
+CsEsi equ 0A0h
+CsEbx equ 0A4h
+CsEdx equ 0A8h
+CsEcx equ 0ACh
+CsEax equ 0B0h
+CsEbp equ 0B4h
+CsEip equ 0B8h
+CsSegCs equ 0BCh
+CsEflags equ 0C0h
+CsEsp equ 0C4h
+CsSegSs equ 0C8h
+CsExtendedRegisters equ 0CCh
+ContextFrameLength equ 2D0h
+CONTEXT_ALIGNED_SIZE equ 2CCh
 
-CsContextFlags equ 00000H
-CsDr0 equ 00004H
-CsDr1 equ 00008H
-CsDr2 equ 0000CH
-CsDr3 equ 00010H
-CsDr6 equ 00014H
-CsDr7 equ 00018H
-CsFloatSave equ 0001CH
-CsSegGs equ 0008CH
-CsSegFs equ 00090H
-CsSegEs equ 00094H
-CsSegDs equ 00098H
-CsEdi equ 0009CH
-CsEsi equ 000A0H
-CsEbx equ 000A4H
-CsEdx equ 000A8H
-CsEcx equ 000ACH
-CsEax equ 000B0H
-CsEbp equ 000B4H
-CsEip equ 000B8H
-CsSegCs equ 000BCH
-CsEflags equ 000C0H
-CsEsp equ 000C4H
-CsSegSs equ 000C8H
-CsExtendedRegisters equ 000CCH
-ContextFrameLength equ 002D0H
-CONTEXT_ALIGNED_SIZE equ 002CCH
+DR6_LEGAL equ 0E00Fh
+DR7_LEGAL equ 0FFFF0155h
+DR7_ACTIVE equ 55h
+DR7_RESERVED_MASK equ 0DC00h
 
-DR6_LEGAL equ 0E00FH
-DR7_LEGAL equ 0FFFF0155H
-DR7_ACTIVE equ 00055H
-DR7_RESERVED_MASK equ 0DC00H
+ErrHandler equ 4
+ErrNext equ 0
+ErrLength equ 8
 
-ErrHandler equ 00004H
-ErrNext equ 00000H
-ErrLength equ 00008H
-
-;
 ;  Floating save area field offset definitions
-;
+FpControlWord equ 0
+FpStatusWord equ 4
+FpTagWord equ 8
+FpErrorOffset equ 0Ch
+FpErrorSelector equ 10h
+FpDataOffset equ 14h
+FpDataSelector equ 18h
+FpRegisterArea equ 1Ch
+FpCtxtCr0NpxState equ 6Ch
 
-FpControlWord equ 00000H
-FpStatusWord equ 00004H
-FpTagWord equ 00008H
-FpErrorOffset equ 0000CH
-FpErrorSelector equ 00010H
-FpDataOffset equ 00014H
-FpDataSelector equ 00018H
-FpRegisterArea equ 0001CH
-FpCtxtCr0NpxState equ 0006CH
-
-;
 ;  FX Floating save area field offset definitions
-;
+FxControlWord equ 0
+FxStatusWord equ 2
+FxTagWord equ 4
+FxErrorOpcode equ 6
+FxErrorOffset equ 8
+FxErrorSelector equ 0Ch
+FxDataOffset equ 10h
+FxDataSelector equ 14h
+FxMXCsr equ 18h
+FxFpRegisterArea equ 20h
+FpNpxSavedCpu equ 208h
+FpCr0NpxState equ 20Ch
 
-FxControlWord equ 00000H
-FxStatusWord equ 00002H
-FxTagWord equ 00004H
-FxErrorOpcode equ 00006H
-FxErrorOffset equ 00008H
-FxErrorSelector equ 0000CH
-FxDataOffset equ 00010H
-FxDataSelector equ 00014H
-FxMXCsr equ 00018H
-FxFpRegisterArea equ 00020H
-FpNpxSavedCpu equ 00208H
-FpCr0NpxState equ 0020CH
+NPX_FRAME_LENGTH equ 210h
 
-NPX_FRAME_LENGTH equ 00210H
-
-;
 ;  Processor State Frame Offset Definitions
+PsContextFrame equ 0
+PsSpecialRegisters equ 2CCh
+SrCr0 equ 0
+SrCr2 equ 4
+SrCr3 equ 8
+SrCr4 equ 0Ch
+SrKernelDr0 equ 10h
+SrKernelDr1 equ 14h
+SrKernelDr2 equ 18h
+SrKernelDr3 equ 1Ch
+SrKernelDr6 equ 20h
+SrKernelDr7 equ 24h
+SrGdtr equ 2Ah
+SrIdtr equ 32h
+SrTr equ 38h
+SrLdtr equ 3Ah
+ProcessorStateLength equ 320h
 
-;
-
-PsContextFrame equ 00000H
-PsSpecialRegisters equ 002CCH
-SrCr0 equ 00000H
-SrCr2 equ 00004H
-SrCr3 equ 00008H
-SrCr4 equ 0000CH
-SrKernelDr0 equ 00010H
-SrKernelDr1 equ 00014H
-SrKernelDr2 equ 00018H
-SrKernelDr3 equ 0001CH
-SrKernelDr6 equ 00020H
-SrKernelDr7 equ 00024H
-SrGdtr equ 0002AH
-SrIdtr equ 00032H
-SrTr equ 00038H
-SrLdtr equ 0003AH
-ProcessorStateLength equ 00320H
-
-;
 ;  EPROCESS
-;
+EpDebugPort equ 0CCh
+EpVdmObjects equ 144h
 
-EpDebugPort equ 000CCH
-EpVdmObjects equ 00144H
-
-;
 ;  Machine type definitions (Temporarily)
-;
+MACHINE_TYPE_ISA equ 0
+MACHINE_TYPE_EISA equ 1
+MACHINE_TYPE_MCA equ 2
 
-MACHINE_TYPE_ISA equ 00000H
-MACHINE_TYPE_EISA equ 00001H
-MACHINE_TYPE_MCA equ 00002H
-
-;
 ;  KeFeatureBits defines
-;
+KF_V86_VIS equ 1
+KF_RDTSC equ 2
+KF_CR4 equ 4
+KF_GLOBAL_PAGE equ 10h
+KF_LARGE_PAGE equ 20h
+KF_CMPXCHG8B equ 80h
+KF_FAST_SYSCALL equ 1000h
 
-KF_V86_VIS equ 00001H
-KF_RDTSC equ 00002H
-KF_CR4 equ 00004H
-KF_GLOBAL_PAGE equ 00010H
-KF_LARGE_PAGE equ 00020H
-KF_CMPXCHG8B equ 00080H
-KF_FAST_SYSCALL equ 01000H
-
-;
 ;  LoaderParameterBlock offsets relative to base
-;
+LpbLoadOrderListHead equ 0
+LpbMemoryDescriptorListHead equ 8
+LpbKernelStack equ 18h
+LpbPrcb equ 1Ch
+LpbProcess equ 20h
+LpbThread equ 24h
+LpbI386 equ 5Ch
+LpbRegistryLength equ 28h
+LpbRegistryBase equ 2Ch
+LpbConfigurationRoot equ 30h
+LpbArcBootDeviceName equ 34h
+LpbArcHalDeviceName equ 38h
+LpbExtension equ 58h
 
-LpbLoadOrderListHead equ 00000H
-LpbMemoryDescriptorListHead equ 00008H
-LpbKernelStack equ 00018H
-LpbPrcb equ 0001CH
-LpbProcess equ 00020H
-LpbThread equ 00024H
-LpbI386 equ 0005CH
-LpbRegistryLength equ 00028H
-LpbRegistryBase equ 0002CH
-LpbConfigurationRoot equ 00030H
-LpbArcBootDeviceName equ 00034H
-LpbArcHalDeviceName equ 00038H
-LpbExtension equ 00058H
-
-;
 ;  LoaderParameterExtension offsets relative to base
-;
+LpeHalpIRQLToTPR equ 40h
+LpeHalpVectorToIRQL equ 44h
+PAGE_SIZE equ 1000h
 
-LpeHalpIRQLToTPR equ 00040H
-LpeHalpVectorToIRQL equ 00044H
-PAGE_SIZE equ 01000H
-
-;
 ;  VDM equates.
-;
+VDM_INDEX_Invalid equ 0
+VDM_INDEX_0F equ 1
+VDM_INDEX_ESPrefix equ 2
+VDM_INDEX_CSPrefix equ 3
+VDM_INDEX_SSPrefix equ 4
+VDM_INDEX_DSPrefix equ 5
+VDM_INDEX_FSPrefix equ 6
+VDM_INDEX_GSPrefix equ 7
+VDM_INDEX_OPER32Prefix equ 8
+VDM_INDEX_ADDR32Prefix equ 9
+VDM_INDEX_INSB equ 0Ah
+VDM_INDEX_INSW equ 0Bh
+VDM_INDEX_OUTSB equ 0Ch
+VDM_INDEX_OUTSW equ 0Dh
+VDM_INDEX_PUSHF equ 0Eh
+VDM_INDEX_POPF equ 0Fh
+VDM_INDEX_INTnn equ 10h
+VDM_INDEX_INTO equ 11h
+VDM_INDEX_IRET equ 12h
+VDM_INDEX_NPX equ 13h
+VDM_INDEX_INBimm equ 14h
+VDM_INDEX_INWimm equ 15h
+VDM_INDEX_OUTBimm equ 16h
+VDM_INDEX_OUTWimm equ 17h
+VDM_INDEX_INB equ 18h
+VDM_INDEX_INW equ 19h
+VDM_INDEX_OUTB equ 1Ah
+VDM_INDEX_OUTW equ 1Bh
+VDM_INDEX_LOCKPrefix equ 1Ch
+VDM_INDEX_REPNEPrefix equ 1Dh
+VDM_INDEX_REPPrefix equ 1Eh
+VDM_INDEX_CLI equ 1Fh
+VDM_INDEX_STI equ 20h
+VDM_INDEX_HLT equ 21h
+MAX_VDM_INDEX equ 22h
 
-VDM_INDEX_Invalid equ 00000H
-VDM_INDEX_0F equ 00001H
-VDM_INDEX_ESPrefix equ 00002H
-VDM_INDEX_CSPrefix equ 00003H
-VDM_INDEX_SSPrefix equ 00004H
-VDM_INDEX_DSPrefix equ 00005H
-VDM_INDEX_FSPrefix equ 00006H
-VDM_INDEX_GSPrefix equ 00007H
-VDM_INDEX_OPER32Prefix equ 00008H
-VDM_INDEX_ADDR32Prefix equ 00009H
-VDM_INDEX_INSB equ 0000AH
-VDM_INDEX_INSW equ 0000BH
-VDM_INDEX_OUTSB equ 0000CH
-VDM_INDEX_OUTSW equ 0000DH
-VDM_INDEX_PUSHF equ 0000EH
-VDM_INDEX_POPF equ 0000FH
-VDM_INDEX_INTnn equ 00010H
-VDM_INDEX_INTO equ 00011H
-VDM_INDEX_IRET equ 00012H
-VDM_INDEX_NPX equ 00013H
-VDM_INDEX_INBimm equ 00014H
-VDM_INDEX_INWimm equ 00015H
-VDM_INDEX_OUTBimm equ 00016H
-VDM_INDEX_OUTWimm equ 00017H
-VDM_INDEX_INB equ 00018H
-VDM_INDEX_INW equ 00019H
-VDM_INDEX_OUTB equ 0001AH
-VDM_INDEX_OUTW equ 0001BH
-VDM_INDEX_LOCKPrefix equ 0001CH
-VDM_INDEX_REPNEPrefix equ 0001DH
-VDM_INDEX_REPPrefix equ 0001EH
-VDM_INDEX_CLI equ 0001FH
-VDM_INDEX_STI equ 00020H
-VDM_INDEX_HLT equ 00021H
-MAX_VDM_INDEX equ 00022H
-
-;
 ;  VDM feature bits.
-;
+V86_VIRTUAL_INT_EXTENSIONS equ 1
+PM_VIRTUAL_INT_EXTENSIONS equ 2
 
-V86_VIRTUAL_INT_EXTENSIONS equ 00001H
-PM_VIRTUAL_INT_EXTENSIONS equ 00002H
-
-;
 ;  Selector types.
-;
+SEL_TYPE_NP equ 40h
 
-SEL_TYPE_NP equ 00040H
-
-;
 ;  Usermode callout frame definitions
-;
+CuInStk equ 0
+CuTrFr equ 4
+CuCbStk equ 8
+CuEdi equ 0Ch
+CuEsi equ 10h
+CuEbx equ 14h
+CuEbp equ 18h
+CuRet equ 1Ch
+CuOutBf equ 20h
+CuOutLn equ 24h
 
-CuInStk equ 00000H
-CuTrFr equ 00004H
-CuCbStk equ 00008H
-CuEdi equ 0000CH
-CuEsi equ 00010H
-CuEbx equ 00014H
-CuEbp equ 00018H
-CuRet equ 0001CH
-CuOutBf equ 00020H
-CuOutLn equ 00024H
-
-;
 ;  VDM_PROCESS_OBJECTS
-;
+VpVdmTib equ 98h
 
-VpVdmTib equ 00098H
-
-;
 ;  Wow64 turbo dispatch system call types
-;
+ServiceNoTurbo equ 0
 
-ServiceNoTurbo equ 00000H
-
-;
 ;  No arguments system call
-;
+Service0Arg equ 1
+Service0ArgReloadState equ 2
 
-Service0Arg equ 00001H
-Service0ArgReloadState equ 00002H
-
-;
 ;  One argument system call types
-;
+Service1ArgSp equ 3
+Service1ArgNSp equ 4
 
-Service1ArgSp equ 00003H
-Service1ArgNSp equ 00004H
-
-;
 ;  Two arguments system call types
-;
+Service2ArgNSpNSp equ 5
+Service2ArgNSpNSpReloadState equ 6
+Service2ArgSpNSp equ 7
+Service2ArgSpSp equ 8
+Service2ArgNSpSp equ 9
 
-Service2ArgNSpNSp equ 00005H
-Service2ArgNSpNSpReloadState equ 00006H
-Service2ArgSpNSp equ 00007H
-Service2ArgSpSp equ 00008H
-Service2ArgNSpSp equ 00009H
-
-;
 ;  Three arguments system call types
-;
+Service3ArgNSpNSpNSp equ 0Ah
+Service3ArgSpSpSp equ 0Bh
+Service3ArgSpNSpNSp equ 0Ch
+Service3ArgSpNSpNSpReloadState equ 0Dh
+Service3ArgSpSpNSp equ 0Eh
+Service3ArgSpNSpSp equ 10h
 
-Service3ArgNSpNSpNSp equ 0000AH
-Service3ArgSpSpSp equ 0000BH
-Service3ArgSpNSpNSp equ 0000CH
-Service3ArgSpNSpNSpReloadState equ 0000DH
-Service3ArgSpSpNSp equ 0000EH
-Service3ArgSpSpSp equ 0000BH
-Service3ArgSpNSpSp equ 00010H
-
-;
 ;  Four arguments system call types
-;
+Service4ArgNSpNSpNSpNSp equ 11h
+Service4ArgSpSpNSpNSp equ 12h
+Service4ArgSpSpNSpNSpReloadState equ 13h
+Service4ArgSpNSpNSpNSp equ 14h
+Service4ArgSpNSpNSpNSpReloadState equ 15h
+Service4ArgNSpSpNSpNSp equ 16h
+Service4ArgSpSpSpNSp equ 17h
 
-Service4ArgNSpNSpNSpNSp equ 00011H
-Service4ArgSpSpNSpNSp equ 00012H
-Service4ArgSpSpNSpNSpReloadState equ 00013H
-Service4ArgSpNSpNSpNSp equ 00014H
-Service4ArgSpNSpNSpNSpReloadState equ 00015H
-Service4ArgNSpSpNSpNSp equ 00016H
-Service4ArgSpSpSpNSp equ 00017H
-
-;
 ;  Special system calls
-;
-
-ServiceCpupTdQuerySystemTime equ 00018H
-ServiceCpupTdGetCurrentProcessorNumber equ 00019H
-ServiceCpupTdReadWriteFile equ 0001AH
-ServiceCpupTdDeviceIoControlFile equ 0001BH
-ServiceCpupTdRemoveIoCompletion equ 0001CH
-ServiceCpupTdWaitForMultipleObjects equ 0001DH
-ServiceCpupTdWaitForMultipleObjects32 equ 0001EH
-Wow64ServiceTypesCount equ 0001FH
+ServiceCpupTdQuerySystemTime equ 18h
+ServiceCpupTdGetCurrentProcessorNumber equ 19h
+ServiceCpupTdReadWriteFile equ 1Ah
+ServiceCpupTdDeviceIoControlFile equ 1Bh
+ServiceCpupTdRemoveIoCompletion equ 1Ch
+ServiceCpupTdWaitForMultipleObjects equ 1Dh
+ServiceCpupTdWaitForMultipleObjects32 equ 1Eh
+Wow64ServiceTypesCount equ 1Fh

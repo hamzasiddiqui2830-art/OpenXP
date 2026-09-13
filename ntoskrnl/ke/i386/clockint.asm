@@ -26,10 +26,10 @@ include mac386.inc
         .list
 
         EXTRNP  Kei386EoiHelper
-        EXTRNP  HalRequestSoftwareInterrupt,1,IMPORT,FASTCALL
-        EXTRNP  HalEndSystemInterrupt,2,IMPORT
-        extrn   _HalEndSystemInterrupt@8:DWORD
-        extrn   _Kei386EoiHelper@0:DWORD
+        EXTRNP  HalRequestSoftwareInterrupt,1,,FASTCALL
+        EXTRNP  HalEndSystemInterrupt,2,,IMPORT
+        extrn   __imp_HalEndSystemInterrupt@8:DWORD
+        extrn   __imp_Kei386EoiHelper@0:DWORD
         extern  _ExpInterlockedPopEntrySListEnd@0:PROC
         extrn   _ExpInterlockedPopEntrySListResume@0:PROC
         extrn   _KeTimeIncrement:DWORD

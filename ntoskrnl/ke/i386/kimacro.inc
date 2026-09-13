@@ -1277,16 +1277,16 @@ endif
 ; N.B. End system interrupt MUST be called with a trap frame at 8[esp].
 ;
 
-ifdef _HalEndSystemInterrupt@8
+ifdef HalEndSystemInterrupt@8
         cli
 
-        call    _HalEndSystemInterrupt@8
-        jmp     dword ptr [_Kei386EoiHelper@0]
+        call    HalEndSystemInterrupt@8
+        jmp     dword ptr [__imp_Kei386EoiHelper@0]
 
 else
         cli
-        call    dword ptr [_HalEndSystemInterrupt@8]
-        jmp     dword ptr [_Kei386EoiHelper@0]
+        call    dword ptr [__imp_HalEndSystemInterrupt@8]
+        jmp     dword ptr [__imp_Kei386EoiHelper@0]
 endif
 endm
 

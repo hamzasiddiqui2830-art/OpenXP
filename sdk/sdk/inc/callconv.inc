@@ -292,13 +292,13 @@ fstCall macro   Func,ArgList
         Bytes = Bytes*4
 
         if Bytes eq 0
-            stdCallCall   _&Func,%cFCall_&Func
+            stdCallCall   Func,%cFCall_&Func
         elseifdef cFCall_&Func
             ; must have 2 register params
-            stdCallCall   _&Func,%(Bytes-cFCall_&Func)
+            stdCallCall   Func,%(Bytes-cFCall_&Func)
         else
             ; no register params, all on stack
-            stdCallCall   _&Func,%Bytes
+            stdCallCall   Func,%Bytes
         endif
 endm
 

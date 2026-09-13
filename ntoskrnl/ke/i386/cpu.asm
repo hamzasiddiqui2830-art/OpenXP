@@ -1,8 +1,8 @@
-        title  "Processor type and stepping detection"
+        title   "Processor type and stepping detection"
 ;++
 ;
-; Copyright (c) OpenXP. 
-;
+; Copyright (c) OpenXP.
+; Refactored for MASM 14.x (Visual Studio 2022/2026) - x86 (32-bit) Target
 ;
 ; Module Name:
 ;
@@ -27,6 +27,13 @@ include mac386.inc
         .list
 
 ;
+; IRET frame offsets (for temporary exception handlers)
+;
+IretEip     equ 0
+IretCs      equ 4
+IretEFlags  equ 8
+
+;
 ; constant for i386 32-bit multiplication test
 ;
 
@@ -48,9 +55,9 @@ PSEUDO_DENORMAL_HIGH  equ     0000h
 ;
 ; Constants for GenuineIntel cpuid.0 vendor string
 ;
-CPUID_0_INTEL_EBX	  equ	  0756e6547h
-CPUID_0_INTEL_EDX	  equ	  049656e69h
-CPUID_0_INTEL_ECX	  equ	  06c65746eh
+CPUID_0_INTEL_EBX     equ     0756e6547h
+CPUID_0_INTEL_EDX     equ     049656e69h
+CPUID_0_INTEL_ECX     equ     06c65746eh
 
 
 .586p
@@ -58,7 +65,6 @@ CPUID_0_INTEL_ECX	  equ	  06c65746eh
 INIT    SEGMENT DWORD PUBLIC 'CODE'
         ASSUME  DS:FLAT, ES:FLAT, SS:NOTHING, FS:NOTHING, GS:NOTHING
 
-
 ;++
 ;
 ; USHORT
@@ -90,7 +96,7 @@ INIT    SEGMENT DWORD PUBLIC 'CODE'
 ;--
 cPublicProc _KiSetProcessorType,0
 
-        mov     byte ptr PCR[PcPrcbData.PbCpuID], 0
+        mov     byte ptr PCR[PcPrcbData+PbCpuID], 0
 
         push    edi
         push    esi
@@ -125,12 +131,12 @@ cpuid_unsupported:
         je      short cpu_is_386        ; No, then this is a 386
 
 cpu_is_486:
-        mov     byte ptr PCR[PcPrcbData.PbCpuType], 4h    ; Save CPU Type
+        mov     byte ptr PCR[PcPrcbData+PbCpuType], 4h    ; Save CPU Type
         call    Get486Stepping
         jmp     cpu_save_stepping
 
 cpu_is_386:
-        mov     byte ptr PCR[PcPrcbData.PbCpuType], 3h    ; Save CPU Type
+        mov     byte ptr PCR[PcPrcbData+PbCpuType], 3h    ; Save CPU Type
         call    Get386Stepping
         jmp     cpu_save_stepping
 
@@ -285,11 +291,11 @@ cpu_not_extended:
         and     ebx, 0F00h              ; (bh) = CpuType
 
 cpu_save_signature:
-        mov     byte ptr PCR[PcPrcbData.PbCpuID], 1       ; Has ID support
-        mov     byte ptr PCR[PcPrcbData.PbCpuType], bh    ; Save CPU Type
+        mov     byte ptr PCR[PcPrcbData+PbCpuID], 1       ; Has ID support
+        mov     byte ptr PCR[PcPrcbData+PbCpuType], bh    ; Save CPU Type
 
 cpu_save_stepping:
-        mov     word ptr PCR[PcPrcbData.PbCpuStep], ax    ; Save CPU Stepping
+        mov     word ptr PCR[PcPrcbData+PbCpuStep], ax    ; Save CPU Stepping
         popfd                                   ; Restore flags
         pop     eax
         mov     cr0, eax
@@ -305,7 +311,7 @@ cpuid_trap:
         jmp     cpuid_unsupported       ; Go get processor information
 
 stdENDP _KiSetProcessorType
-
+
 ;++
 ;
 ; BOOLEAN
@@ -330,12 +336,11 @@ stdENDP _KiSetProcessorType
 
 CpuIdTrap6Handler   proc
 
-        mov     [esp].IretEip,offset cpuid_trap
+        mov     [esp+IretEip],offset cpuid_trap
         iretd
 
 CpuIdTrap6Handler  endp
 
-
 ;++
 ;
 ; USHORT
@@ -382,7 +387,7 @@ G3s10:
         ret
 
 Get386Stepping  endp
-
+
 ;++
 ;
 ; USHORT
@@ -438,7 +443,7 @@ G4s20:  mov     ax, 300h                ; Set to D stepping
         ret
 
 Get486Stepping          endp
-
+
 ;++
 ;
 ; BOOLEAN
@@ -481,7 +486,7 @@ Check486AStepping       proc    near
 cas10:  clc
         ret
 Check486AStepping       endp
-
+
 ;++
 ;
 ; BOOLEAN
@@ -566,11 +571,11 @@ Check486BStepping       endp
 
 Temporary486Int6        proc
 
-        mov     [esp].IretEIp,offset c4bs60 ; set EIP to stc instruction
+        mov     [esp+IretEip],offset c4bs60 ; set EIP to stc instruction
         iretd
 
 Temporary486Int6        endp
-
+
 ;++
 ;
 ; BOOLEAN
@@ -663,7 +668,7 @@ c4ds10: mov     esp, ebp
         ret
 
 Check486CStepping       endp
-
+
 ;++
 ;
 ; BOOLEAN
@@ -768,11 +773,11 @@ Check386B0      endp
 
 TemporaryInt6    proc
 
-        mov     [esp].IretEip,offset b1c60 ; set IP to clc instruction
+        mov     [esp+IretEip],offset b1c60 ; set IP to clc instruction
         iretd
 
 TemporaryInt6   endp
-
+
 ;++
 ;
 ; BOOLEAN
@@ -868,12 +873,12 @@ Check386D1      endp
 
 TemporaryInt1   proc
 
-        and     [esp].IretEFlags,not EFLAGS_TF ; clear caller's Trace Flag
-        mov     [esp].IretEip,offset d1c60     ; set IP to next instruction
+        and     [esp+IretEFlags],not EFLAGS_TF ; clear caller's Trace Flag
+        mov     [esp+IretEip],offset d1c60     ; set IP to next instruction
         iretd
 
 TemporaryInt1   endp
-
+
 ;++
 ;
 ; BOOLEAN
@@ -1003,7 +1008,7 @@ cPublicProc _KiIsNpxPresent,0
         or      eax, CR0_ET
         mov     edx, 1
 
-        cmp     PCR[PcPrcbData.PbCpuType], 3h
+        cmp     PCR[PcPrcbData+PbCpuType], 3h
         jbe     Inp10
 
         or      eax, CR0_NE
@@ -1111,10 +1116,12 @@ stdENDP _RDTSC
 ; Return Value:
 ;
 ;--
-cPublicFastCall RDMSR, 1
+; Explicit fastcall declaration (replaces cPublicFastCall/fstRET/fstENDP)
+PUBLIC @RDMSR@4
+@RDMSR@4 proc
     rdmsr
-    fstRET  RDMSR
-fstENDP RDMSR
+    ret
+@RDMSR@4 endp
 
 
 ;++
@@ -1163,4 +1170,3 @@ stdENDP _KeYieldProcessor
 
 _TEXT   ENDS
         END
-

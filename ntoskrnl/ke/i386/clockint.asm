@@ -41,6 +41,22 @@ if DBG
         extrn   _MsgDpcTimeout:BYTE
 endif
 
+; Additional external declarations for global variables
+extrn   _KiTickOffset:DWORD
+extrn   _KeTickCount:DWORD
+extrn   _KeTimeAdjustment:DWORD
+extrn   _KiTimerTableListHead:DWORD
+extrn   _KdDebuggerEnabled:DWORD
+extrn   _KeMaximumIncrement:DWORD
+extrn   _KiAdjustDpcThreshold:DWORD
+extrn   _KiIdealDpcRate:DWORD
+extrn   _KiMaximumDpcQueueDepth:DWORD
+extrn   _PPerfGlobalGroupMask:DWORD
+extrn   _KiProfileLock:DWORD
+extrn   _KiProfileListHead:DWORD
+extrn   _ExpInterlockedPopEntrySListResume:DWORD
+extrn   _ExpInterlockedPopEntrySListEnd:DWORD
+
 _DATA   SEGMENT  DWORD PUBLIC 'DATA'
 public  ProfileCount
 ProfileCount    DD      0

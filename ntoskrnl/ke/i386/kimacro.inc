@@ -1281,12 +1281,12 @@ ifdef HalEndSystemInterrupt@8
         cli
 
         call    HalEndSystemInterrupt@8
-        jmp     dword ptr [__imp__Kei386EoiHelper@0]
+        jmp     dword ptr [__imp_Kei386EoiHelper@0]
 
 else
         cli
-        call    dword ptr [__imp__HalEndSystemInterrupt@8]
-        jmp     dword ptr [__imp__Kei386EoiHelper@0]
+        call    dword ptr [__imp_HalEndSystemInterrupt@8]
+        jmp     dword ptr [__imp_Kei386EoiHelper@0]
 endif
 endm
 

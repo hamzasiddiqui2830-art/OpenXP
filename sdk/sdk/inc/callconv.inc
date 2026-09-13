@@ -160,8 +160,8 @@ EXTRNP2 macro   Func,N
 endm
 
 EXTRNTHUNK macro   Func,N
-        IFNDEF  __imp__&Func&@&N
-            extrn       __imp__&Func&@&N:DWORD
+        IFNDEF  __imp_&Func&@&N
+            extrn       __imp_&Func&@&N:DWORD
         ENDIF
 endm
 
@@ -268,8 +268,8 @@ endMod  macro   Func
 endm
 
 stdCallCall macro  Func,N
-    IFDEF   __imp__&Func&@&N
-        call    dword ptr [__imp__&Func&@&N]
+    IFDEF   __imp_&Func&@&N
+        call    dword ptr [__imp_&Func&@&N]
     ELSE
         call    _&Func&@&N
     ENDIF
@@ -297,8 +297,12 @@ fstCall macro   Func,ArgList
             ; must have 2 register params
             stdCallCall   Func,%(Bytes-cFCall_&Func)
         else
-            ; no register params, all on stack
-            stdCallCall   Func,%Bytes
+            ; no register params, all on stack - use 0 for fastcall with no stack args
+            if Bytes eq 0
+                stdCallCall   Func,0
+            else
+                stdCallCall   Func,%Bytes
+            endif
         endif
 endm
 

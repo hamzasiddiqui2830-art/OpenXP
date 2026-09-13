@@ -45,18 +45,17 @@ ACQUIRE_SPINLOCK macro LockAddress, SpinLabel, NoChecking
     ENDIF
 
     IFNDEF NT_UP
-        ; Attempt to assert the lock
-        lock bts dword ptr [LockAddress], 0     ; test and set the spinlock
-        jc SpinLabel                            ; spinlock owned, go SpinLabel
+        lock bts dword ptr [LockAddress], 0
+        jc SpinLabel
 
         IFDEF DBG
             IFB <NoChecking>
-                push edi                        ; save edi
+                push edi
                 mov edi, fs:PcPrcb
-                mov edi, [edi].PbCurrentThread
-                or edi, 1                       ; spinlock owned
-                mov [LockAddress], edi          ; remember current thread
-                pop edi                         ; restore edi
+                mov edi, [edi+PbCurrentThread]      ; FIXED: was [edi].PbCurrentThread
+                or edi, 1
+                mov [LockAddress], edi
+                pop edi
             ENDIF
         ENDIF
     ENDIF
@@ -133,7 +132,7 @@ endm
 ;--
 RELEASE_SPINLOCK macro LockAddress, NoChecking
     LOCAL a
-    
+
     IFB <LockAddress>
         .err <LockAddress argument is required>
     ENDIF
@@ -143,13 +142,13 @@ RELEASE_SPINLOCK macro LockAddress, NoChecking
             IFB <NoChecking>
                 EXTRNP _KeBugCheckEx, 5
 
-                push edi                        ; save edi
+                push edi
                 mov edi, fs:PcPrcb
-                mov edi, [edi].PbCurrentThread
-                or edi, 1                       ; assume current thread owns the lock
-                cmp edi, [LockAddress]          ; Does current thread own the lock?
-                pop edi                         ; restore edi
-                jz short a                      ; if z, yes, goto a and release lock
+                mov edi, [edi+PbCurrentThread]      ; FIXED: was [edi].PbCurrentThread
+                or edi, 1
+                cmp edi, [LockAddress]
+                pop edi
+                jz short a
                 stdCall _KeBugCheckEx, <SPIN_LOCK_NOT_OWNED, LockAddress, 0, 0, 0>
 a:
             ENDIF

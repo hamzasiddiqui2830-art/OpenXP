@@ -210,12 +210,11 @@ endm
 
 ProcNameF macro  Name,Func,N,M
 
-        cByte&Func  equ     M
-        cFCall&Func equ     N
-        Name        equ     <Func&@&N>
+        cByte&Func&  equ     M
+        cFCall&Func& equ     N
+        Name        equ     <&Func&@&N&>
 
 endm
-
 stdPROCF  macro   Func,N,ArgList
 
         if N gt 2
@@ -268,10 +267,10 @@ endMod  macro   Func
 endm
 
 stdCallCall macro  Func,N
-    IFDEF   __imp_&Func&@&N
-        call    dword ptr [__imp_&Func&@&N]
+    IFDEF   __imp_&Func&@&N&
+        call    dword ptr [__imp_&Func&@&N&]
     ELSE
-        call    Func&@&N
+        call    &Func&@&N&
     ENDIF
 endm
 
@@ -292,10 +291,10 @@ fstCall macro   Func,ArgList
         Bytes = Bytes*4
 
         if Bytes eq 0
-            stdCallCall   &@&Func,%cFCall&@&Func
+            stdCallCall   @&Func&,cFCall&Func&
         else
             ; must have 2 register params
-            stdCallCall   &@&Func,%(Bytes+8)
+            stdCallCall   @&Func&,%(Bytes+8)
         endif
 endm
 

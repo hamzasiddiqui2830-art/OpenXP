@@ -1,0 +1,154 @@
+[
+  {
+    "file": "/workspace/ntoskrnl/ke/i386/clockint.asm",
+    "double_decorated": [],
+    "extrnp_declarations": [],
+    "fstcall_calls": [
+      {
+        "line": 239,
+        "symbol": "HalRequestSoftwareInterrupt",
+        "is_decorated": false
+      },
+      {
+        "line": 438,
+        "symbol": "HalRequestSoftwareInterrupt",
+        "is_decorated": false
+      },
+      {
+        "line": 484,
+        "symbol": "HalRequestSoftwareInterrupt",
+        "is_decorated": false
+      },
+      {
+        "line": 607,
+        "symbol": "PerfProfileInterrupt",
+        "is_decorated": false
+      },
+      {
+        "line": 622,
+        "symbol": "KiCheckForSListAddress",
+        "is_decorated": false
+      }
+    ],
+    "stdcall_calls": [
+      {
+        "line": 272,
+        "symbol": "KdPollBreakIn",
+        "is_decorated": false
+      },
+      {
+        "line": 275,
+        "symbol": "DbgBreakPointWithStatus",
+        "is_decorated": false
+      },
+      {
+        "line": 369,
+        "symbol": "_DbgBreakPoint",
+        "is_decorated": false
+      }
+    ],
+    "potential_issues": []
+  },
+  {
+    "file": "/workspace/ntoskrnl/ke/i386/cpu.asm",
+    "double_decorated": [],
+    "extrnp_declarations": [],
+    "fstcall_calls": [],
+    "stdcall_calls": [],
+    "potential_issues": []
+  },
+  {
+    "file": "/workspace/ntoskrnl/ke/i386/ctxswap.asm",
+    "double_decorated": [],
+    "extrnp_declarations": [],
+    "fstcall_calls": [
+      {
+        "line": 218,
+        "symbol": "KiRetireDpcList",
+        "is_decorated": false
+      },
+      {
+        "line": 278,
+        "symbol": "KefAcquireSpinLockAtDpcLevel",
+        "is_decorated": false
+      },
+      {
+        "line": 294,
+        "symbol": "KiQueueReadyThread",
+        "is_decorated": false
+      },
+      {
+        "line": 677,
+        "symbol": "HalRequestSoftwareInterrupt",
+        "is_decorated": false
+      },
+      {
+        "line": 797,
+        "symbol": "WmiTraceContextSwap",
+        "is_decorated": false
+      },
+      {
+        "line": 1428,
+        "symbol": "HalClearSoftwareInterrupt",
+        "is_decorated": false
+      },
+      {
+        "line": 1431,
+        "symbol": "KiRetireDpcList",
+        "is_decorated": false
+      },
+      {
+        "line": 1480,
+        "symbol": "KefAcquireSpinLockAtDpcLevel",
+        "is_decorated": false
+      },
+      {
+        "line": 1554,
+        "symbol": "KiIdleSchedule",
+        "is_decorated": false
+      }
+    ],
+    "stdcall_calls": [
+      {
+        "line": 315,
+        "symbol": "_KiQuantumEnd",
+        "is_decorated": false
+      },
+      {
+        "line": 805,
+        "symbol": "_KeBugCheckEx",
+        "is_decorated": false
+      }
+    ],
+    "potential_issues": []
+  },
+  {
+    "file": "/workspace/ntoskrnl/ke/i386/callout.asm",
+    "double_decorated": [],
+    "extrnp_declarations": [],
+    "fstcall_calls": [],
+    "stdcall_calls": [
+      {
+        "line": 108,
+        "symbol": "KeBugCheck2",
+        "is_decorated": false
+      },
+      {
+        "line": 120,
+        "symbol": "KeBugCheck2",
+        "is_decorated": false
+      }
+    ],
+    "potential_issues": []
+  },
+  {
+    "file": "/workspace/sdk/sdk/inc/callconv.inc",
+    "macro_definitions": {},
+    "potential_issues": []
+  },
+  {
+    "file": "/workspace/ntoskrnl/ke/i386/kimacro.inc",
+    "macro_definitions": {},
+    "potential_issues": []
+  }
+]

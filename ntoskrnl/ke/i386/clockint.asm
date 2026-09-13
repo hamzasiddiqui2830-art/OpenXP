@@ -28,30 +28,11 @@ include mac386.inc
         EXTRNP  Kei386EoiHelper
         EXTRNP  HalRequestSoftwareInterrupt,1,,FASTCALL
         EXTRNP  HalEndSystemInterrupt,2,,IMPORT
-        extrn   __imp_HalEndSystemInterrupt@8:DWORD
-        extrn   __imp_Kei386EoiHelper@0:DWORD
-        extern  _ExpInterlockedPopEntrySListEnd@0:PROC
-        extrn   _ExpInterlockedPopEntrySListResume@0:PROC
-        extrn   _KeTimeIncrement:DWORD
-        extrn   _KeMaximumIncrement:DWORD
-        extrn   _KeTickCount:DWORD
-        extrn   _KeTimeAdjustment:DWORD
-        extrn   _KiAdjustDpcThreshold:DWORD
         EXTRNP  KiCheckForSListAddress,1,,FASTCALL
-        extrn   _KiIdealDpcRate:DWORD
-        extrn   _KiMaximumDpcQueueDepth:DWORD
-        extrn   _KiTickOffset:DWORD
-        extrn   _KiTimerTableListHead:DWORD
-        extrn   _KiProfileListHead:DWORD
-        extrn   _KiProfileLock:DWORD
-        extrn   _KiProfileInterval:DWORD
-        extrn   _KdDebuggerEnabled:BYTE
         EXTRNP  DbgBreakPoint
         EXTRNP  DbgBreakPointWithStatus,1
         EXTRNP  KdPollBreakIn
         EXTRNP  KiDeliverApc,3
-        extrn   _KeI386MachineType:DWORD
-        extrn   _PPerfGlobalGroupMask:DWORD
         EXTRNP  PerfProfileInterrupt,2,,FASTCALL
 
 if DBG

@@ -25,8 +25,7 @@ include mac386.inc
         .list
 
         EXTRNP  Kei386EoiHelper
-        EXTRNP  HalRequestSoftwareInterrupt, 1, IMPORT, FASTCALL
-        EXTRNP  _HalEndSystemInterrupt, 2, IMPORT
+        EXTRN   _HalEndSystemInterrupt@8:NEAR
         EXTRN   _ExpInterlockedPopEntrySListEnd@0:PROC
         EXTRN   _ExpInterlockedPopEntrySListResume@0:PROC
         EXTRN   _KeTimeIncrement:DWORD
@@ -34,7 +33,6 @@ include mac386.inc
         EXTRN   _KeTickCount:DWORD
         EXTRN   _KeTimeAdjustment:DWORD
         EXTRN   _KiAdjustDpcThreshold:DWORD
-        EXTRNP  KiCheckForSListAddress, 1, , FASTCALL
         EXTRN   _KiIdealDpcRate:DWORD
         EXTRN   _KiMaximumDpcQueueDepth:DWORD
         EXTRN   _KiTickOffset:DWORD
@@ -49,7 +47,11 @@ include mac386.inc
         EXTRNP  _KiDeliverApc, 3
         EXTRN   _KeI386MachineType:DWORD
         EXTRN   _PPerfGlobalGroupMask:DWORD
-        EXTRNP  PerfProfileInterrupt, 2, , FASTCALL
+
+; Fastcall imports - explicit declarations with @ decoration
+        EXTRN   @HalRequestSoftwareInterrupt@4:NEAR
+        EXTRN   @PerfProfileInterrupt@8:NEAR
+        EXTRN   @KiCheckForSListAddress@4:NEAR
 
 IF DBG
         EXTRN   _DbgPrint:NEAR
@@ -145,7 +147,7 @@ kust15:
         MOV     [ECX+PbTimerRequest], ESP
         MOV     [ECX+PbTimerHand], EBX
         MOV     ECX, DISPATCH_LEVEL
-        fstCall HalRequestSoftwareInterrupt
+        call    @HalRequestSoftwareInterrupt@4    ; fstCall replacement
 
 kustxx: CMP     _KdDebuggerEnabled, 0
         JNZ     SHORT kust45
@@ -184,7 +186,7 @@ stdENDP _KeUpdateSystemTime
         SUBTTL  "Update Thread and Process Runtime"
 
 cPublicProc _KeUpdateRunTime, 1
-cPublicFpo 1, 1
+; cPublicFpo 1, 1  ; REMOVED: obsolete in MASM 14.x
 
         MOV     EAX, PCR[PcSelfPcr]
 IF DBG
@@ -261,7 +263,7 @@ Kutp50: MOV     ECX, [EAX+PcPrcbData+PbDpcCount]
         CMP     BYTE PTR [EAX+PcPrcbData+PbDpcInterruptRequested], 0
         JNE     SHORT Kutp53
         MOV     ECX, DISPATCH_LEVEL
-        fstCall HalRequestSoftwareInterrupt
+        call    @HalRequestSoftwareInterrupt@4    ; fstCall replacement
         MOV     EAX, PCR[PcSelfPcr]
         MOV     ECX, [EAX+PcPrcbData+PbDpcRequestRate]
         MOV     EDX, _KiAdjustDpcThreshold
@@ -290,7 +292,7 @@ Kutp55: SUB     BYTE PTR [EBX+ThQuantum], CLOCK_QUANTUM_DECREMENT
         JZ      Kutp75
         MOV     BYTE PTR [EAX+PcPrcbData+PbQuantumEnd], 1
         MOV     ECX, DISPATCH_LEVEL
-        fstCall HalRequestSoftwareInterrupt
+        call    @HalRequestSoftwareInterrupt@4    ; fstCall replacement
 Kutp75:
         POP     EBX
         stdRET    _KeUpdateRunTime
@@ -303,6 +305,10 @@ ENDIF
 
 stdENDP _KeUpdateRunTime
 
+
+;++
+;   PROFILING SUPPORT
+;--
 
 cPublicProc _KeProfileInterrupt, 1
         POP     EAX
@@ -326,9 +332,9 @@ kipeflags       EQU     <DWORD PTR [EBP+TsEFlags]>
         CMP     _PPerfGlobalGroupMask, 0
         JE      SHORT kipi03
 
-        MOV     ECX, [ESP+8]
-        MOV     EDX, kipieip
-        fstCall PerfProfileInterrupt
+        MOV     ECX, [ESP+8]              ; ProfileSource -> ECX (1st fastcall arg)
+        MOV     EDX, kipieip              ; EIP -> EDX (2nd fastcall arg)
+        call    @PerfProfileInterrupt@8   ; fstCall replacement
         MOV     EBP, DWORD PTR [ESP+4]
 
 kipi03:
@@ -336,8 +342,8 @@ kipi03:
         JB      kipi04
         CMP     kipieip, OFFSET FLAT:_ExpInterlockedPopEntrySListEnd@0
         JA      kipi04
-        MOV     ECX, EBP
-        fstCall KiCheckForSListAddress
+        MOV     ECX, EBP                  ; TrapFrame -> ECX (1st fastcall arg)
+        call    @KiCheckForSListAddress@4 ; fstCall replacement
 
 kipi04:
 

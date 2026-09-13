@@ -127,7 +127,7 @@ endm
 
 PUBLICP2 macro   Func,N
 
-        public  Func&@&N
+        public  &Func&@&N&
 endm
 
 EXTRNP  macro   Func,N,Thunk,FastCall

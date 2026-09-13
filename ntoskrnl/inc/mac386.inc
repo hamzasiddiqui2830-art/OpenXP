@@ -1,7 +1,6 @@
 ;++
 ;
 ; Copyright (c) Microsoft Corporation. All rights reserved.
-; Project OpenXP Internal
 ; Refactored for MASM 14.x (Visual Studio 2022/2026) - x86 (32-bit) Target
 ;
 ; Module Name:
@@ -17,10 +16,6 @@
 ;
 ;--
 
-IFDEF _CAPKERN
-    EXTRN _CAP_Log_NInt:PROC
-ENDIF
-
 ;++
 ;  YIELD
 ;
@@ -32,9 +27,6 @@ YIELD macro
         pause   ; Modern MASM supports 'pause' directly (translates to F3 90)
     ENDIF
 endm
-
-
-IFNDEF NT_INST
 
 ;++
 ;  ACQUIRE_SPINLOCK LockAddress, SpinLabel, NoChecking
@@ -53,24 +45,18 @@ ACQUIRE_SPINLOCK macro LockAddress, SpinLabel, NoChecking
     ENDIF
 
     IFNDEF NT_UP
-        IFDEF CAPKERN_SYNCH_POINTS
-            push LockAddress
-            push 000010101h    ; 1 Dword, Timestamp, Subcode = 1
-            call _CAP_Log_NInt
-            add esp, 8
-        ENDIF
-
+        ; Attempt to assert the lock
         lock bts dword ptr [LockAddress], 0     ; test and set the spinlock
-        jc SpinLabel                              ; spinlock owned, go SpinLabel
+        jc SpinLabel                            ; spinlock owned, go SpinLabel
 
         IFDEF DBG
             IFB <NoChecking>
-                push edi                          ; save edi
+                push edi                        ; save edi
                 mov edi, fs:PcPrcb
                 mov edi, [edi].PbCurrentThread
-                or edi, 1                         ; spinlock owned
-                mov [LockAddress], edi            ; remember current thread
-                pop edi                           ; restore edi
+                or edi, 1                       ; spinlock owned
+                mov [LockAddress], edi          ; remember current thread
+                pop edi                         ; restore edi
             ENDIF
         ENDIF
     ENDIF
@@ -116,32 +102,10 @@ SPIN_ON_SPINLOCK macro LockAddress, AcquireLabel, NoChecking, PollDebugger, NoTi
 
         ELSE
             ; Non-Debug version
-            IFDEF CAPKERN_SYNCH_POINTS
-                push eax
-                push ebx
-                mov eax, LockAddress
-                xor ebx, ebx
-a:              inc ebx
-                test dword ptr [eax], 1           ; Was spinlock cleared?
-                jz short b                        ; Yes, go get it
-                YIELD
-                jmp short a
-
-b:              
-                push eax
-                push ebx
-                push 000020102h                   ; 2 Dwords, Timestamp, Subcode = 2
-                call _CAP_Log_NInt
-                add esp, 12
-                pop ebx
-                pop eax
-                jmp AcquireLabel
-            ELSE
-a:              test dword ptr [LockAddress], 1   ; Was spinlock cleared?
-                jz AcquireLabel                   ; Yes, go get it
-                YIELD
-                jmp short a
-            ENDIF
+a:          test dword ptr [LockAddress], 1     ; Was spinlock cleared?
+            jz AcquireLabel                     ; Yes, go get it
+            YIELD
+            jmp short a
         ENDIF
     ENDIF
 endm
@@ -155,8 +119,8 @@ endm
 ;     to obtain the spinlock in a locked manner.
 ;--
 TEST_SPINLOCK macro LockAddress, BusyLabel
-    test dword ptr [LockAddress], 1               ; spinlock clear?
-    jnz BusyLabel                                 ; No, then busy
+    cmp dword ptr [LockAddress], 0              ; spinlock clear?
+    jnz BusyLabel                               ; No, then busy
 endm
 
 ;++
@@ -179,13 +143,13 @@ RELEASE_SPINLOCK macro LockAddress, NoChecking
             IFB <NoChecking>
                 EXTRNP _KeBugCheckEx, 5
 
-                push edi                          ; save edi
+                push edi                        ; save edi
                 mov edi, fs:PcPrcb
                 mov edi, [edi].PbCurrentThread
-                or edi, 1                         ; assume current thread owns the lock
-                cmp edi, [LockAddress]            ; Does current thread own the lock?
-                pop edi                           ; restore edi
-                jz short a                        ; if z, yes, goto a and release lock
+                or edi, 1                       ; assume current thread owns the lock
+                cmp edi, [LockAddress]          ; Does current thread own the lock?
+                pop edi                         ; restore edi
+                jz short a                      ; if z, yes, goto a and release lock
                 stdCall _KeBugCheckEx, <SPIN_LOCK_NOT_OWNED, LockAddress, 0, 0, 0>
 a:
             ENDIF
@@ -193,74 +157,5 @@ a:
         ELSE
             lock and byte ptr [LockAddress], 0
         ENDIF
-
-        IFDEF CAPKERN_SYNCH_POINTS
-            push LockAddress
-            push 000010107h                       ; 1 Dword, Timestamp, Subcode = 7
-            call _CAP_Log_NInt
-            add esp, 8
-        ENDIF
     ENDIF
 endm
-
-ENDIF ; IFNDEF NT_INST
-
-
-IFDEF NT_INST
-;
-; These are the instrumentation versions of the above functions.
-; Internal use only.
-;
-
-ACQUIRE_SPINLOCK macro LockAddress, SpinLabel, NoChecking
-    EXTRNP KiInst_AcquireSpinLock, 0
-    IFIDNI <&LockAddress>, <eax>
-        stdCall KiInst_AcquireSpinLock
-    ELSE
-        push eax
-        mov eax, LockAddress
-        stdCall KiInst_AcquireSpinLock
-        pop eax
-    ENDIF
-    jc SpinLabel
-endm
-
-SPIN_ON_SPINLOCK macro LockAddress, AcquireLabel, NoChecking, PollDebugger
-    EXTRNP KiInst_SpinOnSpinLock, 0
-    IFIDNI <&LockAddress>, <eax>
-        stdCall KiInst_SpinOnSpinLock
-    ELSE
-        push eax
-        mov eax, LockAddress
-        stdCall KiInst_SpinOnSpinLock
-        pop eax
-    ENDIF
-    jmp AcquireLabel
-endm
-
-TEST_SPINLOCK macro LockAddress, BusyLabel
-    EXTRNP KiInst_TestSpinLock, 0
-    IFIDNI <&LockAddress>, <eax>
-        stdCall KiInst_TestSpinLock
-    ELSE
-        push eax
-        mov eax, LockAddress
-        stdCall KiInst_TestSpinLock
-        pop eax
-    ENDIF
-    jnc BusyLabel  ; Fixed typo from original source (was incorrectly 'AcquireLabel')
-endm
-
-RELEASE_SPINLOCK macro LockAddress, NoChecking
-    EXTRNP KiInst_ReleaseSpinLock, 0
-    IFIDNI <&LockAddress>, <eax>
-        stdCall KiInst_ReleaseSpinLock
-    ELSE
-        push eax
-        mov eax, LockAddress
-        stdCall KiInst_ReleaseSpinLock
-        pop eax
-    ENDIF
-endm
-
-ENDIF ; IFDEF NT_INST

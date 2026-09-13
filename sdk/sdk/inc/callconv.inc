@@ -126,7 +126,6 @@ PUBLICP macro   Func,N
 endm
 
 PUBLICP2 macro   Func,N
-
         public  &Func&@&N
 endm
 
@@ -159,12 +158,11 @@ EXTRNP2 macro   Func,N
         ENDIF
 endm
 
-EXTRNTHUNK macro   Func,N
-        IFNDEF  __imp_&Func&@&N
-            extrn       __imp_&Func&@&N:DWORD
+EXTRNP2 macro   Func,N
+        IFNDEF  &Func&@&N
+            extrn   &Func&@&N:NEAR
         ENDIF
 endm
-
 LABELP  macro   Func,N
 
         ifb    <N>
@@ -209,11 +207,9 @@ cPublicProc macro Func,N,ArgList
 endm
 
 ProcNameF macro  Name,Func,N,M
-
         cByte&Func  equ     M
         cFCall&Func equ     N
-        Name        equ     <&Func&@&N>
-
+        Name        equ     <@&Func@&N>
 endm
 stdPROCF  macro   Func,N,ArgList
 
@@ -237,7 +233,7 @@ cPublicFastCall macro Func,N,ArgList
 endm
 
 fstRET  macro   Func
-        ret     cByte&@&Func
+        ret     cByte&Func
 endm
 
 stdRET  macro   Func
@@ -252,8 +248,7 @@ endm
 
 
 fstENDP macro   Func
-
-        &@&Func    endp
+        @&Func  endp
 endm
 
 stdENDP macro   Func
@@ -267,11 +262,11 @@ endMod  macro   Func
 endm
 
 stdCallCall macro  Func,N
-    IFDEF   __imp_&Func&@&N
-        call    dword ptr [__imp_&Func&@&N]
-    ELSE
-        call    &Func&@&N
-    ENDIF
+        IFDEF   __imp_&Func&@&N
+            call    dword ptr [__imp_&Func&@&N]
+        ELSE
+            call    &Func&@&N
+        ENDIF
 endm
 
 
@@ -286,10 +281,8 @@ endm
 
 fstCall macro   Func,ArgList
         Local   Bytes
-
         RevPush <ArgList>,Bytes
         Bytes = Bytes*4
-
         if Bytes eq 0
             stdCallCall   @&Func&,%cFCall&Func
         else

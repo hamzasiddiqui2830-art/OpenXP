@@ -293,7 +293,7 @@ fstCall macro   Func,ArgList
 
         if Bytes eq 0
             stdCallCall   _&Func,%cFCall_&Func
-        else ifdef cFCall_&Func
+        elseifdef cFCall_&Func
             ; must have 2 register params
             stdCallCall   _&Func,%(Bytes-cFCall_&Func)
         else

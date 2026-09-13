@@ -137,8 +137,10 @@ COPY_CALL_FRAME macro FramePtr
         mov     [FramePtr].TsEdi,edi
         mov     [FramePtr].TsEbp,ebp
         mov     [FramePtr].TsHardwareEsp,esp
-        mov     [FramePtr].TsSegFs,fs
-        mov     [FramePtr].TsSegCs,cs
+        mov     eax,fs
+        mov     [FramePtr].TsSegFs,eax
+        mov     eax,cs
+        mov     [FramePtr].TsSegCs,eax
 endm
         page ,132
         subttl  "Abios Support Code"

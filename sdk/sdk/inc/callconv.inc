@@ -43,7 +43,6 @@ PUBLICP2 macro Func, N
     PUBLIC Func&@&N
 endm
 
-; Simplified EXTRNP - no fastcall support via macros
 EXTRNP macro Func, N, Thunk, FastCall
     IFB <N>
         IFNDEF Func&@0
@@ -138,31 +137,6 @@ MovAddr macro dest, addr, n
     ComposeInst <mov >, dest, <, offset FLAT:>, addr, <@>, n
 endm
 
-; FASTCALL SUPPORT - Use explicit declarations instead of macros
-; In your .asm files, instead of:
-;   EXTRNP HalRequestSoftwareInterrupt,1,IMPORT,FASTCALL
-;   fstCall HalRequestSoftwareInterrupt
-;
-; Use:
-;   EXTRN @HalRequestSoftwareInterrupt@4:NEAR
-;   call @HalRequestSoftwareInterrupt@4
-
-fstCall macro Func, ArgList
-    ; This macro is now deprecated - use explicit calls
-    .err <fstCall is deprecated. Use explicit: call @FuncName@N>
-endm
-
-cPublicFastCall macro Func, N, ArgList
-    ; This macro is now deprecated - use explicit PROC declarations
-    .err <cPublicFastCall is deprecated. Use explicit: @FuncName@N proc>
-endm
-
-fstRET macro Func
-    ; This macro is now deprecated
-    .err <fstRET is deprecated. Use explicit: ret N>
-endm
-
-fstENDP macro Func
-    ; This macro is now deprecated
-    .err <fstENDP is deprecated. Use explicit: @FuncName@N endp>
-endm
+; FASTCALL - Use explicit declarations in .asm files:
+;   EXTRN @FuncName@N:NEAR
+;   call @FuncName@N

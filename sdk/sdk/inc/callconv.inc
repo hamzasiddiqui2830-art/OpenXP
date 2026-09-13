@@ -127,7 +127,7 @@ endm
 
 PUBLICP2 macro   Func,N
 
-        public  &Func&@&N&
+        public  &Func&@&N
 endm
 
 EXTRNP  macro   Func,N,Thunk,FastCall
@@ -143,7 +143,7 @@ EXTRNP  macro   Func,N,Thunk,FastCall
                     EXTRNTHUNK  Func,%(N*4)
                 endif
             else
-                cFCall&Func& equ   (N*4)
+               cFCall&Func equ   (N*4)
                 ifb     <Thunk>
                     EXTRNP2     @&Func&,%(N*4)
                 else
@@ -154,14 +154,14 @@ EXTRNP  macro   Func,N,Thunk,FastCall
 endm
 
 EXTRNP2 macro   Func,N
-        IFNDEF  &Func&@&N&
-            extrn   &Func&@&N&:NEAR
+        IFNDEF  &Func&@&N
+            extrn   &Func&@&N:NEAR
         ENDIF
 endm
 
 EXTRNTHUNK macro   Func,N
-        IFNDEF  __imp_&Func&@&N&
-            extrn       __imp_&Func&@&N&:DWORD
+        IFNDEF  __imp_&Func&@&N
+            extrn       __imp_&Func&@&N:DWORD
         ENDIF
 endm
 
@@ -210,9 +210,9 @@ endm
 
 ProcNameF macro  Name,Func,N,M
 
-        cByte&Func&  equ     M
-        cFCall&Func& equ     N
-        Name        equ     <&Func&@&N&>
+        cByte&Func  equ     M
+        cFCall&Func equ     N
+        Name        equ     <&Func&@&N>
 
 endm
 stdPROCF  macro   Func,N,ArgList
@@ -228,11 +228,11 @@ endm
 
 cPublicFastCall macro Func,N,ArgList
         align   dword
-        PUBLICP &@&Func,N
+        PUBLICP @&Func&,N
         ifb <N>
-            stdPROCF &@&Func,0,<ArgList>
+            stdPROCF @&Func&,0,<ArgList>
         else
-            stdPROCF &@&Func,N,<ArgList>
+            stdPROCF @&Func&,N,<ArgList>
         endif
 endm
 
@@ -267,10 +267,10 @@ endMod  macro   Func
 endm
 
 stdCallCall macro  Func,N
-    IFDEF   __imp_&Func&@&N&
-        call    dword ptr [__imp_&Func&@&N&]
+    IFDEF   __imp_&Func&@&N
+        call    dword ptr [__imp_&Func&@&N]
     ELSE
-        call    &Func&@&N&
+        call    &Func&@&N
     ENDIF
 endm
 
@@ -291,7 +291,7 @@ fstCall macro   Func,ArgList
         Bytes = Bytes*4
 
         if Bytes eq 0
-            stdCallCall   @&Func&,cFCall&Func&
+            stdCallCall   @&Func&,%cFCall&Func
         else
             ; must have 2 register params
             stdCallCall   @&Func&,%(Bytes+8)

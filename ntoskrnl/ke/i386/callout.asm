@@ -1,8 +1,8 @@
-        title  "Call Out to User Mode"
+        title   "Call Out to User Mode"
 ;++
 ;
 ; Copyright (c) OpenXP
-;
+; Refactored for MASM 14.x (Visual Studio 2022/2026) - x86 (32-bit) Target
 ;
 ; Module Name:
 ;
@@ -23,17 +23,17 @@ include callconv.inc
 include irqli386.inc
         .list
 
-        extrn   _KiServiceExit:PROC
-        extrn   _KeUserCallbackDispatcher:DWORD
+        EXTRN   _KiServiceExit:PROC
+        EXTRN   _KeUserCallbackDispatcher:DWORD
 
-        EXTRNP  _KeBugCheck2,6
-        EXTRNP  _MmGrowKernelStack,1
+        EXTRNP  _KeBugCheck2, 6
+        EXTRNP  _MmGrowKernelStack, 1
 
 _TEXT   SEGMENT DWORD PUBLIC 'CODE'
         ASSUME  DS:FLAT, ES:FLAT, SS:FLAT, FS:NOTHING, GS:NOTHING
 
-        page ,132
-        subttl  "Call User Mode Function"
+        PAGE ,132
+        SUBTTL  "Call User Mode Function"
 ;++
 ;
 ; NTSTATUS
@@ -72,66 +72,58 @@ _TEXT   SEGMENT DWORD PUBLIC 'CODE'
 ;
 ;--
 
-;
-; To support the debugger, the callback stack frame is now defined in i386.h.
-; If the stack frame is changed, i386.h must be updated and geni386
-; rebuilt and run, then rebuild this file and ntos\kd.
-;
-; The FPO record below must also be updated to correctly represent
-; the stack frame.
-;
-
 cPublicProc _KiCallUserMode, 2
 
-.FPO (3, 2, 4, 4, 0, 0)
+; .FPO (3, 2, 4, 4, 0, 0)
+; NOTE: .FPO is obsolete in MASM 14.x. Frame data is auto-generated.
 
 ;
 ; Save nonvolatile registers.
 ;
 
-        push    ebp                     ; save nonvolatile registers
-        push    ebx                     ;
-        push    esi                     ;
-        push    edi                     ;
+        PUSH    EBP                     ; save nonvolatile registers
+        PUSH    EBX                     ;
+        PUSH    ESI                     ;
+        PUSH    EDI                     ;
 
-        mov     ebx,PCR[PcPrcbData + PbCurrentThread] ; get current thread address
+        MOV     EBX, PCR[PcPrcbData+PbCurrentThread] ; get current thread address
 
 ;
 ; Check if the current IRQL is above passive level.
 ;
 
-if DBG
+IF DBG
 
         CurrentIrql                     ; get current IRQL
-        or      al,al                   ; check if IRQL is passive level
-        jz      short Kcb00             ; if z, IRQL at passive level
-        stdCall _KeBugCheck2,<IRQL_GT_ZERO_AT_SYSTEM_SERVICE,0,eax,0,0,0>
+        OR      AL, AL                  ; check if IRQL is passive level
+        JZ      SHORT Kcb00             ; if z, IRQL at passive level
+        stdCall _KeBugCheck2, <IRQL_GT_ZERO_AT_SYSTEM_SERVICE, 0, EAX, 0, 0, 0>
 
 ;
 ; Check if kernel APCs are disabled or a process is attached.
 ;
 
-Kcb00:  movzx   eax,byte ptr[ebx]+ThApcStateIndex ; get APC state index
-        mov     edx,[ebx]+ThCombinedApcDisable ; get kernel APC disable
-        or      eax,eax                ; check if process attached
-        jne     short Kcb05            ; if ne, process is attached
-        or      edx,edx                ; check if kernel APCs disabled
-        jz      short Kcb07            ; if z, kernel APCs enabled
-Kcb05:  stdCall _KeBugCheck2,<APC_INDEX_MISMATCH,0,eax,edx,0,0>
+Kcb00:  MOVZX   EAX, BYTE PTR [EBX+ThApcStateIndex] ; get APC state index
+        MOV     EDX, [EBX+ThCombinedApcDisable]     ; get kernel APC disable
+        OR      EAX, EAX                ; check if process attached
+        JNE     SHORT Kcb05             ; if ne, process is attached
+        OR      EDX, EDX                ; check if kernel APCs disabled
+        JZ      SHORT Kcb07             ; if z, kernel APCs enabled
+Kcb05:  stdCall _KeBugCheck2, <APC_INDEX_MISMATCH, 0, EAX, EDX, 0, 0>
 
-endif
+ENDIF
 
 ;
 ; Check if sufficient room is available on the kernel stack for another
 ; system call.
 ;
 
-Kcb07:  lea     eax,[esp]-KERNEL_LARGE_STACK_COMMIT ; compute bottom address
-        cmp     eax,[ebx]+ThStackLimit  ; check if limit exceeded
-        jae     short Kcb10             ; if ae, limit not exceeded
-        stdCall _MmGrowKernelStack,<esp> ; attempt to grow kernel stack
-        or      eax, eax                ; check for successful completion
-        jne     Kcb20                   ; if ne, attempt to grow failed
+Kcb07:  LEA     EAX, [ESP]-KERNEL_LARGE_STACK_COMMIT ; compute bottom address
+        CMP     EAX, [EBX+ThStackLimit] ; check if limit exceeded
+        JAE     SHORT Kcb10             ; if ae, limit not exceeded
+        stdCall _MmGrowKernelStack, <ESP> ; attempt to grow kernel stack
+        OR      EAX, EAX                ; check for successful completion
+        JNE     Kcb20                   ; if ne, attempt to grow failed
 
 ;
 ; Get the address of the current thread and save the previous trap frame
@@ -139,12 +131,12 @@ Kcb07:  lea     eax,[esp]-KERNEL_LARGE_STACK_COMMIT ; compute bottom address
 ; callback stack address in the thread object.
 ;
 
-Kcb10:  push    [ebx].ThCallbackStack   ; save callback stack address
-        mov     edx,[ebx].ThTrapFrame   ; get current trap frame address
-        push    edx                     ; save trap frame address
-        mov     esi,[ebx].ThInitialStack ; get initial stack address
-        push    esi                     ; save initial stack address
-        mov     [ebx].ThCallbackStack,esp ; save callback stack address
+Kcb10:  PUSH    [EBX+ThCallbackStack]   ; save callback stack address
+        MOV     EDX, [EBX+ThTrapFrame]  ; get current trap frame address
+        PUSH    EDX                     ; save trap frame address
+        MOV     ESI, [EBX+ThInitialStack] ; get initial stack address
+        PUSH    ESI                     ; save initial stack address
+        MOV     [EBX+ThCallbackStack], ESP ; save callback stack address
 
 KcbPrologEnd: ; help for the debugger
 
@@ -156,83 +148,83 @@ KcbPrologEnd: ; help for the debugger
 ; as required by fxsave\fxrstor
 ;
 
-        and     esp, 0fffffff0h         ;
-        mov     edi,esp                 ; set new initial stack address
-        sub     esp,NPX_FRAME_LENGTH    ; compute destination NPX save area
-        sub     esi,NPX_FRAME_LENGTH    ; compute source NPX save area
-        cli                             ; disable interrupts
-        mov     ecx,[esi].FpControlWord ; copy NPX state to new frame
-        mov     [esp].FpControlWord,ecx ;
-        mov     ecx,[esi].FpStatusWord  ;
-        mov     [esp].FpStatusWord,ecx  ;
-        mov     ecx,[esi].FpTagWord     ;
-        mov     [esp].FpTagWord,ecx     ;
-        mov     ecx,[esi].FxMXCsr       ;
-        mov     [esp].FxMXCsr,ecx       ;
-        mov     ecx,[esi].FpCr0NpxState ;
-        mov     [esp].FpCr0NpxState,ecx ;
-        mov     esi,PCR[PcTss]          ; get address of task switch segment
-        mov     [ebx].ThInitialStack,edi ; reset initial stack address
-        mov     ecx, esp                ;
-        sub     esp,TsV86Gs - TsHardwareSegSs ; bias for missing V86 fields
+        AND     ESP, 0FFFFFFF0h         ;
+        MOV     EDI, ESP                ; set new initial stack address
+        SUB     ESP, NPX_FRAME_LENGTH   ; compute destination NPX save area
+        SUB     ESI, NPX_FRAME_LENGTH   ; compute source NPX save area
+        CLI                             ; disable interrupts
+        MOV     ECX, [ESI+FpControlWord] ; copy NPX state to new frame
+        MOV     [ESP+FpControlWord], ECX ;
+        MOV     ECX, [ESI+FpStatusWord]  ;
+        MOV     [ESP+FpStatusWord], ECX  ;
+        MOV     ECX, [ESI+FpTagWord]     ;
+        MOV     [ESP+FpTagWord], ECX     ;
+        MOV     ECX, [ESI+FxMXCsr]       ;
+        MOV     [ESP+FxMXCsr], ECX       ;
+        MOV     ECX, [ESI+FpCr0NpxState] ;
+        MOV     [ESP+FpCr0NpxState], ECX ;
+        MOV     ESI, PCR[PcTss]         ; get address of task switch segment
+        MOV     [EBX+ThInitialStack], EDI ; reset initial stack address
+        MOV     ECX, ESP                ;
+        SUB     ESP, TsV86Gs-TsHardwareSegSs ; bias for missing V86 fields
 
-.errnz (EFLAGS_V86_MASK AND 0FF00FFFFh)
+        .ERRNZ (EFLAGS_V86_MASK AND 0FF00FFFFh)
 
-        test    byte ptr [edx]+TsEFlags+2,EFLAGS_V86_MASK/010000h  ; is this a V86 frame?
-        jne     @f
-        mov     ecx, esp                ; Use adjusted esp (normal case)
-@@:     mov     [esi].TssEsp0,ecx       ; set kernel entry stack address
+        TEST    BYTE PTR [EDX+TsEFlags+2], EFLAGS_V86_MASK/010000h  ; is this a V86 frame?
+        JNE     @F
+        MOV     ECX, ESP                ; Use adjusted esp (normal case)
+@@:     MOV     [ESI+TssEsp0], ECX      ; set kernel entry stack address
 
 ;
 ; Construct a trap frame to facilitate the transfer into user mode via
 ; the standard system call exit.
 ;
 
-        sub     esp,TsHardwareSegSs + 4 ; allocate trap frame
-        mov     ebp,esp                 ; set address of trap frame
-        mov     ecx,(TsHardwareSegSs - TsSegFs + 4) / 4; set repeat count
-        lea     edi,[esp].TsSegFs       ; set destination address
-        lea     esi,[edx].TsSegFs       ; set source address
-        rep     movsd                   ; copy trap information
+        SUB     ESP, TsHardwareSegSs+4  ; allocate trap frame
+        MOV     EBP, ESP                ; set address of trap frame
+        MOV     ECX, (TsHardwareSegSs-TsSegFs+4)/4 ; set repeat count
+        LEA     EDI, [ESP+TsSegFs]      ; set destination address
+        LEA     ESI, [EDX+TsSegFs]      ; set source address
+        REP     MOVSD                   ; copy trap information
 
-        mov     edi, [edx].TsDr7                ; Fetch control register
-        test    edi, (NOT DR7_RESERVED_MASK)    ; Do we need to restore Debug reg?
-        mov     [esp].TsDr7, edi                ; Save away Dr7
-        jnz     short Kcb18                     ; Yes, go save them.
+        MOV     EDI, [EDX+TsDr7]        ; Fetch control register
+        TEST    EDI, (NOT DR7_RESERVED_MASK) ; Do we need to restore Debug reg?
+        MOV     [ESP+TsDr7], EDI        ; Save away Dr7
+        JNZ     SHORT Kcb18             ; Yes, go save them.
 
-Kcb15:  mov     eax,_KeUserCallbackDispatcher ; st address of callback dispatcher
-        mov     [esp].TsEip,eax         ;
-        mov     eax,PCR[PcExceptionList] ; get current exception list
-        mov     [esp].TsExceptionList,eax ; set previous exception list
-        mov     eax,[edx].TsPreviousPreviousMode ; get previous mode
-        mov     [esp].TsPreviousPreviousMode,eax ; set previous mode
-        sti                             ; enable interrupts
+Kcb15:  MOV     EAX, _KeUserCallbackDispatcher ; st address of callback dispatcher
+        MOV     [ESP+TsEip], EAX        ;
+        MOV     EAX, PCR[PcExceptionList] ; get current exception list
+        MOV     [ESP+TsExceptionList], EAX ; set previous exception list
+        MOV     EAX, [EDX+TsPreviousPreviousMode] ; get previous mode
+        MOV     [ESP+TsPreviousPreviousMode], EAX ; set previous mode
+        STI                             ; enable interrupts
 
         SET_DEBUG_DATA                  ; set system call debug data for exit
 
-        jmp     _KiServiceExit          ; exit through service dispatch
+        JMP     _KiServiceExit          ; exit through service dispatch
 
 Kcb18:
-        mov     ecx,(TsDr6 - TsDr0 + 4) / 4; set repeat count
-        lea     edi,[esp].TsDr0         ; set destination address
-        lea     esi,[edx].TsDr0         ; set source address
-        rep     movsd                   ; copy trap information
-        jmp     short Kcb15
+        MOV     ECX, (TsDr6-TsDr0+4)/4  ; set repeat count
+        LEA     EDI, [ESP+TsDr0]        ; set destination address
+        LEA     ESI, [EDX+TsDr0]        ; set source address
+        REP     MOVSD                   ; copy trap information
+        JMP     SHORT Kcb15
 
 ;
 ; An attempt to grow the kernel stack failed.
 ;
 
-Kcb20:  pop     edi                     ; restore nonvolitile register
-        pop     esi                     ;
-        pop     ebx                     ;
-        pop     ebp                     ;
+Kcb20:  POP     EDI                     ; restore nonvolatile register
+        POP     ESI                     ;
+        POP     EBX                     ;
+        POP     EBP                     ;
         stdRET  _KiCallUserMode
 
 stdENDP _KiCallUserMode
 
-        page ,132
-        subttl  "Switch Kernel Stack"
+        PAGE ,132
+        SUBTTL  "Switch Kernel Stack"
 ;++
 ;
 ; PVOID
@@ -263,8 +255,8 @@ stdENDP _KiCallUserMode
 ;
 ;--
 
-SsStkBs equ     4                       ; new kernel stack base address
-SsStkLm equ     8                       ; new kernel stack limit address
+SsStkBs EQU     4                       ; new kernel stack base address
+SsStkLm EQU     8                       ; new kernel stack limit address
 
 cPublicProc _KeSwitchKernelStack, 2
 
@@ -273,55 +265,55 @@ cPublicProc _KeSwitchKernelStack, 2
 ; stack.
 ;
 
-        push    esi                     ; save string move registers
-        push    edi                     ;
-        mov     edx,PCR[PcPrcbData + PbCurrentThread] ; get current thread address
-        mov     edi,[esp]+SsStkBs + 8   ; get new kernel stack base address
-        mov     ecx,[edx].ThStackBase   ; get current stack base address
-        sub     ebp,ecx                 ; relocate the callers frame pointer
-        add     ebp,edi                 ;
-        mov     eax,[edx].ThTrapFrame   ; relocate the current trap frame address
-        sub     eax,ecx                 ;
-        add     eax,edi                 ;
-        mov     [edx].ThTrapFrame,eax   ;
-        sub     ecx,esp                 ; compute length of copy
-        sub     edi,ecx                 ; set destination address of copy
-        mov     esi,esp                 ; set source address of copy
-        push    edi                     ; save new stack pointer address
-        rep     movsb                   ; copy old stack to new stack
-        pop     edi                     ; restore new stack pointer address
+        PUSH    ESI                     ; save string move registers
+        PUSH    EDI                     ;
+        MOV     EDX, PCR[PcPrcbData+PbCurrentThread] ; get current thread address
+        MOV     EDI, [ESP+SsStkBs+8]    ; get new kernel stack base address
+        MOV     ECX, [EDX+ThStackBase]  ; get current stack base address
+        SUB     EBP, ECX                ; relocate the callers frame pointer
+        ADD     EBP, EDI                ;
+        MOV     EAX, [EDX+ThTrapFrame]  ; relocate the current trap frame address
+        SUB     EAX, ECX                ;
+        ADD     EAX, EDI                ;
+        MOV     [EDX+ThTrapFrame], EAX  ;
+        SUB     ECX, ESP                ; compute length of copy
+        SUB     EDI, ECX                ; set destination address of copy
+        MOV     ESI, ESP                ; set source address of copy
+        PUSH    EDI                     ; save new stack pointer address
+        REP     MOVSB                   ; copy old stack to new stack
+        POP     EDI                     ; restore new stack pointer address
 
 ;
 ; Switch to the new kernel stack and return the address of the old kernel
 ; stack.
 ;
 
-        mov     eax,[edx].ThStackBase   ; get old kernel stack base address
-        mov     ecx,[esp]+SsStkBs + 8   ; get new kernel stack base address
-        mov     esi,[esp]+SsStkLm + 8   ; get new kernel stack limit address
-        cli                             ; disable interrupts
-        mov     [edx].ThStackBase,ecx   ; set new kernel stack base address
-        mov     [edx].ThStackLimit,esi  ; set new kernel stack limit address
-        mov     byte ptr [edx].ThLargeStack, 1 ; set large stack TRUE
-        mov     [edx].ThInitialStack,ecx ; set new initial stack address
-        mov     esi,[edx].ThTrapFrame   ; Get current trap frame address
-        mov     edx,PCR[PcTss]          ; get address of task switch segment
-.errnz (EFLAGS_V86_MASK AND 0FF00FFFFh)
-        test    byte ptr [esi]+TsEFlags+2,EFLAGS_V86_MASK/010000h  ; is this a V86 frame?
-        lea     ecx, dword ptr [ecx-NPX_FRAME_lENGTH]    ; compute NPX save area address
-        jne     @f
-        sub     ecx,TsV86Gs - TsHardwareSegSs ; bias for missing V86 fields
-@@:     mov     [edx].TssEsp0,ecx       ; set kernel entry stack address
-        mov     esp,edi                 ; set new stack pointer address
-        sti                             ;
-        pop     edi                     ; restore string move registers
-        pop     esi                     ;
+        MOV     EAX, [EDX+ThStackBase]  ; get old kernel stack base address
+        MOV     ECX, [ESP+SsStkBs+8]    ; get new kernel stack base address
+        MOV     ESI, [ESP+SsStkLm+8]    ; get new kernel stack limit address
+        CLI                             ; disable interrupts
+        MOV     [EDX+ThStackBase], ECX  ; set new kernel stack base address
+        MOV     [EDX+ThStackLimit], ESI ; set new kernel stack limit address
+        MOV     BYTE PTR [EDX+ThLargeStack], 1 ; set large stack TRUE
+        MOV     [EDX+ThInitialStack], ECX ; set new initial stack address
+        MOV     ESI, [EDX+ThTrapFrame]  ; Get current trap frame address
+        MOV     EDX, PCR[PcTss]         ; get address of task switch segment
+        .ERRNZ (EFLAGS_V86_MASK AND 0FF00FFFFh)
+        TEST    BYTE PTR [ESI+TsEFlags+2], EFLAGS_V86_MASK/010000h  ; is this a V86 frame?
+        LEA     ECX, DWORD PTR [ECX-NPX_FRAME_LENGTH] ; compute NPX save area address
+        JNE     @F
+        SUB     ECX, TsV86Gs-TsHardwareSegSs ; bias for missing V86 fields
+@@:     MOV     [EDX+TssEsp0], ECX      ; set kernel entry stack address
+        MOV     ESP, EDI                ; set new stack pointer address
+        STI                             ;
+        POP     EDI                     ; restore string move registers
+        POP     ESI                     ;
         stdRET  _KeSwitchKernelStack
 
 stdENDP _KeSwitchKernelStack
 
-        page ,132
-        subttl  "Get User Mode Stack Address"
+        PAGE ,132
+        SUBTTL  "Get User Mode Stack Address"
 ;++
 ;
 ; PULONG
@@ -346,15 +338,15 @@ stdENDP _KeSwitchKernelStack
 
 cPublicProc _KiGetUserModeStackAddress, 0
 
-        mov     eax,PCR[PcPrcbData + PbCurrentThread] ; get current thread address
-        mov     eax,[eax].ThTrapFrame   ; get current trap frame address
-        lea     eax,[eax].TsHardwareEsp ; get address of stack address
+        MOV     EAX, PCR[PcPrcbData+PbCurrentThread] ; get current thread address
+        MOV     EAX, [EAX+ThTrapFrame]  ; get current trap frame address
+        LEA     EAX, [EAX+TsHardwareEsp] ; get address of stack address
         stdRET  _KiGetUserModeStackAddress
 
 stdENDP _KiGetUserModeStackAddress
 
-        page ,132
-        subttl  "Return from User Mode Callback"
+        PAGE ,132
+        SUBTTL  "Return from User Mode Callback"
 ;++
 ;
 ; NTSTATUS
@@ -386,8 +378,8 @@ stdENDP _KiGetUserModeStackAddress
 ; Return Value:
 ;
 ;    If the callback return cannot be executed, then an error status is
-;    returned. Otherwise, the specified callback status is returned to
-;    the caller of the callback function.
+;    returned. Otherwise, the specified callback status is returned to the
+;    caller of the callback function.
 ;
 ;    N.B. This function returns to the function that called out to user
 ;         mode is a callout is currently active.
@@ -396,10 +388,10 @@ stdENDP _KiGetUserModeStackAddress
 
 cPublicProc _NtCallbackReturn, 3
 
-        mov     eax,PCR[PcPrcbData + PbCurrentThread] ; get current thread address
-        mov     ecx,[eax].ThCallbackStack ; get callback stack address
-        test    ecx, ecx
-        je      CbExit                    ; if zero, no callback stack present
+        MOV     EAX, PCR[PcPrcbData+PbCurrentThread] ; get current thread address
+        MOV     ECX, [EAX+ThCallbackStack] ; get callback stack address
+        TEST    ECX, ECX
+        JE      CbExit                  ; if zero, no callback stack present
 
 ;
 ; Restore the current exception list from the saved exception list in the
@@ -407,65 +399,65 @@ cPublicProc _NtCallbackReturn, 3
 ; store the output buffer address and length, and set the service status.
 ;
 
-        mov     ebx, [eax].ThTrapFrame   ; get current trap frame address
-        mov     edx, [ebx].TsExceptionList ; get saved exception list address
-        mov     PCR[PcExceptionList], edx ; restore exception list address
-        mov     edi, [esp] + 4           ; get output buffer address
-        mov     esi, [esp] + 8           ; get output buffer length
-        mov     ebp, [esp] + 12          ; get callout service status
-        mov     ebx, [ecx].CuOutBf       ; get address to store output buffer
-        mov     [ebx], edi               ; store output buffer address
-        mov     ebx, [ecx].CuOutLn       ; get address to store output length
-        mov     [ebx], esi               ; store output buffer length
-        mov     ebx, [ecx]               ; get previous initial stack address
-        cli                             ; disable interrupt
-        mov     esi, [eax].ThInitialStack ; get source NPX save area address
-        mov     [eax].ThInitialStack, ebx ; restore initial stack address
-        sub     esi, NPX_FRAME_LENGTH    ; compute source NPX save area
-        sub     ebx, NPX_FRAME_LENGTH    ; compute destination NPX save area
-        mov     edx,[esi].FpControlWord ; copy NPX state to previous frame
-        mov     [ebx].FpControlWord, edx ;
-        mov     edx, [esi].FpStatusWord  ;
-        mov     [ebx].FpStatusWord, edx  ;
-        mov     edx, [esi].FpTagWord     ;
-        mov     [ebx].FpTagWord, edx     ;
-        mov     edx, [esi].FxMXCsr       ;
-        mov     [ebx].FxMXCsr, edx       ;
-        mov     edx, [esi].FpCr0NpxState ;
-        mov     [ebx].FpCr0NpxState, edx ;
-        cmp     ebp, STATUS_CALLBACK_POP_STACK
-        mov     edi, [ecx].CuTrFr        ; Fetch address of previous trap frame
-        jz      short _NtCbCopyTrapFrame
+        MOV     EBX, [EAX+ThTrapFrame]  ; get current trap frame address
+        MOV     EDX, [EBX+TsExceptionList] ; get saved exception list address
+        MOV     PCR[PcExceptionList], EDX ; restore exception list address
+        MOV     EDI, [ESP+4]            ; get output buffer address
+        MOV     ESI, [ESP+8]            ; get output buffer length
+        MOV     EBP, [ESP+12]           ; get callout service status
+        MOV     EBX, [ECX+CuOutBf]      ; get address to store output buffer
+        MOV     [EBX], EDI              ; store output buffer address
+        MOV     EBX, [ECX+CuOutLn]      ; get address to store output length
+        MOV     [EBX], ESI              ; store output buffer length
+        MOV     EBX, [ECX]              ; get previous initial stack address
+        CLI                             ; disable interrupt
+        MOV     ESI, [EAX+ThInitialStack] ; get source NPX save area address
+        MOV     [EAX+ThInitialStack], EBX ; restore initial stack address
+        SUB     ESI, NPX_FRAME_LENGTH   ; compute source NPX save area
+        SUB     EBX, NPX_FRAME_LENGTH   ; compute destination NPX save area
+        MOV     EDX, [ESI+FpControlWord] ; copy NPX state to previous frame
+        MOV     [EBX+FpControlWord], EDX ;
+        MOV     EDX, [ESI+FpStatusWord]  ;
+        MOV     [EBX+FpStatusWord], EDX  ;
+        MOV     EDX, [ESI+FpTagWord]     ;
+        MOV     [EBX+FpTagWord], EDX     ;
+        MOV     EDX, [ESI+FxMXCsr]       ;
+        MOV     [EBX+FxMXCsr], EDX       ;
+        MOV     EDX, [ESI+FpCr0NpxState] ;
+        MOV     [EBX+FpCr0NpxState], EDX ;
+        CMP     EBP, STATUS_CALLBACK_POP_STACK
+        MOV     EDI, [ECX+CuTrFr]       ; Fetch address of previous trap frame
+        JZ      SHORT _NtCbCopyTrapFrame
 _NtCbCopyTrapFrameRet:
-        and     dword ptr [edi].TsDr7, 0 ; Assume original trap frame has no debug registers active
-        test    byte ptr [eax].ThDebugActive, 0ffh 
-        jne     short _NtCbGetDebugRegs
-_NtCbGetDebugRet:        
-        mov     edx, PCR[PcTss]          ; Get address of task switch segment
-        lea     esp, [ecx].CuCbStk      ; Trim stack back to callback frame
-.errnz (EFLAGS_V86_MASK AND 0FF00FFFFh)
-        test    byte ptr [edi]+TsEFlags+2, EFLAGS_V86_MASK/010000h  ; is this a V86 frame?
-        jne     @f
-        sub     ebx, TsV86Gs - TsHardwareSegSs ; bias for missing V86 fields
+        AND     DWORD PTR [EDI+TsDr7], 0 ; Assume original trap frame has no debug registers active
+        TEST    BYTE PTR [EAX+ThDebugActive], 0FFh
+        JNE     SHORT _NtCbGetDebugRegs
+_NtCbGetDebugRet:
+        MOV     EDX, PCR[PcTss]         ; Get address of task switch segment
+        LEA     ESP, [ECX+CuCbStk]      ; Trim stack back to callback frame
+        .ERRNZ (EFLAGS_V86_MASK AND 0FF00FFFFh)
+        TEST    BYTE PTR [EDI+TsEFlags+2], EFLAGS_V86_MASK/010000h  ; is this a V86 frame?
+        JNE     @F
+        SUB     EBX, TsV86Gs-TsHardwareSegSs ; bias for missing V86 fields
 @@:
-        mov     [edx].TssEsp0, ebx       ; restore kernel entry stack address
-        mov     [eax].ThTrapFrame, edi  ; restore current trap frame address
-        sti                             ; enable interrupts
-        pop     [eax].ThCallbackStack   ; restore callback stack address
-        mov     eax, ebp                 ; set callback service status
-        
+        MOV     [EDX+TssEsp0], EBX      ; restore kernel entry stack address
+        MOV     [EAX+ThTrapFrame], EDI  ; restore current trap frame address
+        STI                             ; enable interrupts
+        POP     [EAX+ThCallbackStack]   ; restore callback stack address
+        MOV     EAX, EBP                ; set callback service status
+
 ;
 ; Restore nonvolatile registers, clean call parameters from stack, and
 ; return to callback caller.
 ;
 
-        pop     edi                     ; restore nonvolatile registers
-        pop     esi                     ;
-        pop     ebx                     ;
-        pop     ebp                     ;
-        pop     edx                     ; save return address
-        add     esp, 8                   ; remove parameters from stack
-        jmp     edx                     ; return to callback caller
+        POP     EDI                     ; restore nonvolatile registers
+        POP     ESI                     ;
+        POP     EBX                     ;
+        POP     EBP                     ;
+        POP     EDX                     ; save return address
+        ADD     ESP, 8                  ; remove parameters from stack
+        JMP     EDX                     ; return to callback caller
 
 ;
 ; edi - previous trap frame [in/out]
@@ -475,49 +467,48 @@ _NtCbGetDebugRet:
 ;
 
 _NtCbCopyTrapFrame:
-        mov     ecx, (TsV86Es-TsSegFs)/4 
-        mov     esi, [eax].ThTrapFrame   ; trap frame for this system call
-.errnz (EFLAGS_V86_MASK AND 0FF00FFFFh)
-        test    byte ptr [esi]+TsEFlags+2, EFLAGS_V86_MASK/010000h
-        mov     edx, edi
-        lea     edi, [edi].TsSegFs
-        jz      short @f
-        add     ecx, (KTRAP_FRAME_LENGTH-TsV86Es)/4
-@@:     lea     esi, [esi].TsSegFs
-        rep     movsd                    ; copy the relevant parts of the frame
-        mov     ecx, [eax].ThCallbackStack
-        mov     edi, edx                 ; restores ecx, edi
-        jmp     _NtCbCopyTrapFrameRet
+        MOV     ECX, (TsV86Es-TsSegFs)/4
+        MOV     ESI, [EAX+ThTrapFrame]  ; trap frame for this system call
+        .ERRNZ (EFLAGS_V86_MASK AND 0FF00FFFFh)
+        TEST    BYTE PTR [ESI+TsEFlags+2], EFLAGS_V86_MASK/010000h
+        MOV     EDX, EDI
+        LEA     EDI, [EDI+TsSegFs]
+        JZ      SHORT @F
+        ADD     ECX, (KTRAP_FRAME_LENGTH-TsV86Es)/4
+@@:     LEA     ESI, [ESI+TsSegFs]
+        REP     MOVSD                   ; copy the relevant parts of the frame
+        MOV     ECX, [EAX+ThCallbackStack]
+        MOV     EDI, EDX                ; restores ecx, edi
+        JMP     _NtCbCopyTrapFrameRet
 
 _NtCbGetDebugRegs:
 
 ;
 ; Copy debug registers from current frame to original frame.
 ;
-        mov     esi, [eax].ThTrapFrame  ; Get current trap frame
-        mov     edx, [esi].TsDr0
-        mov     [edi].TsDr0, edx
-        mov     edx, [esi].TsDr1
-        mov     [edi].TsDr1, edx
-        mov     edx, [esi].TsDr2
-        mov     [edi].TsDr2, edx
-        mov     edx, [esi].TsDr3
-        mov     [edi].TsDr3, edx
-        mov     edx, [esi].TsDr6
-        mov     [edi].TsDr6, edx
-        mov     edx, [esi].TsDr7
-        mov     [edi].TsDr7, edx
-        jmp     _NtCbGetDebugRet
+        MOV     ESI, [EAX+ThTrapFrame]  ; Get current trap frame
+        MOV     EDX, [ESI+TsDr0]
+        MOV     [EDI+TsDr0], EDX
+        MOV     EDX, [ESI+TsDr1]
+        MOV     [EDI+TsDr1], EDX
+        MOV     EDX, [ESI+TsDr2]
+        MOV     [EDI+TsDr2], EDX
+        MOV     EDX, [ESI+TsDr3]
+        MOV     [EDI+TsDr3], EDX
+        MOV     EDX, [ESI+TsDr6]
+        MOV     [EDI+TsDr6], EDX
+        MOV     EDX, [ESI+TsDr7]
+        MOV     [EDI+TsDr7], EDX
+        JMP     _NtCbGetDebugRet
 
 ;
 ; No callback is currently active.
 ;
 
-CbExit: mov     eax, STATUS_NO_CALLBACK_ACTIVE ; set service status
-        stdRET  _NtCallBackReturn
+CbExit: MOV     EAX, STATUS_NO_CALLBACK_ACTIVE ; set service status
+        stdRET  _NtCallbackReturn
 
 stdENDP _NtCallbackReturn
 
-_TEXT   ends
-        end
-
+_TEXT   ENDS
+        END

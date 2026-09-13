@@ -24,8 +24,8 @@ include i386\kimacro.inc
 include mac386.inc
         .list
 
-        EXTRNP  Kei386EoiHelper
         EXTRN   _HalEndSystemInterrupt@8:NEAR
+        EXTRN   __imp_Kei386EoiHelper@0:DWORD     ; <-- ADD THIS LINE
         EXTRN   _ExpInterlockedPopEntrySListEnd@0:PROC
         EXTRN   _ExpInterlockedPopEntrySListResume@0:PROC
         EXTRN   _KeTimeIncrement:DWORD

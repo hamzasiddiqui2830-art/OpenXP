@@ -1,8 +1,6 @@
 ;
-; Copyright (c) Microsoft Corporation. All rights reserved.
+; Copyright (c) OpenXP
 ;
-; You may only use this code if you agree to the terms of the Windows Research Kernel Source Code License agreement (see License.txt).
-; If you do not agree to the terms, do not use the code.
 ;
 
 ;****************************CallConv.Inc************************************
@@ -126,8 +124,10 @@ PUBLICP macro   Func,N
 endm
 
 PUBLICP2 macro   Func,N
+        Local   SymbolName
 
-        public  Func&@&N
+        SymbolName TEXTEQU @CatStr(Func,<@>,%N)
+        public  &SymbolName&
 endm
 
 EXTRNP  macro   Func,N,Thunk,FastCall
@@ -188,9 +188,11 @@ LABELP  macro   Func,N
 endm
 
 LABELP2 macro   Func,N
+        Local   SymbolName
 
-Func&@&N    label   near
+        SymbolName TEXTEQU @CatStr(Func,<@>,%N)
 
+&SymbolName& label   near
 endm
 
 ProcName macro  Name,Func,N
@@ -222,11 +224,17 @@ cPublicProc macro Func,N,ArgList
 endm
 
 ProcNameF macro  Name,Func,N,M
+        Local   ByteName
+        Local   CallName
+        Local   SymbolName
 
-        cByte&Func  equ     M
-        cFCall&Func equ     N
-        Name        equ     <Func&@&N>
+        ByteName   TEXTEQU @CatStr(<cByte>,Func)
+        CallName   TEXTEQU @CatStr(<cFCall>,Func)
+        SymbolName TEXTEQU @CatStr(Func,<@>,%N)
 
+        &ByteName& equ M
+        &CallName& equ N
+        Name       equ <&SymbolName&>
 endm
 
 stdPROCF  macro   Func,N,ArgList
@@ -251,7 +259,11 @@ cPublicFastCall macro Func,N,ArgList
 endm
 
 fstRET  macro   Func
-        ret     cByte&@&Func
+        Local ByteName
+
+        ByteName TEXTEQU @CatStr(<cByte>,<@>,Func)
+
+        ret     &ByteName&
 endm
 
 stdRET  macro   Func
@@ -266,8 +278,11 @@ endm
 
 
 fstENDP macro   Func
+        Local ProcName
 
-        &@&Func    endp
+        ProcName TEXTEQU @CatStr(<@>,Func)
+
+        &ProcName& endp
 endm
 
 stdENDP macro   Func
@@ -328,5 +343,5 @@ endm
 MovAddr macro   dest,addr,n
 
         ComposeInst <mov >,dest,<,offset FLAT:>,addr,<@>,n
-endm
 
+endm

@@ -132,8 +132,8 @@ endm
 
 EXTRNP  macro   Func,N,Thunk,FastCall
         ifb    <N>
-            IFNDEF  Func&@0
-                extrn       Func&@0:NEAR
+            IFNDEF  &Func&@0
+                extrn       &Func&@0:NEAR
             ENDIF
         else
             ifb     <FastCall>
@@ -143,25 +143,25 @@ EXTRNP  macro   Func,N,Thunk,FastCall
                     EXTRNTHUNK  Func,%(N*4)
                 endif
             else
-                cFCall&@&Func equ   (N*4)
+                cFCall&Func& equ   (N*4)
                 ifb     <Thunk>
-                    EXTRNP2     &@&Func,%(N*4)
+                    EXTRNP2     @&Func&,%(N*4)
                 else
-                    EXTRNTHUNK  &@&Func,%(N*4)
+                    EXTRNTHUNK  @&Func&,%(N*4)
                 endif
             endif
         endif
 endm
 
 EXTRNP2 macro   Func,N
-        IFNDEF  Func&@&N
-            extrn   Func&@&N:NEAR
+        IFNDEF  &Func&@&N&
+            extrn   &Func&@&N&:NEAR
         ENDIF
 endm
 
 EXTRNTHUNK macro   Func,N
-        IFNDEF  __imp_&Func&@&N
-            extrn       __imp_&Func&@&N:DWORD
+        IFNDEF  __imp_&Func&@&N&
+            extrn       __imp_&Func&@&N&:DWORD
         ENDIF
 endm
 

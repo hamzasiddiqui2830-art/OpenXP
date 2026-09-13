@@ -1,3 +1,4 @@
+;/*
 ;
 ; Copyright (c) OpenXP
 ; Refactored for MASM 14.x (Visual Studio 2022/2026) - x86 (32-bit) Target
@@ -11,19 +12,29 @@
 ;    This module implements the header for Fast System Calls for Intel
 ;    x86 family processors.
 ;
+;*/
 
-;---------------------------------------------------------------------------
-; C-only definitions (Ignored by MASM assembler)
-;---------------------------------------------------------------------------
-IF 0
-    ; #define KI_FAST_SYSCALL_SUPPORTED   0x0800
-    ; #define MSR_SYSENTER_CS             0x00000174
-    ; #define MSR_SYSENTER_ESP            0x00000175
-    ; #define MSR_SYSENTER_EIP            0x00000176
-    ; #define MSR_EXT_FEATURE_ENABLE      0xC0000080
-    ; #define MSR_SYSCALL_TARGET_ADDR     0xC0000081
-    ; #define MSR_EFER_SCE                0x1
-ENDIF
+#if 0  ; Begin C only code   */
+
+// CPUID Feature bit in EDX indicating that fast system calls are supported
+#define KI_FAST_SYSCALL_SUPPORTED   0x0800
+
+#define MSR_SYSENTER_CS             0x00000174
+#define MSR_SYSENTER_ESP            0x00000175
+#define MSR_SYSENTER_EIP            0x00000176
+
+#define MSR_EXT_FEATURE_ENABLE      0xC0000080
+#define MSR_SYSCALL_TARGET_ADDR     0xC0000081
+
+// Define bits in the Extended Feature Enable Register (EFER) (MSR).
+#define MSR_EFER_SCE                0x1
+
+/*
+#endif ; End of C only code
+;
+;  Begin Assembly definitions
+;
+*/
 
 ;---------------------------------------------------------------------------
 ; Assembly definitions

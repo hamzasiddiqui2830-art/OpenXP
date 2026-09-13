@@ -71,7 +71,6 @@ b:
     ENDIF
 ENDM
 
-
 ;++
 ;   SET_DEBUG_DATA
 ;   USE ebx and edi.
@@ -83,7 +82,7 @@ SET_DEBUG_DATA  MACRO
         MOV     EBX, [EBP+TsEbp]
         MOV     EDI, [EBP+TsEip]
         MOV     [EBP+TsDbgArgPointer], EDX
-        MOV     [EBP+TsDbgArgMark], 0BADB0D00h
+        MOV     DWORD PTR [EBP+TsDbgArgMark], 0BADB0D00h
         MOV     [EBP+TsDbgEbp], EBX
         MOV     [EBP+TsDbgEip], EDI
     ENDIF

@@ -557,16 +557,16 @@ endif
 
         mov     eax,PCR[PcTeb]
         shr     edx, 16
-        mov     eax,[eax].TeVdm
+        mov     eax,[eax+TeVdm]
 
         cmp     eax, _MmUserProbeAddress     ; check if user address
         jae     V86Trap6PassThrough          ; if ae, then not user address
 
         and     edx, 0ffh
-        mov     dword ptr [eax].VtEIEvent, VdmBop
-        mov     dword ptr [eax].VtEIBopNumber, edx
-        mov     dword ptr [eax].VtEIInstSize, 3
-        lea     eax, [eax].VtVdmContext
+        mov     dword ptr [eax+VtEIEvent], VdmBop
+        mov     dword ptr [eax+VtEIBopNumber], edx
+        mov     dword ptr [eax+VtEIInstSize], 3
+        lea     eax, [eax+VtVdmContext]
 
         ;
         ;       Save V86 state to Vdm structure
@@ -577,25 +577,25 @@ endif
         cmp     eax, _MmUserProbeAddress     ; check if user address
         jae     V86Trap6PassThrough          ; if ae, then not user address
 
-        mov     [eax].CsEcx, ecx
-        mov     [eax].CsEbx, ebx      ; Save non-volatile registers
-        mov     [eax].CsEsi, esi
-        mov     [eax].CsEdi, edi
+        mov     [eax+CsEcx], ecx
+        mov     [eax+CsEbx], ebx      ; Save non-volatile registers
+        mov     [eax+CsEsi], esi
+        mov     [eax+CsEdi], edi
         mov     ecx, [esp+TRAP6_EAX]  ; Get eax
-        mov     [eax].CsEbp, ebp
-        mov     [eax].CsEdx, edx
-        mov     [eax].CsEax, ecx
+        mov     [eax+CsEbp], ebp
+        mov     [eax+CsEdx], edx
+        mov     [eax+CsEax], ecx
 
         mov     ebx, [esp]+TRAP6_IP   ; (ebx) = user ip
         mov     ecx, [esp]+TRAP6_CS   ; (ecx) = user cs
         mov     esi, [esp]+TRAP6_SP   ; (esi) = user esp
         mov     edi, [esp]+TRAP6_SS   ; (edi) = user ss
         mov     edx, [esp]+TRAP6_FLAGS; (edx) = user eflags
-        mov     [eax].CsEip, ebx
+        mov     [eax+CsEip], ebx
         and     esi, 0ffffh
-        mov     [eax].CsSegCs, ecx
-        mov     [eax].CsEsp, esi
-        mov     [eax].CsSegSs, edi
+        mov     [eax+CsSegCs], ecx
+        mov     [eax+CsEsp], esi
+        mov     [eax+CsSegSs], edi
         test    _KeI386VirtualIntExtensions, V86_VIRTUAL_INT_EXTENSIONS
         jz      short @f
 
@@ -610,15 +610,15 @@ endif
 
         and     edx, NOT EFLAGS_INTERRUPT_MASK
 a:
-        mov     [eax].CsEFlags, edx
+        mov     [eax+CsEFlags], edx
         mov     ebx, [esp]+TRAP6_DS   ; (ebx) = user ds
         mov     ecx, [esp]+TRAP6_ES   ; (ecx) = user es
         mov     edx, [esp]+TRAP6_FS   ; (edx) = user fs
         mov     esi, [esp]+TRAP6_GS   ; (esi) = user gs
-        mov     [eax].CsSegDs, ebx
-        mov     [eax].CsSegEs, ecx
-        mov     [eax].CsSegFs, edx
-        mov     [eax].CsSegGs, esi
+        mov     [eax+CsSegDs], ebx
+        mov     [eax+CsSegEs], ecx
+        mov     [eax+CsSegFs], edx
+        mov     [eax+CsSegGs], esi
 
         ;
         ; Load Monitor context
@@ -626,16 +626,16 @@ a:
 
         add     eax, VtMonitorContext - VtVdmContext ; (eax)->monitor context
 
-        mov     ebx, [eax].CsEbx        ; We don't need to load volatile registers.
-        mov     esi, [eax].CsEsi        ; because monitor uses SystemCall to return
-        mov     edi, [eax].CsEdi        ; back to v86.  C compiler knows that
-        mov     ebp, [eax].CsEbp        ; SystemCall does not preserve volatile
+        mov     ebx, [eax+CsEbx]        ; We don't need to load volatile registers.
+        mov     esi, [eax+CsEsi]        ; because monitor uses SystemCall to return
+        mov     edi, [eax+CsEdi]        ; back to v86.  C compiler knows that
+        mov     ebp, [eax+CsEbp]        ; SystemCall does not preserve volatile
                                         ; registers.
                                         ; es, ds are set up already.
 
         ;
         ; Note these push instructions won't fail.  Do NOT combine the
-        ; 'move ebx, [eax].CsEbx' with 'push ebx' to 'push [eax].CsEbx'
+        ; 'move ebx, [eax+CsEbx]' with 'push ebx' to 'push [eax+CsEbx]'
         ;
 
         push    ebx                     ; note, these push instructions won't fail
@@ -644,11 +644,11 @@ a:
         push    ebp
         mov     dword ptr PCR[PcVdmAlert], offset FLAT:V86Trap6Recovery2
 
-        mov     ebx, [eax].CsSegSs
-        mov     esi, [eax].CsEsp
-        mov     edi, [eax].CsEFlags
-        mov     edx, [eax].CsSegCs
-        mov     ecx, [eax].CsEip
+        mov     ebx, [eax+CsSegSs]
+        mov     esi, [eax+CsEsp]
+        mov     edi, [eax+CsEFlags]
+        mov     edx, [eax+CsSegCs]
+        mov     ecx, [eax+CsEip]
 
         ;
         ; after this point, we don't need to worry about instruction fault
@@ -683,7 +683,7 @@ a:
         ;
 
         mov     ecx, PCR[PcPrcbData+PbCurrentThread]
-        mov     ecx, [ecx].thInitialStack
+        mov     ecx, [ecx+thInitialStack]
         mov     edx, PCR[PcTss]
 
 .errnz (EFLAGS_V86_MASK AND 0FF00FFFFh)
@@ -694,7 +694,7 @@ a:
 @@:
         sub     ecx, NPX_FRAME_LENGTH
         xor     eax, eax         ; ret status = SUCCESS
-        mov     [edx].TssEsp0, ecx
+        mov     [edx+TssEsp0], ecx
 
         mov     edx, KGDT_R3_TEB OR RPL_MASK
         mov     fs, dx
@@ -713,15 +713,15 @@ DoFastIo:
         add     esp, 7 * 4              ; leave eax in the TsErrCode
         xchg    [esp], eax              ; Restore eax, store a zero errcode
         sub     esp, TsErrcode          ; build a trap frame
-        mov     [esp].TsEbx, ebx
-        mov     [esp].TsEax, eax
-        mov     [esp].TsEbp, ebp
-        mov     [esp].TsEsi, esi
-        mov     [esp].TsEdi, edi
-        mov     [esp].TsEcx, ecx
-        mov     [esp].TsEdx, edx
+        mov     [esp+TsEbx], ebx
+        mov     [esp+TsEax], eax
+        mov     [esp+TsEbp], ebp
+        mov     [esp+TsEsi], esi
+        mov     [esp+TsEdi], edi
+        mov     [esp+TsEcx], ecx
+        mov     [esp+TsEdx], edx
 if DBG
-        mov     [esp].TsPreviousPreviousMode, -1
+        mov     [esp+TsPreviousPreviousMode], -1
         mov     [esp]+TsDbgArgMark, 0BADB0D00h
 endif
         mov     edi, PCR[PcExceptionList]
@@ -732,7 +732,7 @@ ifdef NT_UP
         mov     fs, bx
 endif
         mov     ebx, PCR[PcPrcbData+PbCurrentThread] ; fetch current thread
-        test    [ebx].ThDebugActive, 0ffh            ; See if debug registers are active
+        test    [ebx+ThDebugActive], 0ffh            ; See if debug registers are active
         mov     ebp, esp
         cld
 .errnz (DR7_ACTIVE AND 0FFFFFF00h)
@@ -757,24 +757,24 @@ endif
         ; Load KernelDr* into processor
         ;
         mov     edi,dword ptr PCR[PcPrcb]
-        mov     ebx,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr0
-        mov     esi,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr1
+        mov     ebx,[edi+PbProcessorState].PsSpecialRegisters.SrKernelDr0
+        mov     esi,[edi+PbProcessorState].PsSpecialRegisters.SrKernelDr1
         mov     dr0,ebx
         mov     dr1,esi
-        mov     ebx,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr2
-        mov     esi,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr3
+        mov     ebx,[edi+PbProcessorState].PsSpecialRegisters.SrKernelDr2
+        mov     esi,[edi+PbProcessorState].PsSpecialRegisters.SrKernelDr3
         mov     dr2,ebx
         mov     dr3,esi
-        mov     ebx,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr6
-        mov     esi,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr7
+        mov     ebx,[edi+PbProcessorState].PsSpecialRegisters.SrKernelDr6
+        mov     esi,[edi+PbProcessorState].PsSpecialRegisters.SrKernelDr7
         mov     dr6,ebx
         mov     dr7,esi
 @@:
         xor     edx, edx
-        mov     dx, word ptr [ebp].TsSegCs
+        mov     dx, word ptr [ebp+TsSegCs]
         shl     edx, 4
         xor     ebx, ebx
-        add     edx, [ebp].TsEip
+        add     edx, [ebp+TsEip]
 
         ;
         ; Set the magic PCR bit indicating we are executing VDM management code
@@ -866,7 +866,7 @@ b:      mov     ebx, PCR[PcPrcbData+PbCurrentThread]; get addr of current thread
 
         mov     ebx, TFrame
 ifnb <ReturnCurrentEax>
-        mov     [ebx].TsEax, eax        ; Store return code in trap frame
+        mov     [ebx+TsEax], eax        ; Store return code in trap frame
         mov     dword ptr [ebx]+TsSegFs, KGDT_R3_TEB OR RPL_MASK
         mov     dword ptr [ebx]+TsSegDs, KGDT_R3_DATA OR RPL_MASK
         mov     dword ptr [ebx]+TsSegEs, KGDT_R3_DATA OR RPL_MASK
@@ -899,7 +899,7 @@ endif
         LowerIrql ecx
 
 ifnb <ReturnCurrentEax>
-        mov     eax, [ebx].TsEax        ; Restore eax, just in case
+        mov     eax, [ebx+TsEax]        ; Restore eax, just in case
 endif
 
         cli
@@ -998,7 +998,7 @@ Kss_ExceptionHandler:
 ;
 
         mov     eax, [esp+4]            ; (eax)-> ExceptionRecord
-        mov     eax, [eax].ErExceptionCode ; (eax) = Exception code
+        mov     eax, [eax+ErExceptionCode] ; (eax) = Exception code
         mov     esp, [esp+8]            ; (esp)-> ExceptionList
 
         pop     eax
@@ -1009,7 +1009,7 @@ Kss_ExceptionHandler:
         test    dword ptr [ebp]+TsEFlags,EFLAGS_V86_MASK
         jnz     kss60           ; v86 mode => usermode
 
-        test    dword ptr [ebp].TsSegCs, MODE_MASK ; if premode=kernel
+        test    dword ptr [ebp+TsSegCs], MODE_MASK ; if premode=kernel
         jnz     kss60                   ; nz, prevmode=user, go return
 
 ; raise bugcheck if prevmode=kernel
@@ -1107,11 +1107,11 @@ endif
 ; If this isn't the same as esp0 then we are a VX86 thread and we are rejected
 ;
 
-        mov     ecx, [ecx].ThInitialStack
+        mov     ecx, [ecx+ThInitialStack]
         lea     esp, [ecx-(NPX_FRAME_LENGTH + (TsV86Gs - TsHardwareSegSS))]
         mov     ecx, PCR[PcTss]
 
-        cmp     esp, [ecx].TssEsp0
+        cmp     esp, [ecx+TssEsp0]
         jne     Kfsc90
 
 
@@ -1146,11 +1146,11 @@ endif ;; NT_UP
 ; If this isn't the same as esp0 then we are a VX86 thread and we are rejected
 ;
 
-        mov     ecx, [ecx].ThInitialStack
+        mov     ecx, [ecx+ThInitialStack]
         lea     esp, [ecx-(NPX_FRAME_LENGTH + (TsV86Gs - TsHardwareSegSS))]
         mov     ecx, PCR[PcTss]
 
-        cmp     esp, [ecx].TssEsp0
+        cmp     esp, [ecx+TssEsp0]
         jne     Kfsc90
 ;
 ;       Set ecx to return address in user mode
@@ -1365,8 +1365,8 @@ kss61:
 ;
 
 kss70:  mov     ecx, PCR[PcPrcbData+PbCurrentThread] ; get current thread address
-        mov     edx, [ebp].TsEdx        ; restore previous trap frame address
-        mov     [ecx].ThTrapFrame, edx  ;
+        mov     edx, [ebp+TsEdx]        ; restore previous trap frame address
+        mov     [ecx+ThTrapFrame], edx  ;
 
 ;
 ;   System service's private version of KiExceptionExit
@@ -1393,7 +1393,7 @@ _KiServiceExit:
 ; Otherwise, copy the argument list and execute the system service.
 ;
 
-kss80:  test    byte ptr [ebp].TsSegCs, MODE_MASK ; test previous mode
+kss80:  test    byte ptr [ebp+TsSegCs], MODE_MASK ; test previous mode
         jz      KiSystemServiceCopyArguments ; if z, previous mode kernel
         mov     eax, STATUS_ACCESS_VIOLATION ; set service status
         jmp     kss60                   ;
@@ -1465,7 +1465,7 @@ endif
 ;
 
 Kfsc90:
-        mov     esp, [ecx].TssEsp0
+        mov     esp, [ecx+TssEsp0]
         push    0                           ; save VX86 Es, Ds, Fs, Gs
         push    0
         push    0
@@ -1627,7 +1627,7 @@ _KiCallbackReturn proc
         mov     ecx,KGDT_R0_PCR         ; set PCR segment number
         mov     fs,cx                   ;
         mov     eax,PCR[PcPrcbData + PbCurrentThread] ; get current thread address
-        mov     ecx,[eax].ThCallbackStack ; get callback stack address
+        mov     ecx,[eax+ThCallbackStack] ; get callback stack address
         test    ecx,ecx                 ; check if callback active
         jz      _KiCbExit               ; if z, no callback active
         mov     edi,[esp] + 4           ; set output buffer address
@@ -1648,13 +1648,13 @@ _KiCallbackReturn proc
 ;
 
         cld                             ; clear the direction flag
-        mov     ebx,[ecx].CuOutBf       ; get address to store output buffer
+        mov     ebx,[ecx+CuOutBf]       ; get address to store output buffer
         mov     [ebx],edi               ; store output buffer address
-        mov     ebx,[ecx].CuOutLn       ; get address to store output length
+        mov     ebx,[ecx+CuOutLn]       ; get address to store output length
         mov     [ebx],esi               ; store output buffer length
-        mov     esi,[eax].ThInitialStack ; get source NPX save area address
+        mov     esi,[eax+ThInitialStack] ; get source NPX save area address
         mov     ebx,[ecx]               ; get previous initial stack address
-        mov     [eax].ThInitialStack,ebx ; restore initial stack address
+        mov     [eax+ThInitialStack],ebx ; restore initial stack address
         sub     ebx,NPX_FRAME_LENGTH    ; compute destination NPX save area
         sub     esi,NPX_FRAME_LENGTH    ; compute source NPX save area
 
@@ -1662,36 +1662,36 @@ _KiCallbackReturn proc
 ; the source NPX save area. So we always copy first 3 dwords, irrespective
 ; of the fact whether the save was done using fxsave or fnsave.
 
-        mov     edx,[esi].FpControlWord ; copy NPX state to previous frame
-        mov     [ebx].FpControlWord,edx ;
-        mov     edx,[esi].FpStatusWord  ;
-        mov     [ebx].FpStatusWord,edx  ;
-        mov     edx,[esi].FpTagWord     ;
-        mov     [ebx].FpTagWord,edx     ;
-        mov     edx,[esi].FxMXCsr       ;
-        mov     [ebx].FxMXCsr,edx       ;
-        mov     edx,[esi].FpCr0NpxState ;
-        mov     [ebx].FpCr0NpxState,edx ;
+        mov     edx,[esi+FpControlWord] ; copy NPX state to previous frame
+        mov     [ebx+FpControlWord],edx ;
+        mov     edx,[esi+FpStatusWord]  ;
+        mov     [ebx+FpStatusWord],edx  ;
+        mov     edx,[esi+FpTagWord]     ;
+        mov     [ebx+FpTagWord],edx     ;
+        mov     edx,[esi+FxMXCsr]       ;
+        mov     [ebx+FxMXCsr],edx       ;
+        mov     edx,[esi+FpCr0NpxState] ;
+        mov     [ebx+FpCr0NpxState],edx ;
         lea     esp, [ecx]+4            ; trim stack back to callback frame
         pop     edx
 
 .errnz (EFLAGS_V86_MASK AND 0FF00FFFFh)
 
         test    byte ptr [edx]+TsEFlags+2,EFLAGS_V86_MASK/010000h  ; is this a V86 frame?
-        mov     [eax].ThTrapFrame, edx  ; restore current trap frame address
+        mov     [eax+ThTrapFrame], edx  ; restore current trap frame address
         mov     edx,PCR[PcTss]          ; get address of task switch segment
         jne     @f
         sub     ebx, TsV86Gs-TsHardwareSegSs ; bias missing V86 fields
-@@:     mov     [edx].TssEsp0,ebx       ; restore kernel entry stack address
-        test    [eax].ThDebugActive, 0ffh ; Are debug registers active?
+@@:     mov     [edx+TssEsp0],ebx       ; restore kernel entry stack address
+        test    [eax+ThDebugActive], 0ffh ; Are debug registers active?
 .errnz (DR7_ACTIVE AND 0FFFFFF00h)
         jnz     short _KiCbDebugRegs    ; restore kernel Debug Registers
 _KiCbRet:
-        mov     edx, [eax].ThTrapFrame  ; Get current trap frame address
-        test    [edx].TsDr7, DR7_ACTIVE
-        setnz   byte ptr [eax].ThDebugActive ; Set debug active to match saved DR7
+        mov     edx, [eax+ThTrapFrame]  ; Get current trap frame address
+        test    [edx+TsDr7], DR7_ACTIVE
+        setnz   byte ptr [eax+ThDebugActive] ; Set debug active to match saved DR7
         sti                             ; enable interrupts
-        pop     [eax].ThCallbackStack   ; restore callback stack address
+        pop     [eax+ThCallbackStack]   ; restore callback stack address
         mov     eax,ebp                 ; set callback service status
 
 ;
@@ -1715,16 +1715,16 @@ _KiCbDebugRegs:
         mov     edi, PCR[PcPrcb]
         xor     ecx, ecx                ; Make Dr7 safe
         mov     dr7, ecx
-        mov     ebx, [edi].PbProcessorState.PsSpecialRegisters.SrKernelDr0
-        mov     ecx, [edi].PbProcessorState.PsSpecialRegisters.SrKernelDr1
+        mov     ebx, [edi+PbProcessorState].PsSpecialRegisters.SrKernelDr0
+        mov     ecx, [edi+PbProcessorState].PsSpecialRegisters.SrKernelDr1
         mov     dr0, ebx
         mov     dr1, ecx
-        mov     ebx, [edi].PbProcessorState.PsSpecialRegisters.SrKernelDr2
-        mov     ecx, [edi].PbProcessorState.PsSpecialRegisters.SrKernelDr3
+        mov     ebx, [edi+PbProcessorState].PsSpecialRegisters.SrKernelDr2
+        mov     ecx, [edi+PbProcessorState].PsSpecialRegisters.SrKernelDr3
         mov     dr2, ebx
         mov     dr3, ecx
-        mov     ebx, [edi].PbProcessorState.PsSpecialRegisters.SrKernelDr6
-        mov     ecx, [edi].PbProcessorState.PsSpecialRegisters.SrKernelDr7
+        mov     ebx, [edi+PbProcessorState].PsSpecialRegisters.SrKernelDr6
+        mov     ecx, [edi+PbProcessorState].PsSpecialRegisters.SrKernelDr7
         mov     dr6, ebx
         mov     dr7, ecx
         jmp     short _KiCbRet
@@ -1753,8 +1753,8 @@ _KiSetLowWaitHighThread proc
         ENTER_SYSCALL   kslwh_a, kslwh_t ; Set up trap frame
 
         mov     eax,STATUS_NO_EVENT_PAIR ; set service status
-        mov     edx,[ebp].TsEdx         ; restore old trap frame address
-        mov     [esi].ThTrapFrame,edx   ;
+        mov     edx,[ebp+TsEdx]         ; restore old trap frame address
+        mov     [esi+ThTrapFrame],edx   ;
         jmp     _KiServiceExit
 
 _KiSetLowWaitHighThread endp
@@ -2228,7 +2228,7 @@ MODIFY_BASE_TRAP_FRAME macro
 
         mov     edi, PCR[PcPrcbData+PbCurrentThread] ; Get current thread
         lea     eax, [esp]+KTRAP_FRAME_LENGTH + NPX_FRAME_LENGTH ; adjust for base frame
-        sub     eax, [edi].ThInitialStack ; Bias out this stack
+        sub     eax, [edi+ThInitialStack] ; Bias out this stack
         je      short vbfdone           ; if eq, then this is the base frame
 
         cmp     eax, -TsEflags          ; second frame is only this big
@@ -2326,7 +2326,7 @@ vbfdone:
 KiRestoreBaseFrame proc
         pop     ebx                     ; Get return address
 IF DBG
-        mov     eax, [esp].TsEip        ; EIP of trap
+        mov     eax, [esp+TsEip]        ; EIP of trap
 
     ;
     ; This code is to handle a very specific problem of a not-present
@@ -2350,7 +2350,7 @@ ENDIF
     ; a full base trap frame
     ;
         mov     eax, PCR[PcPrcbData+PbCurrentThread] ; Get current thread
-        mov     edi, [eax].ThInitialStack
+        mov     edi, [eax+ThInitialStack]
         sub     edi, NPX_FRAME_LENGTH + KTRAP_FRAME_LENGTH + TsEFlags + 4 ; (edi) = bottom of target
         mov     esi, esp                ; (esi) = bottom of source
         mov     esp, edi                ; make space before copying the data
@@ -2369,7 +2369,7 @@ ENDIF
     ; data from the current frame.
     ;
         mov     ecx, esi                ; Location of esp at time of fault
-        mov     edi, [eax].ThInitialStack
+        mov     edi, [eax+ThInitialStack]
         sub     edi, NPX_FRAME_LENGTH + KTRAP_FRAME_LENGTH ; (edi) = base trap frame
         mov     ebx, edi
 
@@ -2401,27 +2401,27 @@ ENDIF
     ;   - Not all enter's push the PreviousPreviousMode.  Since this is
     ;     the base trap frame we know that this must be UserMode.
     ;
-        mov     eax, [ebp].TsEax                    ; make sure correct
-        mov     [ebx].TsEax, eax                    ; eax is in base frame
-        mov     byte ptr [ebx].TsPreviousPreviousMode, 1    ; UserMode
+        mov     eax, [ebp+TsEax]                    ; make sure correct
+        mov     [ebx+TsEax], eax                    ; eax is in base frame
+        mov     byte ptr [ebx+TsPreviousPreviousMode], 1    ; UserMode
 
-        mov     [ebp].TsEbp, ebx
-        mov     [ebp].TsEip, offset _KiServiceExit2 ; ExitAll which
+        mov     [ebp+TsEbp], ebx
+        mov     [ebp+TsEip], offset _KiServiceExit2 ; ExitAll which
 
                                                     ; restores everything
     ;
     ; Since we backed up Eip we need to reset some of the kernel selector
     ; values in case they were already restored by the attempted base frame pop
     ;
-        mov     dword ptr [ebp].TsSegDs, KGDT_R3_DATA OR RPL_MASK
-        mov     dword ptr [ebp].TsSegEs, KGDT_R3_DATA OR RPL_MASK
-        mov     dword ptr [ebp].TsSegFs, KGDT_R0_PCR
+        mov     dword ptr [ebp+TsSegDs], KGDT_R3_DATA OR RPL_MASK
+        mov     dword ptr [ebp+TsSegEs], KGDT_R3_DATA OR RPL_MASK
+        mov     dword ptr [ebp+TsSegFs], KGDT_R0_PCR
 
     ;
     ; The backed up EIP is before interrupts were disabled.  Re-enable
     ; interrupts for the current trap frame
     ;
-        or      [ebp].TsEFlags, EFLAGS_INTERRUPT_MASK
+        or      [ebp+TsEFlags], EFLAGS_INTERRUPT_MASK
 
         ret
 
@@ -2566,8 +2566,8 @@ align dword
 ;
 
 
-Kt0100: mov     [ebp].TsEip, _KiFastCallEntry2
-        and     dword ptr [ebp].TsEflags, NOT EFLAGS_TF
+Kt0100: mov     [ebp+TsEip], _KiFastCallEntry2
+        and     dword ptr [ebp+TsEflags], NOT EFLAGS_TF
         jmp     _KiExceptionExit        ; join common code
 
         ENTER_DR_ASSIST kit1_a, kit1_t, NoAbiosAssist
@@ -2666,7 +2666,7 @@ Kt01VdmAlert:
         mov     eax, PCR[PcVdmAlert]
         mov     dword ptr PCR[PcVdmAlert], 0
 
-        mov     [ebp].TsEip, eax
+        mov     [ebp+TsEip], eax
         mov     esp,ebp                 ; (esp) -> trap frame
         jmp     _KiExceptionExit        ; join common code
 
@@ -2713,7 +2713,7 @@ _KiTrap02       proc
 
         mov     eax, PCR[PcTss]                      ; get old TSS address
         mov     ecx, PCR[PcPrcbData+PbCurrentThread] ; get thread address
-        mov     edi, [ecx].ThApcState.AsProcess      ; get process address
+        mov     edi, [ecx+ThApcState].AsProcess      ; get process address
         mov     ecx, [edi]+PrDirectoryTableBase      ; get directory base
         mov     [eax]+TssCR3, ecx                    ; set previous cr3
 
@@ -2778,25 +2778,25 @@ _KiTrap02       proc
         push    0                       ; faked V86Gs thru V86Es
         push    0
         push    0
-        push    [eax].TssSs             ; copy fields from TSS to
-        push    [eax].TssEsp            ; trap frame.
-        push    [eax].TssEflags
-        push    [eax].TssCs
-        push    [eax].TssEip
+        push    [eax+TssSs]             ; copy fields from TSS to
+        push    [eax+TssEsp]            ; trap frame.
+        push    [eax+TssEflags]
+        push    [eax+TssCs]
+        push    [eax+TssEip]
         push    0
-        push    [eax].TssEbp
-        push    [eax].TssEbx
-        push    [eax].TssEsi
-        push    [eax].TssEdi
-        push    [eax].TssFs
+        push    [eax+TssEbp]
+        push    [eax+TssEbx]
+        push    [eax+TssEsi]
+        push    [eax+TssEdi]
+        push    [eax+TssFs]
         push    PCR[PcExceptionList]
         push    -1                      ; previous mode
-        push    [eax].TssEax
-        push    [eax].TssEcx
-        push    [eax].TssEdx
-        push    [eax].TssDs
-        push    [eax].TssEs
-        push    [eax].TssGs
+        push    [eax+TssEax]
+        push    [eax+TssEcx]
+        push    [eax+TssEdx]
+        push    [eax+TssDs]
+        push    [eax+TssEs]
+        push    [eax+TssGs]
         push    0                       ; fake out the debug registers
         push    0
         push    0
@@ -2807,8 +2807,8 @@ _KiTrap02       proc
         push    0                       ; temp CS
         push    0
         push    0
-        push    [eax].TssEip
-        push    [eax].TssEbp
+        push    [eax+TssEip]
+        push    [eax+TssEbp]
         mov     ebp, esp                ; ebp -> TrapFrame
 
 .FPO ( 0, 0, 0, 0, 0, FPO_TRAPFRAME )
@@ -3428,7 +3428,7 @@ Kt6_ExceptionHandler proc
         add     esp, 4                  ; pop out except handler
         pop     ebp                     ; (ebp)-> trap frame
 
-        test    dword ptr [ebp].TsSegCs, MODE_MASK ; if premode=kernel
+        test    dword ptr [ebp+TsSegCs], MODE_MASK ; if premode=kernel
         jnz     Kt0630                  ; nz, prevmode=user, go return
 
         ;
@@ -3487,14 +3487,14 @@ _KiTrap07       proc
 
 Kt0700:
         mov     eax, PCR[PcPrcbData+PbCurrentThread]
-        mov     ecx, [eax].ThInitialStack ; (ecx) -> top of kernel stack
+        mov     ecx, [eax+ThInitialStack] ; (ecx) -> top of kernel stack
         sub     ecx, NPX_FRAME_LENGTH
         cli                             ; don't context switch
 .errnz (CR0_EM AND 0FFFFFF00h)
-        test    byte ptr [ecx].FpCr0NpxState,CR0_EM
+        test    byte ptr [ecx+FpCr0NpxState],CR0_EM
         jnz     Kt07140
 
-Kt0701: cmp     byte ptr [eax].ThNpxState, NPX_STATE_LOADED
+Kt0701: cmp     byte ptr [eax+ThNpxState], NPX_STATE_LOADED
         mov     ebx, cr0
         je      Kt0710
 
@@ -3526,7 +3526,7 @@ Kt0702:
 ; that any possible coprocessor error has already occured and been
 ; handled.
 ;
-        mov     esi,[edx].ThInitialStack
+        mov     esi,[edx+ThInitialStack]
         sub     esi, NPX_FRAME_LENGTH   ; Space for NPX_FRAME
 
         test    byte ptr _KeI386FxsrPresent, 1  ; Is FXSR feature present
@@ -3536,7 +3536,7 @@ Kt0702:
 Kt0703a:
         fnsave  [esi]                   ; Save thread's coprocessor state
 Kt0703b:
-        mov     byte ptr [edx].ThNpxState, NPX_STATE_NOT_LOADED
+        mov     byte ptr [edx+ThNpxState], NPX_STATE_NOT_LOADED
 Kt0704:
 endif
 
@@ -3569,11 +3569,11 @@ if 0            ; FpNpxSavedCpu is broken - disable it
         cmp     [edx+PcPrcbData+PbNpxThread], eax
         jne     Kt0704a
 
-        cmp     dword ptr [ecx].FpNpxSavedCpu, edx
+        cmp     dword ptr [ecx+FpNpxSavedCpu], edx
         jne     short Kt0704a
         jmp     short Kt0704c
 Kt0704a:
-        mov     dword ptr [ecx].FpNpxSavedCpu, edx ; Remember processor
+        mov     dword ptr [ecx+FpNpxSavedCpu], edx ; Remember processor
 endif
 endif
         FXRSTOR_ECX                     ; reload NPX context
@@ -3582,13 +3582,13 @@ Kt0704b:
         frstor  [ecx]                   ; reload NPX context
 
 Kt0704c:
-        mov     byte ptr [eax].ThNpxState, NPX_STATE_LOADED
+        mov     byte ptr [eax+ThNpxState], NPX_STATE_LOADED
         mov     PCR[PcPrcbData+PbNpxThread], eax  ; owner of coprocessors state
 
         sti                             ; Allow interrupts & context switches
         nop                             ; sti needs one cycle
 
-        cmp     dword ptr [ecx].FpCr0NpxState, 0
+        cmp     dword ptr [ecx+FpCr0NpxState], 0
         jz      _KiExceptionExit        ; nothing to set, skip CR0 reload
 
 ;
@@ -3599,11 +3599,11 @@ Kt0704c:
 ;
         cli
 if DBG
-        test    dword ptr [ecx].FpCr0NpxState, NOT (CR0_MP+CR0_EM+CR0_TS)
+        test    dword ptr [ecx+FpCr0NpxState], NOT (CR0_MP+CR0_EM+CR0_TS)
         jnz short Kt07dbg1
 endif
         mov     ebx,CR0
-        or      ebx, [ecx].FpCr0NpxState
+        or      ebx, [ecx+FpCr0NpxState]
         mov     cr0, ebx                ; restore thread's CR0 NPX state
         sti
 .errnz (CR0_TS AND 0FFFFFF00h)
@@ -3639,7 +3639,7 @@ if DBG
         jnz     short Kt07dbg3
 endif
 
-        or      dword ptr [ecx].FpCr0NpxState, CR0_TS   ; signal a delayed error
+        or      dword ptr [ecx+FpCr0NpxState], CR0_TS   ; signal a delayed error
 
         cmp     dword ptr [ebp]+TsEip, Kt0704b  ; Is this fault on reload a thread's context?
         jne     short Kt0716                ; No, dispatch exception
@@ -3681,7 +3681,7 @@ Kt0716: stdCall _Ki386CheckDelayedNpxTrap,<ebp,ecx>
         jnz     _KiExceptionExit        ; Already handled
 
         mov     eax, PCR[PcPrcbData+PbCurrentThread]
-        mov     ecx, [eax].ThInitialStack ; (ecx) -> top of kernel stack
+        mov     ecx, [eax+ThInitialStack] ; (ecx) -> top of kernel stack
         sub     ecx, NPX_FRAME_LENGTH
 
 Kt0720:
@@ -3712,7 +3712,7 @@ Kt0725a:
 Kt0725b:
 
 if DBG
-        test    dword ptr [ecx].FpCr0NpxState, NOT (CR0_MP+CR0_EM+CR0_TS)
+        test    dword ptr [ecx+FpCr0NpxState], NOT (CR0_MP+CR0_EM+CR0_TS)
         jnz     Kt07dbg2
 endif
         or      ebx, NPX_STATE_NOT_LOADED
@@ -3722,13 +3722,13 @@ endif
 ;
 ; Clear TS bit in Cr0NpxFlags in case it was set to trigger this trap.
 ;
-        and     dword ptr [ecx].FpCr0NpxState, NOT CR0_TS
+        and     dword ptr [ecx+FpCr0NpxState], NOT CR0_TS
 
 ;
 ; The state is no longer in the coprocessor.  Clear ThNpxState and
 ; re-enable interrupts to allow context switching.
 ;
-        mov     byte ptr [eax].ThNpxState, NPX_STATE_NOT_LOADED
+        mov     byte ptr [eax+ThNpxState], NPX_STATE_NOT_LOADED
         mov     dword ptr PCR[PcPrcbData+PbNpxThread], 0  ; No state in coprocessor
 Kt0726: sti
 
@@ -3890,10 +3890,10 @@ Kt07130:
 ; be saved now, if not loaded, skip save.
 
         mov     eax, PCR[PcPrcbData+PbCurrentThread]
-        mov     ecx, [eax].ThInitialStack   ; ecx -> top of kernel stack
+        mov     ecx, [eax+ThInitialStack]   ; ecx -> top of kernel stack
         sub     ecx, NPX_FRAME_LENGTH       ; ecx -> NPX save area
         cli
-        cmp     byte ptr [eax].ThNpxState, NPX_STATE_LOADED
+        cmp     byte ptr [eax+ThNpxState], NPX_STATE_LOADED
         je      Kt0720                      ; jif NPX state needs to be saved
         jmp     Kt0726                      ; NPX state already saved
 
@@ -3909,7 +3909,7 @@ Kt07140:
 ; an app, such as C7, sets the EM bit after executing NPX instructions,
 ; the fsave in SwapContext will catch an NPX exception
 ;
-        cmp     [ebp].TsSegCS, word ptr KGDT_R0_CODE
+        cmp     [ebp+TsSegCS], word ptr KGDT_R0_CODE
         je      Kt0701
 
 ;
@@ -4001,7 +4001,7 @@ _KiTrap08       proc
 
         mov     eax, PCR[PcTss]                      ; get old TSS address
         mov     ecx, PCR[PcPrcbData+PbCurrentThread] ; get thread address
-        mov     edi, [ecx].ThApcState.AsProcess      ; get process address
+        mov     edi, [ecx+ThApcState].AsProcess      ; get process address
         mov     ecx, [edi]+PrDirectoryTableBase      ; get directory base
         mov     [eax]+TssCR3, ecx                    ; set previous cr3
 
@@ -4347,7 +4347,7 @@ Kt0b40:
 
 Kt0b90:
 if DBG
-        lea     eax, [ebp].TsHardwareEsp
+        lea     eax, [ebp+TsHardwareEsp]
         cmp     eax, edx
         je      @f
         int     3
@@ -4388,16 +4388,16 @@ SaveDebugReg:
         ; Load KernelDr* into processor
         ;
         mov     edi,dword ptr PCR[PcPrcb]
-        mov     ebx,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr0
-        mov     esi,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr1
+        mov     ebx,[edi+PbProcessorState].PsSpecialRegisters.SrKernelDr0
+        mov     esi,[edi+PbProcessorState].PsSpecialRegisters.SrKernelDr1
         mov     dr0,ebx
         mov     dr1,esi
-        mov     ebx,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr2
-        mov     esi,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr3
+        mov     ebx,[edi+PbProcessorState].PsSpecialRegisters.SrKernelDr2
+        mov     esi,[edi+PbProcessorState].PsSpecialRegisters.SrKernelDr3
         mov     dr2,ebx
         mov     dr3,esi
-        mov     ebx,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr6
-        mov     esi,[edi].PbProcessorState.PsSpecialRegisters.SrKernelDr7
+        mov     ebx,[edi+PbProcessorState].PsSpecialRegisters.SrKernelDr6
+        mov     esi,[edi+PbProcessorState].PsSpecialRegisters.SrKernelDr7
         mov     dr6,ebx
         mov     dr7,esi
         pop    esi
@@ -4636,7 +4636,7 @@ VdmFixEspEbp  proc
         ; First check if user SS is small.  If it is big, do nothing
         ;
 
-        mov     eax, [ebp].TsHardwareSegSs
+        mov     eax, [ebp+TsHardwareSegSs]
         lar     eax, eax                        ; [eax]= ss access right
         jnz     Vth_err
 
@@ -4646,20 +4646,20 @@ VdmFixEspEbp  proc
         xor     edx, edx                        ; [edx] = 0 no need to update tframe
         mov     eax, esp
         and     eax, 0ffff0000h                 ; [eax]=kernel esp higher 16bit
-        mov     ecx, [ebp].TsHardwareEsp
+        mov     ecx, [ebp+TsHardwareEsp]
         and     ecx, 0ffff0000h                 ; [ecx]=user esp higher 16bit
         cmp     ecx, eax                        ; are they the same
         jnz     short @f                        ; if nz, no, go check ebp
 
-        and     dword ptr [ebp].TsHardwareEsp, 0ffffH ; zero higher 16 bit of user esp
+        and     dword ptr [ebp+TsHardwareEsp], 0ffffH ; zero higher 16 bit of user esp
         mov     edx, 1                          ; [edx]=1 indicates we need to update trap frame
 @@:
-        mov     ecx, [ebp].TsEbp
+        mov     ecx, [ebp+TsEbp]
         and     ecx, 0ffff0000h                 ; [ecx]=user ebp higher 16bit
         cmp     ecx, eax                        ; are they the same as kernel's
         jnz     short @f                        ; if nz, no, go check if we need to update tframe
 
-        and     dword ptr [ebp].TsEbp, 0ffffH   ; zero higher 16bit of user ebp
+        and     dword ptr [ebp+TsEbp], 0ffffH   ; zero higher 16bit of user ebp
         mov     edx, 1                          ; update kernel trap frame
 @@:     cmp     edx, 1                          ; do we need to update trap frame?
         jnz     short Vth_err                   ; if nz, no, do nothing
@@ -4673,9 +4673,9 @@ Vth_ok:
 
         mov     ebx, PCR[PcTeb]
 
-        mov     eax, [ebp].TsSegCs
-        mov     ecx, [ebp].TsEip
-        mov     edx, [ebp].TsEbx
+        mov     eax, [ebp+TsSegCs]
+        mov     ecx, [ebp+TsEip]
+        mov     edx, [ebp+TsEbx]
 
         stdCall _VdmTibPass1, <eax,ecx,edx>
 
@@ -4686,7 +4686,7 @@ Vth_ok:
         ; [ebx]->vdmtib
         ;
 
-        mov     [ebp].TsEbx, eax
+        mov     [ebp+TsEbx], eax
 
 ;
 ; dispatch control to ntvdm trapc handler which will load ss:esp
@@ -4697,8 +4697,8 @@ Vth_ok:
         mov     eax,[eax]+ThApcState+AsProcess
         mov     eax,[eax]+PrVdmTrapcHandler
 
-        mov     dword ptr [ebp].TsSegCs, KGDT_R3_CODE OR RPL_MASK
-        mov     dword ptr [ebp].TsEip, eax
+        mov     dword ptr [ebp+TsSegCs], KGDT_R3_CODE OR RPL_MASK
+        mov     dword ptr [ebp+TsEip], eax
 
         mov     eax, 1
         ret
@@ -4765,7 +4765,7 @@ Ktd_ExceptionHandler proc
         add     esp, 4                  ; pop out except handler
         pop     ebp                     ; (ebp)-> trap frame
 
-        test    dword ptr [ebp].TsSegCs, MODE_MASK ; if premode=kernel
+        test    dword ptr [ebp+TsSegCs], MODE_MASK ; if premode=kernel
         jnz     Kt0d103                 ; nz, prevmode=user, go return
 
 ; raise bugcheck if prevmode=kernel
@@ -5040,7 +5040,7 @@ Kt0d003:
 
 Kt0d005:
 if DBG
-        lea     eax, [ebp].TsHardwareEsp
+        lea     eax, [ebp+TsHardwareEsp]
         cmp     edx, eax
         je      @f
         int     3
@@ -5088,11 +5088,11 @@ Kt0d02: mov     eax, EXCEPTION_GP_FAULT ; (eax) = trap type
 ; if vdm running in flat mode, handle pop es,fs,gs by setting to Zero
 ;
 kt0d0202:
-        add     dword ptr [ebp].TsEip, 1
+        add     dword ptr [ebp+TsEip], 1
 kt0d02021:
         mov     dword ptr [edx], 0
-        add     dword ptr [ebp].TsEip, 1
-        add     dword ptr [ebp].TsHardwareEsp, 4
+        add     dword ptr [ebp+TsEip], 1
+        add     dword ptr [ebp+TsHardwareEsp], 4
         jmp     _KiExceptionExit
 
 kt0d0201:
@@ -5286,7 +5286,7 @@ Kt0d60: cmp     al, CLI_OP              ; Is it a CLI instruction
         add     esi, KGDT_TSS
         movzx   ebx, word ptr [esi]     ; (ebx) = Tss limit
 
-        mov     edx, [ebp].TsEdx        ; [edx] = port addr
+        mov     edx, [ebp+TsEdx]        ; [edx] = port addr
         mov     ecx, edx
         and     ecx, 07                 ; [ecx] = Bit position
         shr     edx, 3                  ; [edx] = offset to the IoMap
@@ -5391,7 +5391,7 @@ cPublicFpo 0,0
         jmp     Ktia02                  ; no frame, go bugcheck
 Ktia01:
         mov     edx, offset FLAT:ExpInterlockedPopEntrySListFault
-        cmp     [ecx].TsEip, edx        ; check if fault at pop code address
+        cmp     [ecx+TsEip], edx        ; check if fault at pop code address
         sete    al                      ; if yes, then don't bugcheck
 Ktia02:
         fstRET  KeInvalidAccessAllowed
@@ -5534,7 +5534,7 @@ Kt0e01:
 ;
 
 Kt0e05: mov     ecx, offset FLAT:ExpInterlockedPopEntrySListFault ; get pop code address
-        cmp     [ebp].TsEip, ecx        ; check if fault at pop code address
+        cmp     [ebp+TsEip], ecx        ; check if fault at pop code address
         je      Kt0e10a                 ; if eq, skip faulting instruction
 
 ;
@@ -5542,30 +5542,30 @@ Kt0e05: mov     ecx, offset FLAT:ExpInterlockedPopEntrySListFault ; get pop code
 ;   user stack to kernel stack?
 ;
         mov     ecx, offset FLAT:KiSystemServiceCopyArguments
-        cmp     [ebp].TsEip, ecx
+        cmp     [ebp+TsEip], ecx
         je      short Kt0e06
 
         mov     ecx, offset FLAT:KiSystemServiceAccessTeb
-        cmp     [ebp].TsEip, ecx
+        cmp     [ebp+TsEip], ecx
         jne     short Kt0e07
 
-        mov     ecx, [ebp].TsEbp        ; (eax)->TrapFrame of SysService
-        test    [ecx].TsSegCs, MODE_MASK
+        mov     ecx, [ebp+TsEbp]        ; (eax)->TrapFrame of SysService
+        test    [ecx+TsSegCs], MODE_MASK
         jz      short Kt0e07            ; caller of SysService is k mode, we
                                         ; will let it bugcheck.
-        mov     [ebp].TsEip, offset FLAT:kss61
+        mov     [ebp+TsEip], offset FLAT:kss61
         mov     eax, STATUS_ACCESS_VIOLATION
-        mov     [ebp].TsEax, eax
+        mov     [ebp+TsEax], eax
         jmp     _KiExceptionExit
 
 Kt0e06:
-        mov     ecx, [ebp].TsEbp        ; (eax)->TrapFrame of SysService
-        test    [ecx].TsSegCs, MODE_MASK
+        mov     ecx, [ebp+TsEbp]        ; (eax)->TrapFrame of SysService
+        test    [ecx+TsSegCs], MODE_MASK
         jz      short Kt0e07            ; caller of SysService is k mode, we
                                         ; will let it bugcheck.
-        mov     [ebp].TsEip, offset FLAT:kss60
+        mov     [ebp+TsEip], offset FLAT:kss60
         mov     eax, STATUS_ACCESS_VIOLATION
-        mov     [ebp].TsEax, eax
+        mov     [ebp+TsEax], eax
         jmp     _KiExceptionExit
 Kt0e07:
 
@@ -5652,7 +5652,7 @@ Kt0e9b:
 ;
 
 Kt0e10a:mov     ecx, offset FLAT:ExpInterlockedPopEntrySListResume ; get resume address
-        mov     [ebp].TsEip, ecx        ; set continuation address
+        mov     [ebp+TsEip], ecx        ; set continuation address
 
 Kt0e10:
 
@@ -5706,7 +5706,7 @@ Kt0eVdmAlert:
         mov     eax, PCR[PcVdmAlert]
         mov     dword ptr PCR[PcVdmAlert], 0
 
-        mov     [ebp].TsEip, eax
+        mov     [ebp+TsEip], eax
         mov     esp,ebp                 ; (esp) -> trap frame
         jmp     _KiExceptionExit        ; join common code
 
@@ -5790,7 +5790,7 @@ _KiTrap10       proc
 
         mov     eax, PCR[PcPrcbData+PbCurrentThread]    ; Correct context for
         cmp     eax, PCR[PcPrcbData+PbNpxThread]        ; fault?
-        mov     ecx, [eax].ThInitialStack
+        mov     ecx, [eax+ThInitialStack]
         lea     ecx, [ecx]-NPX_FRAME_LENGTH
         je      Kt0715                  ; Yes - go try to dispatch it
 
@@ -5801,7 +5801,7 @@ _KiTrap10       proc
 ; Note: we don't think this is a possible case, but just to be safe...
 ;
 
-        or      dword ptr [ecx].FpCr0NpxState, CR0_TS   ; Set for delayed error
+        or      dword ptr [ecx+FpCr0NpxState], CR0_TS   ; Set for delayed error
         jmp     _KiExceptionExit
 
 _KiTrap10       endp
@@ -5861,7 +5861,7 @@ _KiTrap11       proc
 ;
 Kt11_01:
         mov     ebx,PCR[PcPrcbData+PbCurrentThread] ; (ebx)-> Current Thread
-        test    byte ptr [ebx].ThAutoAlignment, -1
+        test    byte ptr [ebx+ThAutoAlignment], -1
         jz      kt11_00
 ;
 ; This fault was generated even though the thread had AutoAlignment set to
@@ -5933,7 +5933,7 @@ _KiTrap13       proc
         stdCall _KeBugCheckEx,<TRAP_CAUSE_UNKNOWN,13,eax,0,0>
 
 Kt13_10:
-        mov     ecx, [eax].ThInitialStack ; (ecx) -> top of kernel stack
+        mov     ecx, [eax+ThInitialStack] ; (ecx) -> top of kernel stack
         sub     ecx, NPX_FRAME_LENGTH
 
 ;
@@ -5989,7 +5989,7 @@ Kt13_20:
         FXSAVE_ECX
 
 if DBG
-        test    dword ptr [ecx].FpCr0NpxState, NOT (CR0_MP+CR0_EM+CR0_TS)
+        test    dword ptr [ecx+FpCr0NpxState], NOT (CR0_MP+CR0_EM+CR0_TS)
         jnz     Kt13_dbg2
 endif
 
@@ -6000,13 +6000,13 @@ endif
 ;
 ; Clear TS bit in Cr0NpxFlags in case it was set to trigger this trap.
 ;
-        and     dword ptr [ecx].FpCr0NpxState, NOT CR0_TS
+        and     dword ptr [ecx+FpCr0NpxState], NOT CR0_TS
 
 ;
 ; The state is no longer in the coprocessor.  Clear ThNpxState and
 ; re-enable interrupts to allow context switching.
 ;
-        mov     byte ptr [eax].ThNpxState, NPX_STATE_NOT_LOADED
+        mov     byte ptr [eax+ThNpxState], NPX_STATE_NOT_LOADED
         mov     dword ptr PCR[PcPrcbData+PbNpxThread], 0  ; No state in coprocessor
         sti
 
@@ -6016,7 +6016,7 @@ endif
 ; (edx) = Parameter1
 ; (esi) = Parameter2
 ; (edi) = Parameter3
-        mov     ebx, [ebp].TsEip          ; Eip is from trap frame, not from FxErrorOffset
+        mov     ebx, [ebp+TsEip]          ; Eip is from trap frame, not from FxErrorOffset
         movzx   eax, word ptr [ecx] + FxMXCsr
         mov     edx, eax
         shr     edx, 7                    ; get the mask
@@ -6226,9 +6226,9 @@ cPublicProc _KiCoprocessorError     ,0
 ; Bit must be set in FpCr0NpxState before CR0.
 ;
         mov     eax, PCR[PcPrcbData+PbNpxThread]
-        mov     eax, [eax].ThInitialStack
+        mov     eax, [eax+ThInitialStack]
         sub     eax, NPX_FRAME_LENGTH   ; Space for NPX_FRAME
-        or      dword ptr [eax].FpCr0NpxState, CR0_TS
+        or      dword ptr [eax+FpCr0NpxState], CR0_TS
 
         mov     eax, cr0
         or      eax, CR0_TS
@@ -6285,9 +6285,9 @@ cPublicFpo 1, 4
         cli                             ; don't context switch
 
         mov     edi, PCR[PcSelfPcr]
-        mov     esi, [edi].PcPrcbData+PbCurrentThread
+        mov     esi, [edi+PcPrcbData]+PbCurrentThread
 
-        cmp     byte ptr [esi].ThNpxState, NPX_STATE_LOADED
+        cmp     byte ptr [esi+ThNpxState], NPX_STATE_LOADED
         je      short fnpx20
 
 fnpx00:
@@ -6322,11 +6322,11 @@ fnpx07:
         ; If NPX state is for some other thread, save it away
         ;
 
-        mov     eax, [edi].PcPrcbData+PbNpxThread   ; Owner of NPX state
+        mov     eax, [edi+PcPrcbData]+PbNpxThread   ; Owner of NPX state
         or      eax, eax
         jz      short fnpx10            ; no - skip save
 
-        cmp     byte ptr [eax].ThNpxState, NPX_STATE_LOADED
+        cmp     byte ptr [eax+ThNpxState], NPX_STATE_LOADED
         jne     short fnpx10            ; not loaded, skip save
 
 ifndef NT_UP
@@ -6340,18 +6340,18 @@ endif
         ; Save current owners NPX state
         ;
 
-        mov     ecx, [eax].ThInitialStack
+        mov     ecx, [eax+ThInitialStack]
         sub     ecx, NPX_FRAME_LENGTH   ; Space for NPX_FRAME
         FXSAVE_ECX
-        mov     byte ptr [eax].ThNpxState, NPX_STATE_NOT_LOADED
+        mov     byte ptr [eax+ThNpxState], NPX_STATE_NOT_LOADED
 
 fnpx10:
         ;
         ; Load current thread's NPX state
         ;
-        mov     ecx, [edi].PcPrcbData+PbCurrentThread
+        mov     ecx, [edi+PcPrcbData]+PbCurrentThread
 
-        mov     ecx, [ecx].ThInitialStack ; (ecx) -> top of kernel stack
+        mov     ecx, [ecx+ThInitialStack] ; (ecx) -> top of kernel stack
         sub     ecx, NPX_FRAME_LENGTH
         FXRSTOR_ECX                       ; reload NPX context
         mov     ecx, SaveArea
@@ -6368,8 +6368,8 @@ fnpx20:
         and     ebx, NOT (CR0_MP+CR0_TS+CR0_EM)
         mov     cr0, ebx                   ; allow frstor (& fnsave) to work
 fnpx30:
-        mov     ecx, [edi].PcPrcbData+PbCurrentThread
-        mov     ecx, [ecx].ThInitialStack  ; (ecx) -> top of kernel stack
+        mov     ecx, [edi+PcPrcbData]+PbCurrentThread
+        mov     ecx, [ecx+ThInitialStack]  ; (ecx) -> top of kernel stack
         sub     ecx, NPX_FRAME_LENGTH
 
         test    byte ptr _KeI386FxsrPresent, 1
@@ -6385,12 +6385,12 @@ fnpx40:
         fwait                           ; Make sure data is in save area
 fnpx50:
         xor     eax, eax
-        mov     ecx, [edi].PcPrcbData+PbCurrentThread
-        mov     ecx, [ecx].ThInitialStack  ; (ecx) -> top of kernel stack
+        mov     ecx, [edi+PcPrcbData]+PbCurrentThread
+        mov     ecx, [ecx+ThInitialStack]  ; (ecx) -> top of kernel stack
         sub     ecx, NPX_FRAME_LENGTH
-        mov     byte ptr [esi].ThNpxState, NPX_STATE_NOT_LOADED
-        mov     [edi].PcPrcbData+PbNpxThread, eax  ; clear npx owner
-;;      mov     [ecx].FpNpxSavedCpu, eax        ; clear last npx processor
+        mov     byte ptr [esi+ThNpxState], NPX_STATE_NOT_LOADED
+        mov     [edi+PcPrcbData]+PbNpxThread, eax  ; clear npx owner
+;;      mov     [ecx+FpNpxSavedCpu], eax        ; clear last npx processor
 
         or      ebx, NPX_STATE_NOT_LOADED       ; or in new thread's cr0
         or      ebx, [ecx]+FpCr0NpxState        ; merge new thread setable state
@@ -6522,8 +6522,8 @@ cPublicProc _NtContinue     ,2
 ;
 
         mov     ebx, PCR[PcPrcbData+PbCurrentThread] ; get current thread address
-        mov     edx, [ebp].TsEdx        ; restore old trap frame address
-        mov     [ebx].ThTrapFrame, edx  ;
+        mov     edx, [ebp+TsEdx]        ; restore old trap frame address
+        mov     [ebx+ThTrapFrame], edx  ;
 
 ;
 ; Call KiContinue to load ContextRecord into TrapFrame.  On x86 TrapFrame
@@ -6616,8 +6616,8 @@ NtRaiseException:
 ;
 
         mov     ebx, PCR[PcPrcbData+PbCurrentThread] ; get current thread address
-        mov     edx, [ebp].TsEdx        ; restore old trap frame address
-        mov     [ebx].ThTrapFrame, edx  ;
+        mov     edx, [ebp+TsEdx]        ; restore old trap frame address
+        mov     [ebx+ThTrapFrame], edx  ;
 
 ;
 ;   Put back the ExceptionList so the exception can be properly

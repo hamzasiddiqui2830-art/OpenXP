@@ -185,8 +185,8 @@ Msg&name&Prefix db 'NTVDM: Encountered override prefix &name& %lx at '
                 db 'address %lx', 0ah, 0dh, 0
 _DATA ends
 
-        push    [ebp].TsEip
-        push    [ebp].TsSegCs
+        push    [ebp+TsEip]
+        push    [ebp+TsSegCs]
         push    offset FLAT:Msg&name&Prefix
         call    _DbgPrint
         add     esp,12
@@ -229,11 +229,11 @@ cPublicProc _Ki386DispatchOpcodeV86,1
 
         push    ebp
         mov     ebp, [esp+8]
-        movzx   esi,word ptr [ebp].TsSegCs
+        movzx   esi,word ptr [ebp+TsSegCs]
         shl     esi,4
-        and     dword ptr [ebp].TsEip, 0FFFFH
-        and     dword ptr [ebp].TsHardwareEsp, 0FFFFH
-        add     esi,[ebp].TsEip
+        and     dword ptr [ebp+TsEip], 0FFFFH
+        and     dword ptr [ebp+TsHardwareEsp], 0FFFFH
+        add     esi,[ebp+TsEip]
         ;
         ; Probe and fetch the first byte from the instruction stream.
         ; Since we should be at APC_LEVEL here the trap frame can't be
@@ -375,9 +375,9 @@ OpcodeINSBV86 proc
 
         push    ebp                     ; trap frame
         push    edi                     ; size of insb
-        movzx   eax,word ptr [ebp].TsV86Es
+        movzx   eax,word ptr [ebp+TsV86Es]
         shl     eax,16
-        movzx   ecx,word ptr [ebp].TsEdi
+        movzx   ecx,word ptr [ebp+TsEdi]
         or      eax,ecx
         push    eax                     ; address
         mov     eax,1
@@ -386,13 +386,13 @@ OpcodeINSBV86 proc
         jz      oisb20
 
         mov     ecx, 1
-        movzx   eax,word ptr [ebp].TsEcx
+        movzx   eax,word ptr [ebp+TsEcx]
 oisb20:
         push    eax                     ; number of io ops
         push    TRUE                    ; read op
         push    ecx                     ; REP prefix ?
         push    1                       ; byte op
-        movzx   eax,word ptr [ebp].TsEdx
+        movzx   eax,word ptr [ebp+TsEdx]
         push    eax                     ; port number
 
         ; Ki386VdmDispatchStringIo enables interrupts
@@ -431,9 +431,9 @@ OpcodeINSWV86 proc
 
         push    ebp                     ; trap frame
         push    edi                     ; size of insw
-        movzx   eax,word ptr [ebp].TsV86Es
+        movzx   eax,word ptr [ebp+TsV86Es]
         shl     eax,16
-        movzx   ecx,word ptr [ebp].TsEdi
+        movzx   ecx,word ptr [ebp+TsEdi]
         or      eax,ecx
         push    eax                     ; address
         mov     eax,1
@@ -442,13 +442,13 @@ OpcodeINSWV86 proc
         jz      oisw20
 
         mov     ecx, 1
-        movzx   eax,word ptr [ebp].TsEcx
+        movzx   eax,word ptr [ebp+TsEcx]
 oisw20:
         push    eax                     ; number of io ops
         push    TRUE                    ; read op
         push    ecx                     ; REP prefix ?
         push    2                       ; word op
-        movzx   eax,word ptr [ebp].TsEdx
+        movzx   eax,word ptr [ebp+TsEdx]
         push    eax                     ; port number
 
         ; Ki386VdmDispatchStringIo enables interrupts
@@ -487,9 +487,9 @@ OpcodeOUTSBV86 proc
 
         push    ebp                     ; trap frame
         push    edi                     ; size of outsb
-        movzx   eax,word ptr [ebp].TsV86Ds
+        movzx   eax,word ptr [ebp+TsV86Ds]
         shl     eax,16
-        movzx   ecx,word ptr [ebp].TsEsi
+        movzx   ecx,word ptr [ebp+TsEsi]
         or      eax,ecx
         push    eax                     ; address
         mov     eax,1
@@ -498,13 +498,13 @@ OpcodeOUTSBV86 proc
         jz      oosb20
 
         mov     ecx, 1
-        movzx   eax,word ptr [ebp].TsEcx
+        movzx   eax,word ptr [ebp+TsEcx]
 oosb20:
         push    eax                     ; number of io ops
         push    FALSE                   ; write op
         push    ecx                     ; REP prefix ?
         push    1                       ; byte op
-        movzx   eax,word ptr [ebp].TsEdx
+        movzx   eax,word ptr [ebp+TsEdx]
         push    eax                     ; port number
 
         ; Ki386VdmDispatchStringIo enables interrupts
@@ -543,9 +543,9 @@ OpcodeOUTSWV86 proc
 
         push    ebp                     ; trap frame
         push    edi                     ; size of outsw
-        movzx   eax,word ptr [ebp].TsV86Ds
+        movzx   eax,word ptr [ebp+TsV86Ds]
         shl     eax,16
-        movzx   ecx,word ptr [ebp].TsEsi
+        movzx   ecx,word ptr [ebp+TsEsi]
         or      eax,ecx
         push    eax                     ; address
 
@@ -555,13 +555,13 @@ OpcodeOUTSWV86 proc
         jz      oosw20
 
         mov     ecx, 1
-        movzx   eax,word ptr [ebp].TsEcx
+        movzx   eax,word ptr [ebp+TsEcx]
 oosw20:
         push    eax                     ; number of io ops
         push    FALSE                   ; write op
         push    ecx                     ; REP prefix ?
         push    2                       ; word op
-        movzx   eax,word ptr [ebp].TsEdx
+        movzx   eax,word ptr [ebp+TsEdx]
         push    eax                     ; port number
 
         ; Ki386VdmDispatchStringIo enables interrupts
@@ -608,7 +608,7 @@ OpcodePUSHFV86 proc
         test    _KeI386VirtualIntExtensions, dword ptr V86_VIRTUAL_INT_EXTENSIONS
         jz      short puf00
 
-        mov     eax,dword ptr [ebp].TsEFlags
+        mov     eax,dword ptr [ebp+TsEFlags]
         lea     ecx,ds:FIXED_NTVDMSTATE_LINEAR
         or      dword ptr [ecx], VDM_VIRTUAL_INTERRUPTS
         test    eax, EFLAGS_VIF         ; Is vif on
@@ -621,15 +621,15 @@ OpcodePUSHFV86 proc
 puf00:
         lea     eax,ds:FIXED_NTVDMSTATE_LINEAR
 
-        mov     edx,dword ptr [ebp].TsEFlags
+        mov     edx,dword ptr [ebp+TsEFlags]
         mov     eax, dword ptr [eax]         ; get virtual int flag
         and     edx,NOT EFLAGS_INTERRUPT_MASK
         and     eax,VDM_VIRTUAL_INTERRUPTS OR VDM_VIRTUAL_AC OR VDM_VIRTUAL_NT
         or      eax,edx
         or      eax,EFLAGS_IOPL_MASK
 puf03:
-        movzx   ecx,word ptr [ebp].TsHardwareSegSS
-        movzx   edx,word ptr [ebp].TsHardwareEsp
+        movzx   ecx,word ptr [ebp+TsHardwareSegSS]
+        movzx   edx,word ptr [ebp+TsHardwareEsp]
         shl     ecx,4
         sub     dx,2
 
@@ -638,8 +638,8 @@ puf03:
 
         mov     [ecx + edx],ax
 puf05:
-        mov     word ptr [ebp].TsHardwareEsp,dx ; update client esp
-        add     dword ptr [ebp].TsEip,edi
+        mov     word ptr [ebp+TsHardwareEsp],dx ; update client esp
+        add     dword ptr [ebp+TsEip],edi
 
         mov     eax, ds:FIXED_NTVDMSTATE_LINEAR
         test    eax, VDM_VIRTUAL_INTERRUPTS
@@ -697,8 +697,8 @@ endif
 
 
         lea     eax,ds:FIXED_NTVDMSTATE_LINEAR      ; get pointer to VDM State
-        mov     ecx,[ebp].TsHardwareSegSS
-        movzx   edx,word ptr [ebp].TsHardwareEsp
+        mov     ecx,[ebp+TsHardwareSegSS]
+        movzx   edx,word ptr [ebp+TsHardwareEsp]
         shl     ecx,4
         mov     ecx,[ecx + edx]          ; get flags from stack => ecx
         add     edx,4
@@ -707,7 +707,7 @@ endif
         and     ecx,0ffffh               ; only lower 16 bit for 16bit code
         sub     edx,2
 pof10:
-        mov     [ebp].TsHardwareEsp,edx
+        mov     [ebp+TsHardwareEsp],edx
 
         and     ecx, NOT EFLAGS_IOPL_MASK
         mov     ebx,ecx                  ; [ebx]=[ecx]=user EFLAGS - IOPL
@@ -729,18 +729,18 @@ pof10:
 @@:
         or      ebx, (EFLAGS_INTERRUPT_MASK OR EFLAGS_V86_MASK) ;[ebx]=UserFlg-IOPL-NT-VIP+VIF+IF
         push    eax
-        mov     eax, [ebp].TsEFlags
+        mov     eax, [ebp+TsEFlags]
         push    eax
         and     eax, EFLAGS_VIP
         or      eax, ebx
-        mov     [ebp].TsEFlags, eax
+        mov     [ebp+TsEFlags], eax
         jmp     short pof20
 
 pof15:
         push    eax
         or      ebx, (EFLAGS_INTERRUPT_MASK OR EFLAGS_V86_MASK)
-        push   [ebp].TsEFlags
-        mov     [ebp].TsEFlags, ebx
+        push   [ebp+TsEFlags]
+        mov     [ebp+TsEFlags], ebx
 pof20:  
 if DBG
 	test	ebx, EFLAGS_V86_MASK	; Subset of value written to EFLAGs
@@ -753,7 +753,7 @@ endif
 ; (as V86 is being enabled at this time).
 ;
 .errnz (EFLAGS_V86_MASK AND 0FF00FFFFh)
-        test    byte ptr [esp].TsEFlags+2,EFLAGS_V86_MASK/010000h
+        test    byte ptr [esp+TsEFlags]+2,EFLAGS_V86_MASK/010000h
         lea     esp, [esp+4]
         jnz	@f
         stdCall _Ki386AdjustEsp0, <ebp>
@@ -761,7 +761,7 @@ endif
         pop     eax
         MPLOCK and [eax],NOT (EFLAGS_INTERRUPT_MASK OR EFLAGS_ALIGN_CHECK OR EFLAGS_NT_MASK)
         MPLOCK or [eax],ecx
-        add     dword ptr [ebp].TsEip,edi
+        add     dword ptr [ebp+TsEip],edi
 
         mov     eax,dword ptr [eax]
         test    eax,VDM_INTERRUPT_PENDING
@@ -809,7 +809,7 @@ OpcodeINTnnV86 proc
 ; Int nn in v86 mode always disables interrupts
 ;
 
-        mov     edx,[ebp].TsEflags
+        mov     edx,[ebp+TsEflags]
 
         lea     eax,ds:FIXED_NTVDMSTATE_LINEAR   ; get pointer to VDM State
         mov     ecx,dword ptr [eax]       ;[ecx]=vdmstate
@@ -847,23 +847,23 @@ oinnv15:
 
 oinnv20:
         and     edx,NOT (EFLAGS_NT_MASK OR EFLAGS_TF_MASK OR EFLAGS_VIF)
-        mov     [ebp].TsEflags,edx
+        mov     [ebp+TsEflags],edx
 
         or      eax, EFLAGS_IOPL_MASK
-        movzx   ecx,word ptr [ebp].TsHardwareSegSS
+        movzx   ecx,word ptr [ebp+TsHardwareSegSS]
         shl     ecx,4
-        movzx   edx,word ptr [ebp].TsHardwareEsp    ; ecx+edx is user stack
+        movzx   edx,word ptr [ebp+TsHardwareEsp]    ; ecx+edx is user stack
         sub     dx,2
         mov     word ptr [ecx+edx],ax       ; push flags
-        mov     ax,word ptr [ebp].TsSegCS
+        mov     ax,word ptr [ebp+TsSegCS]
         sub     dx,2
         mov     word ptr [ecx+edx],ax       ; push cs
-        movzx   eax,word ptr [ebp].TsEip
+        movzx   eax,word ptr [ebp+TsEip]
         add     eax, edi
         inc     eax
         sub     dx,2
         mov     word ptr [ecx+edx],ax       ; push ip
-        mov     [ebp].TsHardwareEsp,dx      ; update sp on trap frame
+        mov     [ebp+TsHardwareEsp],dx      ; update sp on trap frame
 
         inc     esi
         movzx   ecx,byte ptr [esi]          ; ecx is int#
@@ -897,7 +897,7 @@ oinnv30:
         mov     eax,ebx
         shr     eax,16                      ; new cs
 oinnv40:
-        mov     word ptr [ebp].TsEip,bx
+        mov     word ptr [ebp+TsEip],bx
         test    dword ptr [ebp]+TsEFlags,EFLAGS_V86_MASK
         jnz     @f
         or      ax, RPL_MASK
@@ -905,7 +905,7 @@ oinnv40:
         jae     @f
         mov     ax, KGDT_R3_CODE OR RPL_MASK
 @@:
-        mov     [ebp].TsSegCs,ax            ; cs:ip on trap frame is updated
+        mov     [ebp+TsSegCs],ax            ; cs:ip on trap frame is updated
 
         mov     eax,1
         ret
@@ -919,11 +919,11 @@ oinnvuserrefs proc
         mov     PCR[PcExceptionList],esp    ; Link us on
 
         mov     eax,PCR[PcTeb]
-        mov     eax,[eax].TeVdm             ; get pointer to VdmTib
+        mov     eax,[eax+TeVdm]             ; get pointer to VdmTib
         cmp     eax, _MmUserProbeAddress    ; Probe the TeVdm
         jae     short oinnvuserrefs_fault_resume
 
-        mov     ebx,[eax].VtInterruptTable  ;
+        mov     ebx,[eax+VtInterruptTable]  ;
         cmp     ebx, 0                      ; there is no interrupt table
         je      short oinnvuserrefs_fault_resume  ; so, don't reflect it.
 
@@ -931,11 +931,11 @@ oinnvuserrefs proc
         cmp     ebx, _MmUserProbeAddress    ; Probe the TeVdm
         jae     short oinnvuserrefs_fault_resume
 
-        test    [ebx].ViFlags, VDM_INT_HOOKED    ; need to reflect to PM?
+        test    [ebx+ViFlags], VDM_INT_HOOKED    ; need to reflect to PM?
         jz      short oinnvuserrefs_fault_resume
 
-        lea     ebx,[eax].VtDpmiInfo        ; point to DpmiInfo
-        mov     ebx,[ebx].VpDosxRmReflector ; bop to reflect to PM
+        lea     ebx,[eax+VtDpmiInfo]        ; point to DpmiInfo
+        mov     ebx,[ebx+VpDosxRmReflector] ; bop to reflect to PM
         mov     eax, 1
         pop     PCR[PcExceptionList]        ; Remove our exception handle
         add     esp, 4                      ; clear stack
@@ -1036,23 +1036,23 @@ endif
 
 
         lea     eax,ds:FIXED_NTVDMSTATE_LINEAR
-        movzx   ecx,word ptr [ebp].TsHardwareSegSS
-        movzx   edx,word ptr [ebp].TsHardwareEsp    ; ecx+edx is user stack
+        movzx   ecx,word ptr [ebp+TsHardwareSegSS]
+        movzx   edx,word ptr [ebp+TsHardwareEsp]    ; ecx+edx is user stack
         shl     ecx,4
         add     ecx,edx
         test    ebx,PREFIX_OPER32
         jnz     irt50                               ; normally not
 
         movzx   edi,word ptr [ecx]                  ; get ip value
-        mov     [ebp].TsEip,edi
+        mov     [ebp+TsEip],edi
         movzx   esi,word ptr [ecx+2]                ; get cs value
         add     edx,6
         movzx   ebx,word ptr [ecx+4]                ; get flag value
-        mov     [ebp].TsHardwareEsp,edx             ; update sp on trap frame
+        mov     [ebp+TsHardwareEsp],edx             ; update sp on trap frame
         ;
         ; No validation of SegCs is needed as the V86 bit is always set.
         ;
-        mov     [ebp].TsSegCs,esi
+        mov     [ebp+TsSegCs],esi
 
 irt10:  ; [ebx]=UserFlgs
         and     ebx, NOT (EFLAGS_IOPL_MASK OR EFLAGS_NT_MASK OR EFLAGS_VIP OR EFLAGS_VIF)
@@ -1071,11 +1071,11 @@ irt10:  ; [ebx]=UserFlgs
 irt15:
         push    eax
         or      ebx, (EFLAGS_V86_MASK OR EFLAGS_INTERRUPT_MASK)
-        mov     eax, dword ptr [ebp].TsEFlags
+        mov     eax, dword ptr [ebp+TsEFlags]
         push    eax
         and     eax, EFLAGS_VIP
         or      eax, ebx                  ; update flags in trap frame
-        mov     dword ptr [ebp].TsEFlags, eax
+        mov     dword ptr [ebp+TsEFlags], eax
         pop     ebx
         test    ebx, EFLAGS_V86_MASK
         jne     @f
@@ -1127,12 +1127,12 @@ irtbop:
 
 irt50:
         mov     edi, [ecx]                          ; get ip value
-        mov     [ebp].TsEip,edi
+        mov     [ebp+TsEip],edi
         movzx   esi,word ptr [ecx+4]                ; get cs value
         add     edx,12
         mov     ebx, [ecx+8]                        ; get flag value
-        mov     [ebp].TsSegCs,esi
-        mov     [ebp].TsHardwareEsp,edx             ; update sp on trap frame
+        mov     [ebp+TsSegCs],esi
+        mov     [ebp+TsHardwareEsp],edx             ; update sp on trap frame
         jmp     irt10                               ; rejoin the common path
 
 OpcodeIRETV86 endp
@@ -1330,7 +1330,7 @@ OpcodeOUTWimmV86 endp
         public OpcodeINBV86
 OpcodeINBV86 proc
 
-        movzx   ebx,word ptr [ebp].TsEdx
+        movzx   ebx,word ptr [ebp+TsEdx]
 
 
 ; edi - instruction size
@@ -1388,7 +1388,7 @@ OpcodeINBV86 endp
         public OpcodeINWV86
 OpcodeINWV86 proc
 
-        movzx   ebx,word ptr [ebp].TsEdx
+        movzx   ebx,word ptr [ebp+TsEdx]
 
 ; edi - instruction size
 ; TRUE - read operation
@@ -1429,7 +1429,7 @@ OpcodeINWV86 endp
         public OpcodeOUTBV86
 OpcodeOUTBV86 proc
 
-        movzx   ebx,word ptr [ebp].TsEdx
+        movzx   ebx,word ptr [ebp+TsEdx]
 
         cmp     ebx, 3bch
         jz      oob_prt1
@@ -1486,7 +1486,7 @@ OpcodeOUTBV86 endp
         public OpcodeOUTWV86
 OpcodeOUTWV86 proc
 
-        movzx   ebx,word ptr [ebp].TsEdx
+        movzx   ebx,word ptr [ebp+TsEdx]
 ; edi - instruction size
 ; FALSE - write op
 ; 2 - word op
@@ -1531,7 +1531,7 @@ OpcodeCLIV86 proc
         test    _KeI386VirtualIntExtensions, dword ptr V86_VIRTUAL_INT_EXTENSIONS
         jz      short oc50
 
-        mov     edx, [ebp].TsEFlags       ; redundant code.  Just in case
+        mov     edx, [ebp+TsEFlags]       ; redundant code.  Just in case
         mov     eax,dword ptr [eax]
         and     edx, EFLAGS_VIF + EFLAGS_VIP
         cmp     edx, EFLAGS_VIF + EFLAGS_VIP
@@ -1546,7 +1546,7 @@ OpcodeCLIV86 proc
 
 oc40:   lea     eax,ds:FIXED_NTVDMSTATE_LINEAR
 oc50:   MPLOCK and dword ptr [eax],NOT VDM_VIRTUAL_INTERRUPTS
-        add     dword ptr [ebp].TsEip,edi
+        add     dword ptr [ebp+TsEip],edi
 
         mov     eax,1
         ret
@@ -1586,10 +1586,10 @@ OpcodeSTIV86 proc
         test    _KeI386VirtualIntExtensions, dword ptr V86_VIRTUAL_INT_EXTENSIONS
         jz      short os10
 
-        or      [ebp].TsEFlags, dword ptr EFLAGS_VIF
+        or      [ebp+TsEFlags], dword ptr EFLAGS_VIF
 
 os10:   MPLOCK or dword ptr [eax],EFLAGS_INTERRUPT_MASK
-os20:   add     dword ptr [ebp].TsEip,edi
+os20:   add     dword ptr [ebp+TsEip],edi
         mov     eax,dword ptr [eax]
         test    eax,VDM_INTERRUPT_PENDING
         jz      short os30
@@ -1630,25 +1630,25 @@ do10:   mov     esi,[ebp]
 
         ; initialize rest of the trap from which was'nt initialized for
         ; v86 mode
-        mov     eax, [esi].TsV86Es
-        mov     [esi].TsSegEs,eax
-        mov     eax, [esi].TsV86Ds
-        mov     [esi].TsSegDs,eax
-        mov     eax, [esi].TsV86Fs
-        mov     [esi].TsSegFs,eax
-        mov     eax, [esi].TsV86Gs
-        mov     [esi].TsSegGs,eax
+        mov     eax, [esi+TsV86Es]
+        mov     [esi+TsSegEs],eax
+        mov     eax, [esi+TsV86Ds]
+        mov     [esi+TsSegDs],eax
+        mov     eax, [esi+TsV86Fs]
+        mov     [esi+TsSegFs],eax
+        mov     eax, [esi+TsV86Gs]
+        mov     [esi+TsSegGs],eax
 
         mov     RI.RiTrapFrame,esi
-        mov     eax,[esi].TsHardwareSegSs
+        mov     eax,[esi+TsHardwareSegSs]
         mov     RI.RiSegSs,eax
-        mov     eax,[esi].TsHardwareEsp
+        mov     eax,[esi+TsHardwareEsp]
         mov     RI.RiEsp,eax
-        mov     eax,[esi].TsEFlags
+        mov     eax,[esi+TsEFlags]
         mov     RI.RiEFlags,eax
-        mov     eax,[esi].TsSegCs
+        mov     eax,[esi+TsSegCs]
         mov     RI.RiSegCs,eax
-        mov     eax,[esi].TsEip
+        mov     eax,[esi+TsEip]
         dec     edi
         add     eax,edi                 ; for prefixes
         mov     RI.RiEip,eax
@@ -1664,7 +1664,7 @@ do10:   mov     esi,[ebp]
 
         mov     edi,RI.RiTrapFrame
         mov     eax,RI.RiEip                            ; advance eip
-        mov     [edi].TsEip,eax
+        mov     [edi+TsEip],eax
 do19:   mov     eax,1
 do20:
         pop     edi
@@ -1700,7 +1700,7 @@ VdmDispatchIntAck proc
 
         test    ds:FIXED_NTVDMSTATE_LINEAR, VDM_INT_HARDWARE ; check interrupt int
         mov     eax,PCR[PcTeb]
-        mov     eax,[eax].TeVdm             ; get pointer to VdmTib
+        mov     eax,[eax+TeVdm]             ; get pointer to VdmTib
         jz      short dia20
 
         cmp     eax, _MmUserProbeAddress    ; check if user address
@@ -1730,9 +1730,9 @@ dia20:
         cmp     eax, _MmUserProbeAddress    ; check if user address
         jae     dia10                       ; if ae, then not user address
 
-        mov     dword ptr [eax].VtEIEvent,VdmIntAck ;
-        mov     dword ptr [eax].VtEIInstSize,0
-        mov     dword ptr [eax].VtEiIntAckInfo,0
+        mov     dword ptr [eax+VtEIEvent],VdmIntAck ;
+        mov     dword ptr [eax+VtEIInstSize],0
+        mov     dword ptr [eax+VtEiIntAckInfo],0
 
         pop     PCR[PcExceptionList]        ; Remove our exception handle
 
@@ -1800,7 +1800,7 @@ vdmDebugPoint endp
         public OpcodeHLTV86
 OpcodeHLTV86 proc
 
-        add     dword ptr [ebp].TsEip,edi
+        add     dword ptr [ebp+TsEip],edi
         mov     eax,1
         ret
 
@@ -1837,8 +1837,8 @@ _TEXT$00   SEGMENT DWORD PUBLIC 'CODE'
     public OpcodeNPXV86
 OpcodeNPXV86 proc
         mov     edx, PCR[PcPrcbData+PbCurrentThread] ; get current thread
-        mov     edx, [edx].ThInitialStack
-        mov     edx, [edx].FpCr0NpxState-NPX_FRAME_LENGTH
+        mov     edx, [edx+ThInitialStack]
+        mov     edx, [edx+FpCr0NpxState]-NPX_FRAME_LENGTH
         test    edx, CR0_EM             ; Does app want NPX traps?
         jnz     short onp40
 
@@ -1876,12 +1876,12 @@ KiVdmSetUserCR0 proc
         mov     PCR[PcExceptionList],esp    ; Link us on
 
         mov     edx,PCR[PcTeb]
-        mov     edx,[edx].TeVdm             ; get pointer to VdmTib
+        mov     edx,[edx+TeVdm]             ; get pointer to VdmTib
         cmp     edx, _MmUserProbeAddress    ; probe the pointer
         jbe     short @f
 
         mov     edx, _MmUserProbeAddress    ; make us AV
-@@:     mov     [edx].VtVdmContext.CsFloatSave.FpCtxtCr0NpxState, eax
+@@:     mov     [edx+VtVdmContext].CsFloatSave.FpCtxtCr0NpxState, eax
 
 scr10:  pop     PCR[PcExceptionList]        ; Remove our exception handle
 
@@ -1889,17 +1889,17 @@ scr10:  pop     PCR[PcExceptionList]        ; Remove our exception handle
         add     esp, 4                      ; Remove Exception Handler
         pop     ebp                         ; restore ebp.
 
-        mov     edx, [ebx].ThInitialStack    ; Get fp save area
+        mov     edx, [ebx+ThInitialStack]    ; Get fp save area
         sub     edx, NPX_FRAME_LENGTH
 
 scr20:  cli                                 ; sync with context swap
-        and     [edx].FpCr0NpxState, NOT (CR0_MP+CR0_EM+CR0_PE)
-        or      [edx].FpCr0NpxState,eax     ; set fp save area bits
+        and     [edx+FpCr0NpxState], NOT (CR0_MP+CR0_EM+CR0_PE)
+        or      [edx+FpCr0NpxState],eax     ; set fp save area bits
 
         mov     eax,cr0
         and     eax, NOT (CR0_MP+CR0_EM+CR0_TS) ; turn off bits we will change
-        or      al, [ebx].ThNpxState        ; set scheduler bits
-        or      eax,[edx].FpCr0NpxState     ; set user's bits
+        or      al, [ebx+ThNpxState]        ; set scheduler bits
+        or      eax,[edx+FpCr0NpxState]     ; set user's bits
         mov     cr0,eax
         sti
         ret

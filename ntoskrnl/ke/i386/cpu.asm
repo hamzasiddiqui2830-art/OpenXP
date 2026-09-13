@@ -333,7 +333,7 @@ stdENDP _KiSetProcessorType
 
 CpuIdTrap6Handler   proc
 
-        mov     [esp].IretEip,offset cpuid_trap
+        mov     [esp+IretEip],offset cpuid_trap
         iretd
 
 CpuIdTrap6Handler  endp
@@ -568,7 +568,7 @@ Check486BStepping       endp
 
 Temporary486Int6        proc
 
-        mov     [esp].IretEIp,offset c4bs60 ; set EIP to stc instruction
+        mov     [esp+IretEIp],offset c4bs60 ; set EIP to stc instruction
         iretd
 
 Temporary486Int6        endp
@@ -769,7 +769,7 @@ Check386B0      endp
 
 TemporaryInt6    proc
 
-        mov     [esp].IretEip,offset b1c60 ; set IP to clc instruction
+        mov     [esp+IretEip],offset b1c60 ; set IP to clc instruction
         iretd
 
 TemporaryInt6   endp
@@ -869,8 +869,8 @@ Check386D1      endp
 
 TemporaryInt1   proc
 
-        and     [esp].IretEFlags,not EFLAGS_TF ; clear caller's Trace Flag
-        mov     [esp].IretEip,offset d1c60     ; set IP to next instruction
+        and     [esp+IretEFlags],not EFLAGS_TF ; clear caller's Trace Flag
+        mov     [esp+IretEip],offset d1c60     ; set IP to next instruction
         iretd
 
 TemporaryInt1   endp

@@ -78,8 +78,8 @@ cPublicProc _KiSaveProcessorState   ,2
 ; Copy the whole TrapFrame to our ProcessorState
 ;
 
-        lea     ecx, [edx].PsContextFrame
-        mov     dword ptr [ecx].CsContextFlags, CONTEXT_FULL OR CONTEXT_DEBUG_REGISTERS
+        lea     ecx, [edx+PsContextFrame]
+        mov     dword ptr [ecx+CsContextFlags], CONTEXT_FULL OR CONTEXT_DEBUG_REGISTERS
 
 ; ecx - ContextFrame
 ; 0 - ExceptionFrame == NULL
@@ -135,43 +135,43 @@ cPublicProc _KiSaveProcessorControlState   ,1
         xor     ecx,ecx
 
         mov     eax, cr0
-        mov     [edx].PsSpecialRegisters.SrCr0, eax
+        mov     [edx+PsSpecialRegisters].SrCr0, eax
         mov     eax, cr2
-        mov     [edx].PsSpecialRegisters.SrCr2, eax
+        mov     [edx+PsSpecialRegisters].SrCr2, eax
         mov     eax, cr3
-        mov     [edx].PsSpecialRegisters.SrCr3, eax
+        mov     [edx+PsSpecialRegisters].SrCr3, eax
 
-        mov     [edx].PsSpecialRegisters.SrCr4, ecx
+        mov     [edx+PsSpecialRegisters].SrCr4, ecx
 
         test    _KeFeatureBits, KF_CR4
         jz      short @f
 
 .586p
         mov     eax, cr4
-        mov     [edx].PsSpecialRegisters.SrCr4, eax
+        mov     [edx+PsSpecialRegisters].SrCr4, eax
 .486p
 
 @@:
         mov     eax,dr0
-        mov     [edx].PsSpecialRegisters.SrKernelDr0,eax
+        mov     [edx+PsSpecialRegisters].SrKernelDr0,eax
         mov     eax,dr1
-        mov     [edx].PsSpecialRegisters.SrKernelDr1,eax
+        mov     [edx+PsSpecialRegisters].SrKernelDr1,eax
         mov     eax,dr2
-        mov     [edx].PsSpecialRegisters.SrKernelDr2,eax
+        mov     [edx+PsSpecialRegisters].SrKernelDr2,eax
         mov     eax,dr3
-        mov     [edx].PsSpecialRegisters.SrKernelDr3,eax
+        mov     [edx+PsSpecialRegisters].SrKernelDr3,eax
         mov     eax,dr6
-        mov     [edx].PsSpecialRegisters.SrKernelDr6,eax
+        mov     [edx+PsSpecialRegisters].SrKernelDr6,eax
 
         mov     eax,dr7
         mov     dr7,ecx
-        mov     [edx].PsSpecialRegisters.SrKernelDr7,eax
+        mov     [edx+PsSpecialRegisters].SrKernelDr7,eax
 
-        sgdt    fword ptr [edx].PsSpecialRegisters.SrGdtr
-        sidt    fword ptr [edx].PsSpecialRegisters.SrIdtr
+        sgdt    fword ptr [edx+PsSpecialRegisters].SrGdtr
+        sidt    fword ptr [edx+PsSpecialRegisters].SrIdtr
 
-        str     word ptr [edx].PsSpecialRegisters.SrTr
-        sldt    word ptr [edx].PsSpecialRegisters.SrLdtr
+        str     word ptr [edx+PsSpecialRegisters].SrTr
+        sldt    word ptr [edx+PsSpecialRegisters].SrLdtr
 
         stdRET    _KiSaveProcessorControlState
 
@@ -217,15 +217,15 @@ cPublicProc _KiRestoreProcessorState   ,2
 ; Copy the whole ContextFrame to TrapFrame
 ;
 
-        lea     ecx, [edx].PsContextFrame
-        mov     edx, [edx].PsContextFrame.CsSegCs
+        lea     ecx, [edx+PsContextFrame]
+        mov     edx, [edx+PsContextFrame].CsSegCs
         and     edx, MODE_MASK
 
 ; edx - Previous mode
 ; ecx - ContextFrame
 ; 0 - ExceptionFrame == NULL
 ; eax - TrapFrame
-        stdCall   _KeContextToKframes, <eax,0,ecx,[ecx].CsContextFlags,edx>
+        stdCall   _KeContextToKframes, <eax,0,ecx,[ecx+CsContextFlags],edx>
 
 ;
 ; Save special registers for debugger
@@ -269,51 +269,51 @@ cPublicProc _KiRestoreProcessorControlState,1
 ; Restore special registers for debugger
 ;
 
-        mov     eax, [edx].PsSpecialRegisters.SrCr0
+        mov     eax, [edx+PsSpecialRegisters].SrCr0
         mov     cr0, eax
-        mov     eax, [edx].PsSpecialRegisters.SrCr2
+        mov     eax, [edx+PsSpecialRegisters].SrCr2
         mov     cr2, eax
-        mov     eax, [edx].PsSpecialRegisters.SrCr3
+        mov     eax, [edx+PsSpecialRegisters].SrCr3
         mov     cr3, eax
 
         test    _KeFeatureBits, KF_CR4
         jz      short @f
 
 .586p
-        mov     eax, [edx].PsSpecialRegisters.SrCr4
+        mov     eax, [edx+PsSpecialRegisters].SrCr4
         mov     cr4, eax
 .486p
 @@:
-        mov     eax, [edx].PsSpecialRegisters.SrKernelDr0
+        mov     eax, [edx+PsSpecialRegisters].SrKernelDr0
         mov     dr0, eax
-        mov     eax, [edx].PsSpecialRegisters.SrKernelDr1
+        mov     eax, [edx+PsSpecialRegisters].SrKernelDr1
         mov     dr1, eax
-        mov     eax, [edx].PsSpecialRegisters.SrKernelDr2
+        mov     eax, [edx+PsSpecialRegisters].SrKernelDr2
         mov     dr2, eax
-        mov     eax, [edx].PsSpecialRegisters.SrKernelDr3
+        mov     eax, [edx+PsSpecialRegisters].SrKernelDr3
         mov     dr3, eax
-        mov     eax, [edx].PsSpecialRegisters.SrKernelDr6
+        mov     eax, [edx+PsSpecialRegisters].SrKernelDr6
         mov     dr6, eax
-        mov     eax, [edx].PsSpecialRegisters.SrKernelDr7
+        mov     eax, [edx+PsSpecialRegisters].SrKernelDr7
         mov     dr7, eax
 
-        lgdt    fword ptr [edx].PsSpecialRegisters.SrGdtr
-        lidt    fword ptr [edx].PsSpecialRegisters.SrIdtr
+        lgdt    fword ptr [edx+PsSpecialRegisters].SrGdtr
+        lidt    fword ptr [edx+PsSpecialRegisters].SrIdtr
 
 ;
 ; Force the TSS descriptor into a non-busy state, so we don't fault
 ; when we load the TR.
 ;
 
-        mov     eax, [edx].PsSpecialRegisters.SrGdtr+2  ; (eax)->GDT base
+        mov     eax, [edx+PsSpecialRegisters].SrGdtr+2  ; (eax)->GDT base
         xor     ecx, ecx
-        mov     cx,  word ptr [edx].PsSpecialRegisters.SrTr
+        mov     cx,  word ptr [edx+PsSpecialRegisters].SrTr
         add     eax, 5
         add     eax, ecx                                ; (eax)->TSS Desc. Byte
         and     byte ptr [eax],NOT 2
-        ltr     word ptr [edx].PsSpecialRegisters.SrTr
+        ltr     word ptr [edx+PsSpecialRegisters].SrTr
 
-        lldt    word ptr [edx].PsSpecialRegisters.SrLdtr
+        lldt    word ptr [edx+PsSpecialRegisters].SrLdtr
 
         stdRET    _KiRestoreProcessorControlState
 

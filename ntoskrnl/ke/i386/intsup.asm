@@ -73,12 +73,12 @@ INT_TICK_MASK   EQU     03FH
 CHECK_INT_STORM macro Prefix
         mov     eax, _KeTickCount               ; current time
         and     eax, NOT INT_TICK_MASK          ; mask to closest 640ms
-        cmp     eax, dword ptr [edi].InTickCount  ; in same 640ms second range
+        cmp     eax, dword ptr [edi+InTickCount]  ; in same 640ms second range
         jg      Prefix&_overflowreset     ; tick count has advanced since last interrupt, reset counts
         jl      Prefix&_waittick          ; we have already overflowed interrupt count for this tick, do nothing
                                                 ; until the clock advances to the next tick period
 
-        dec     word ptr [edi].InDispatchCount
+        dec     word ptr [edi+InDispatchCount]
         jz      Prefix&_interruptoverflow           ; interrupt count has just overflowed
 Prefix&_dbg2:
 
@@ -87,22 +87,22 @@ Prefix&_dbg2:
 CHECK_INT_STORM_TAIL macro Prefix, BugCheckID
 Prefix&_interruptoverflow:
 
-        dec     word ptr [edi].InDispatchCount+2
+        dec     word ptr [edi+InDispatchCount]+2
         jz      short @f
         add     eax, INT_TICK_MASK+1
-        mov     [edi].InTickCount, eax  ; bump tick count to next tick
+        mov     [edi+InTickCount], eax  ; bump tick count to next tick
         jmp     short Prefix&_overflowreset2
         
 @@:
         cmp     _KdDebuggerEnabled, 0
         jnz     short @f
-        stdCall _KeBugCheckEx, <HARDWARE_INTERRUPT_STORM, [edi].InServiceRoutine, [edi].InServiceContext, edi, BugCheckID>
+        stdCall _KeBugCheckEx, <HARDWARE_INTERRUPT_STORM, [edi+InServiceRoutine], [edi+InServiceContext], edi, BugCheckID>
 
         ;
         ; Debugger is enabled so do a BP instead of bugchecking
         ;
 @@:
-        push    [edi].InServiceRoutine
+        push    [edi+InServiceRoutine]
         push    offset FLAT:_MsgISROverflow
         call    _DbgPrint
         add     esp, 8
@@ -115,11 +115,11 @@ Prefix&_interruptoverflow:
 
 
 Prefix&_overflowreset:
-        mov     dword ptr [edi].InTickCount, eax  ; initialize time
-        mov     word ptr [edi].InDispatchCount+2, 64     ; 
+        mov     dword ptr [edi+InTickCount], eax  ; initialize time
+        mov     word ptr [edi+InDispatchCount]+2, 64     ; 
 Prefix&_overflowreset2:
         mov     ax, _KiISROverflow
-        mov     word ptr [edi].InDispatchCount, ax      ; reset count
+        mov     word ptr [edi+InDispatchCount], ax      ; reset count
         jmp     Prefix&_dbg2
 
 ;
@@ -128,7 +128,7 @@ Prefix&_overflowreset2:
 ;
 Prefix&_waittick:
         add     eax, INT_TICK_MASK+1
-        cmp     eax, dword ptr [edi].InTickCount
+        cmp     eax, dword ptr [edi+InTickCount]
         je      Prefix&_dbg2                        ; exactly one tick apart, do nothing
         ;
         ; tick count must have wrapped - reset all counters
@@ -266,10 +266,10 @@ cPublicProc _KiChainedDispatch      ,0
 ; Save previous IRQL and set new priority level
 ;
 
-        mov     eax, [edi].InVector     ; save vector
+        mov     eax, [edi+InVector]     ; save vector
         push    eax
         sub     esp, 4                  ; make room for OldIrql
-        mov     ecx, [edi].InIrql       ; Irql
+        mov     ecx, [edi+InIrql]       ; Irql
 
 ;
 ; esp - pointer to OldIrql
@@ -331,7 +331,7 @@ cPublicFpo 0, 4
 ;
 
         xor     ebp, ebp                ; init (ebp) = Interrupthandled = FALSE
-        lea     ebx, [edi].InInterruptListEntry
+        lea     ebx, [edi+InInterruptListEntry]
                                         ; (ebx)->Interrupt Head List
 
         mov     ecx, PCR[PcSelfPcr]     ; get address of PCR
@@ -427,7 +427,7 @@ kcd57:
         je      short kcd70             ; if eq, level sensitive interrupt
 
         mov     ebp, eax                ; else edge shared int is handled. Remember it.
-kcd60:  mov     edi, [edi].InInterruptListEntry
+kcd60:  mov     edi, [edi+InInterruptListEntry]
                                         ; (edi)->next obj's addr of listentry
         cmp     ebx, edi                ; Are we at end of interrupt list?
         je      short kcd65             ; if eq, reach end of list
@@ -573,8 +573,8 @@ cPublicProc _KiFloatingDispatch     ,0
 ;
 ; Save previous IRQL and set new priority level to interrupt obj's SyncIrql
 ;
-        mov     eax, [edi].InVector
-        mov     ecx, [edi].InSynchronizeIrql ; Irql
+        mov     eax, [edi+InVector]
+        mov     ecx, [edi+InSynchronizeIrql] ; Irql
         push    eax                     ; save vector
         sub     esp, 4                  ; make room for OldIrql
 
@@ -734,8 +734,8 @@ cPublicProc _KiInterruptDispatch    ,0
 ;
 ; Save previous IRQL and set new priority level
 ;
-        mov     eax, [edi].InVector     ; save vector
-        mov     ecx, [edi].InSynchronizeIrql ; Irql to raise to
+        mov     eax, [edi+InVector]     ; save vector
+        mov     ecx, [edi+InSynchronizeIrql] ; Irql to raise to
         push    eax
         sub     esp, 4                  ; make room for OldIrql
 

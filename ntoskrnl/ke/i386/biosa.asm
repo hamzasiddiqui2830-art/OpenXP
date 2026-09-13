@@ -99,40 +99,40 @@ OriginalPcTeb           equ     [ecx+8]
 ; (eax)-> Base of trap frame.
 ;
 
-        mov     dword ptr [eax].TsSegCs, KGDT_R0_CODE OR RPL_MASK
+        mov     dword ptr [eax+TsSegCs], KGDT_R0_CODE OR RPL_MASK
                                         ; an invalid cs to trap it back to kernel
-        mov     dword ptr [eax].TsSegEs, 0
-        mov     dword ptr [eax].TsSegDs, 0
-        mov     dword ptr [eax].TsSegFs, 0
-        mov     dword ptr [eax].TsSegGs, 0
-        mov     dword ptr [eax].TsErrCode, 0
+        mov     dword ptr [eax+TsSegEs], 0
+        mov     dword ptr [eax+TsSegDs], 0
+        mov     dword ptr [eax+TsSegFs], 0
+        mov     dword ptr [eax+TsSegGs], 0
+        mov     dword ptr [eax+TsErrCode], 0
         mov     ebx, PCR[PcSelfPcr]       ; (ebx)->Pcr
         mov     edi, [ebx]+PcPrcbData+PbCurrentThread ; (edi)->CurrentThread
-        mov     edx, [edi].ThInitialStack
+        mov     edx, [edi+ThInitialStack]
         sub     edx, NPX_FRAME_LENGTH   ; space for NPX_FRAME
         mov     KsaeInitialStack, edx  ; Thread InitialSack
 
-        mov     edx, [edi].ThTeb
+        mov     edx, [edi+ThTeb]
         mov     OriginalThTeb, edx
 
         mov     edx, PCR[PcTeb]
         mov     OriginalPcTeb, edx
 
         mov     edi, offset Ki386BiosCallReturnAddress
-        mov     [eax].TsEsi, ecx       ; Saved esp
-        mov     [eax].TsEip, edi       ; set up return address
+        mov     [eax+TsEsi], ecx       ; Saved esp
+        mov     [eax+TsEip], edi       ; set up return address
         pushfd
         pop     edi
         and     edi, 60dd7h
         or      edi, 200h              ; sanitize EFLAGS
-        mov     dword ptr [eax].TsHardwareSegSs, KGDT_R3_DATA OR RPL_MASK
-        mov     dword ptr [eax].TsHardwareEsp, V86_STACK_POINTER
-        mov     [eax].TsEflags, edi
-        mov     [eax].TsExceptionList, EXCEPTION_CHAIN_END
-        mov     [eax].TsPreviousPreviousMode, 0ffffffffh ; No previous mode
-        and     [eax].TsDr7, 0
+        mov     dword ptr [eax+TsHardwareSegSs], KGDT_R3_DATA OR RPL_MASK
+        mov     dword ptr [eax+TsHardwareEsp], V86_STACK_POINTER
+        mov     [eax+TsEflags], edi
+        mov     [eax+TsExceptionList], EXCEPTION_CHAIN_END
+        mov     [eax+TsPreviousPreviousMode], 0ffffffffh ; No previous mode
+        and     [eax+TsDr7], 0
 if DBG
-        mov     [eax].TsDbgArgMark, 0BADB0D00h ; set trap frame mark
+        mov     [eax+TsDbgArgMark], 0BADB0D00h ; set trap frame mark
 endif
 
         add     eax, KTRAP_FRAME_LENGTH
@@ -167,7 +167,7 @@ endif
 
         push    ecx     ; save ecx (saved esp)
         mov     edi, [ebx]+PcPrcbData+PbCurrentThread ; (edi)->CurrentThread
-        mov     esi, [edi].ThInitialStack
+        mov     esi, [edi+ThInitialStack]
         sub     esi, NPX_FRAME_LENGTH
         mov     ecx, NPX_FRAME_LENGTH/4
         mov     edi, eax
@@ -177,10 +177,10 @@ endif
         mov     edi, [ebx]+PcPrcbData+PbCurrentThread ; (edi)->CurrentThread
         mov     esi,[ebx]+PcTss         ; (esi)->TSS
         sub     eax,TsV86Gs - TsHardwareSegSs ; bias for missing fields
-        mov     [ebx].PcExceptionList, EXCEPTION_CHAIN_END
+        mov     [ebx+PcExceptionList], EXCEPTION_CHAIN_END
         mov     [esi]+TssEsp0,eax
         add     eax, NPX_FRAME_LENGTH + (TsV86Gs - TsHardwareSegSs)
-        mov     [edi].ThInitialStack, eax
+        mov     [edi+ThInitialStack], eax
 
 ;
 ; Set up the pointers to the fake TEB so we can execute the int10
@@ -188,7 +188,7 @@ endif
 ;
         mov     eax, NewTeb
         mov     PCR[PcTeb], eax
-        mov     [edi].ThTeb, eax
+        mov     [edi+ThTeb], eax
 
         mov     ebx, PCR[PcGdt]
         mov     [ebx]+(KGDT_R3_TEB+KgdtBaseLow), ax
@@ -242,7 +242,7 @@ Ki386BiosCallReturnAddress:
 ;
 
         mov     eax, PCR[PcSelfPcr]       ; (eax)->Pcr
-        mov     edi, [ebp].TsEsi        ; Fetch previous stack address
+        mov     edi, [ebp+TsEsi]        ; Fetch previous stack address
         mov     edi, [edi]              ; Initial Stack is saved at stack top
 
 ;
@@ -250,17 +250,17 @@ Ki386BiosCallReturnAddress:
 ;
 
         mov     ecx, [eax]+PcPrcbData+PbCurrentThread ; (ecx)->CurrentThread
-        mov     esi, [ecx].ThInitialStack
+        mov     esi, [ecx+ThInitialStack]
         sub     esi, NPX_FRAME_LENGTH
         mov     ecx, NPX_FRAME_LENGTH/4
         rep movsd                       ; copy FP state
                                         ; (n.b. edi+= NPX_FRAME_LENGTH)
-        mov     esp, [ebp].TsEsi        ; Shink stack
+        mov     esp, [ebp+TsEsi]        ; Shink stack
         add     esp, 4                  ; drop saved stack address
 
 
         mov     ecx, [eax]+PcPrcbData+PbCurrentThread ; (ecx)->CurrentThread
-        mov     [ecx].ThInitialStack, edi ; Restore Thread.InitialStack
+        mov     [ecx+ThInitialStack], edi ; Restore Thread.InitialStack
 
         mov     eax,[eax]+PcTss         ; (eax)->TSS
         sub     edi, (TsV86Gs - TsHardwareSegSs) + NPX_FRAME_LENGTH
@@ -270,7 +270,7 @@ Ki386BiosCallReturnAddress:
 ; restore pointers to the original TEB
 ;
         pop     edx                     ; (edx) = OriginalThTeb
-        mov     [ecx].ThTeb, edx
+        mov     [ecx+ThTeb], edx
         pop     edx                     ; (edx) = OriginalPcTeb
         mov     PCR[PcTeb], edx
 

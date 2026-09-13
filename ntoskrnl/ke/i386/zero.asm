@@ -242,21 +242,21 @@ cPublicFpo 0, 2
         push    ebp
         push    ebx
         mov     ebx, PCR[PcPrcbData+PbCurrentThread]
-        mov     eax, [ebx].ThInitialStack
+        mov     eax, [ebx+ThInitialStack]
         sub     eax, NPX_FRAME_LENGTH
         mov     ebp, esp                        ; save stack pointer
         sub     esp, 16                         ; reserve space for xmm0
         and     esp, 0FFFFFFF0H                 ; 16 byte aligned
         cli                                     ; don't context switch
-        test    [eax].FpCr0NpxState, CR0_EM     ; if FP explicitly disabled
+        test    [eax+FpCr0NpxState], CR0_EM     ; if FP explicitly disabled
         jnz     short kxzp90                    ; do it the old way
-        cmp     byte ptr [ebx].ThNpxState, NPX_STATE_LOADED
+        cmp     byte ptr [ebx+ThNpxState], NPX_STATE_LOADED
         je      short kxzp80                    ; jiff, NPX stated loaded
 
         ; NPX state is not loaded on this thread, it will be by
         ; the time we reenable context switching.
 
-        mov     byte ptr [ebx].ThNpxState, NPX_STATE_LOADED
+        mov     byte ptr [ebx+ThNpxState], NPX_STATE_LOADED
 
         ; enable use of FP instructions
 
@@ -273,8 +273,8 @@ ifdef NT_UP
         or      ebx, ebx                        ; NULL?
         jz      short @f                        ; yes, skip save.
 
-        mov     byte ptr [ebx].ThNpxState, NPX_STATE_NOT_LOADED
-        mov     ebx, [ebx].ThInitialStack       ; get address of save
+        mov     byte ptr [ebx+ThNpxState], NPX_STATE_NOT_LOADED
+        mov     ebx, [ebx+ThInitialStack]       ; get address of save
         sub     ebx, NPX_FRAME_LENGTH           ; area.
         fxsave  rEBX                            ; save NPX
 @@:

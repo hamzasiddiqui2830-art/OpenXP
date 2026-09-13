@@ -85,10 +85,10 @@ endif
         jne     short stnpx_10               ; Yes, then not supported
 
         mov     ebx, PCR[PcTeb]         ; R3 Teb
-        cmp     [ebx].Einstall, 0       ; Initialized?
+        cmp     [ebx+Einstall], 0       ; Initialized?
         je      short stnpx_10          ; No, then don't return NpxFrame
 
-        test    [ebx].CURErr, Summary   ; Completed?
+        test    [ebx+CURErr], Summary   ; Completed?
         jz      short stnpx_10          ; No, then don't return NpxFrame
 
         mov     esi, [ebp+8]            ; (esi) = NpxFrame
@@ -136,25 +136,25 @@ stnpx_30 endp
 
 SaveEnv:
         xor     ax,ax
-        mov     [esi].reserved1,ax
-        mov     [esi].reserved2,ax
-        mov     [esi].reserved3,ax
-        mov     [esi].reserved4,ax
-        mov     [esi].reserved5,ax
-        mov     ax,[ebx].ControlWord
-        mov     [esi].E32_ControlWord,ax
+        mov     [esi+reserved1],ax
+        mov     [esi+reserved2],ax
+        mov     [esi+reserved3],ax
+        mov     [esi+reserved4],ax
+        mov     [esi+reserved5],ax
+        mov     ax,[ebx+ControlWord]
+        mov     [esi+E32_ControlWord],ax
         call    GetEMSEGStatusWord
-        mov     [esi].E32_StatusWord,ax
+        mov     [esi+E32_StatusWord],ax
         call    GetTagWord
-        mov     [esi].E32_TagWord,ax
+        mov     [esi+E32_TagWord],ax
         mov     ax,cs
-        mov     [esi].E32_CodeSeg,ax    ; NOTE: Not R0 code & stack
+        mov     [esi+E32_CodeSeg],ax    ; NOTE: Not R0 code & stack
         mov     ax,ss
-        mov     [esi].E32_DataSeg,ax
-        mov     eax,[ebx].PrevCodeOff
-        mov     [esi].E32_CodeOff,eax
-        mov     eax,[ebx].PrevDataOff
-        mov     [esi].E32_DataOff,eax
+        mov     [esi+E32_DataSeg],ax
+        mov     eax,[ebx+PrevCodeOff]
+        mov     [esi+E32_CodeOff],eax
+        mov     eax,[ebx+PrevDataOff]
+        mov     [esi+E32_DataOff],eax
         ret
 
 
@@ -171,24 +171,24 @@ SaveEnv:
 ;
 
 SaveState:                              ; Enter here for debugger save state
-        mov     dword ptr [esi].FpCr0NpxState, CR0_EM
+        mov     dword ptr [esi+FpCr0NpxState], CR0_EM
 
         call    SaveEnv
         add     esi,size Env80x87_32    ;Skip over environment
         mov     ebp,NumLev              ;Save entire stack
-        mov     edi,[ebx].CURstk
+        mov     edi,[ebx+CURstk]
 ss_loop:
         mov     eax,[ebx+edi].ExpSgn
         call    StoreTempReal           ;in emstore.asm
         add     esi,10
 
-        mov     edi,[ebx].CURstk
+        mov     edi,[ebx+CURstk]
 ;;;     NextStackElem   edi,SaveState
         cmp     edi,INITstk
         jae     short ss_wrap
         add     edi,Reg87Len
 ss_continue:
-        mov     [ebx].CURstk,edi
+        mov     [ebx+CURstk],edi
         dec     ebp
         jnz     short ss_loop
         ret
@@ -229,7 +229,7 @@ GetTagLoop:
 ;       (ebx) = PcTeb
 
 GetEMSEGStatusWord:
-        mov     eax, [ebx].CURstk
+        mov     eax, [ebx+CURstk]
         sub     eax, BEGstk
 
         ;
@@ -244,7 +244,7 @@ GetEMSEGStatusWord:
         inc     eax
         and     eax, 7                  ; eax is now the stack number
         shl     ax, 11
-        or      ax, [ebx].StatusWord    ; or in the rest of the status word.
+        or      ax, [ebx+StatusWord]    ; or in the rest of the status word.
         ret
 @@:
         mov     eax, STATUS_INTEGER_OVERFLOW
@@ -351,12 +351,12 @@ endif
         jne     short npxts_10               ; Yes, then not supported
 
         mov     ebx, PCR[PcTeb]         ; R3 Teb
-        cmp     [ebx].Einstall, 0       ; Initialized?
+        cmp     [ebx+Einstall], 0       ; Initialized?
         je      short npxts_10          ; No, then don't set NpxFrame
 
         mov     esi, [ebp+8]            ; (esi) = NpxFrame
         call    StorState
-        or      [ebx].CURErr, Summary   ; Set completed
+        or      [ebx+CURErr], Summary   ; Set completed
 
         mov     eax, 1                  ; Return TRUE
 npxts_10:
@@ -405,7 +405,7 @@ StorState:
 ;not physical register order.  We don't do a full load of the environment
 ;because we're not ready to use the tag word yet.
 
-        mov     ax, [esi].E32_StatusWord
+        mov     ax, [esi+E32_StatusWord]
         call    SetEmStatusWord         ;Initialize [CURstk]
         add     esi,size Env80x87_32    ;Skip over environment
 
@@ -414,8 +414,8 @@ StorState:
 ;masked, we will convert unsupported format to Indefinite.  Note that the
 ;mask and [CURerr] will be completely restored by the FLDENV at the end.
 
-        mov     [ebx].CWmask,3FH        ;Mask off invalid operation exception
-        mov     edi,[ebx].CURstk
+        mov     [ebx+CWmask],3FH        ;Mask off invalid operation exception
+        mov     edi,[ebx+CURstk]
         mov     ebp,NumLev
 FrstorLoadLoop:
         push    esi
@@ -436,17 +436,17 @@ fr_continue:
 ; (ebx) = PcTeb
 ;
 
-        mov     ax, [esi].E32_StatusWord
+        mov     ax, [esi+E32_StatusWord]
         call    SetEmStatusWord                 ; set up status word
-        mov     ax, [esi].E32_ControlWord
+        mov     ax, [esi+E32_ControlWord]
         call    SetControlWord
-        mov     ax, [esi].E32_TagWord
+        mov     ax, [esi+E32_TagWord]
         call    UseTagWord
 
-        mov     eax, [esi].E32_CodeOff
-        mov     [ebx].PrevCodeOff, eax
-        mov     eax, [esi].E32_DataOff
-        mov     [ebx].PrevDataOff, eax
+        mov     eax, [esi+E32_CodeOff]
+        mov     [ebx+PrevCodeOff], eax
+        mov     eax, [esi+E32_DataOff]
+        mov     [ebx+PrevDataOff], eax
         ret
 
 fr_wrap:
@@ -464,10 +464,10 @@ SetEmStatusWord:
         and     ax,7F7FH
         mov     cx,ax
         and     cx,3FH                  ; set up CURerr in case user
-        mov     [ebx].CURerr,cl         ; wants to force an exception
+        mov     [ebx+CURerr],cl         ; wants to force an exception
         mov     ecx, eax
         and     ecx, not (7 shl 11)     ; remove stack field.
-        mov     [ebx].StatusWord, cx
+        mov     [ebx+StatusWord], cx
 
         sub     ah, 8                   ; adjust for emulator's stack layout
         and     ah, 7 shl 3
@@ -477,27 +477,27 @@ SetEmStatusWord:
 .erre   Reg87Len eq 12
         and     eax, 255                ; eax is now 12*stack number
         add     eax, BEGstk
-        mov     [ebx].CURstk, eax
+        mov     [ebx+CURstk], eax
         ret
 
 SetControlWord:
         and     ax,0F3FH                ; Limit to valid values
-        mov     [ebx].ControlWord, ax   ; Store in the emulated control word
+        mov     [ebx+ControlWord], ax   ; Store in the emulated control word
         not     al                      ;Flip mask bits for fast compare
         and     al,3FH                  ;Limit to valid mask bits
-        mov     [ebx].ErrMask,al
+        mov     [ebx+ErrMask],al
         and     eax,(RoundControl + PrecisionControl) shl 8
 .erre   RoundControl eq 1100B
 .erre   PrecisionControl eq 0011B
         shr     eax,6                   ;Put PC and RC in bits 2-5
         mov     ecx,_Ki387RoundModeTable
         mov     ecx,[ecx+eax]           ;Get correct RoundMode vector
-        mov     [ebx].RoundMode,ecx
-        mov     [ebx].SavedRoundMode,ecx
+        mov     [ebx+RoundMode],ecx
+        mov     [ebx+SavedRoundMode],ecx
         and     eax,RoundControl shl (8-6)      ;Mask off precision control
         mov     ecx,_Ki387RoundModeTable
         mov     ecx,[ecx+(eax+PC64 shl (8-6))];Get correct RoundMode vector
-        mov     [ebx].TransRound,ecx    ;Round mode w/o precision
+        mov     [ebx+TransRound],ecx    ;Round mode w/o precision
         ret
 
 
@@ -636,7 +636,7 @@ ShortNorm80:
 
 SaveStack:
         mov     eax, PCR[PcTeb]
-        mov     [eax].CURstk,edi
+        mov     [eax+CURstk],edi
         mov     [eax+edi].lManLo,esi
         mov     [eax+edi].lManHi,ebx
         mov     [eax+edi].ExpSgn,ecx
@@ -645,11 +645,11 @@ SaveStack:
 
 Unsupported:
         mov     ebx, PCR[PcTeb]
-        or      [ebx].CURerr,Invalid    ; (assume it's masked?)
+        or      [ebx+CURerr],Invalid    ; (assume it's masked?)
         mov     [ebx+edi].lManLo,0
         mov     [ebx+edi].lManHi,0C0000000H
         mov     [ebx+edi].ExpSgn,TexpMax shl 16 + bSign shl 8 + bTAG_NAN
-        mov     [ebx].CURstk,edi        ;Update top of stack
+        mov     [ebx+CURstk],edi        ;Update top of stack
         ret
 
 _TEXT   ENDS

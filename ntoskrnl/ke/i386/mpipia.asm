@@ -93,8 +93,8 @@ cPublicFpo 2, 3
         xor     edi, edi
         mov     esi, PCR[PcPrcb]        ; get current processor block address
 
-        xchg    dword ptr [esi].PbRequestSummary, ebx
-        xchg    dword ptr [esi].PbSignalDone, edi
+        xchg    dword ptr [esi+PbRequestSummary], ebx
+        xchg    dword ptr [esi+PbSignalDone], edi
 ;
 ; Check for freeze request or synchronous request.
 ;
@@ -119,13 +119,13 @@ cPublicFpo 2, 3
 isr10:  mov     edx, edi                ; copy request pack address
         and     edx, NOT 1              ; Clear point to point bit
         jz      short isr20             ; if z set, no packet ready
-        push    [edx].PbCurrentPacket + 8 ; push parameters on stack
-        push    [edx].PbCurrentPacket + 4 ;
-        push    [edx].PbCurrentPacket + 0 ;
+        push    [edx+PbCurrentPacket] + 8 ; push parameters on stack
+        push    [edx+PbCurrentPacket] + 4 ;
+        push    [edx+PbCurrentPacket] + 0 ;
         push    edi                     ; push source processor block address
-        mov     eax, [edx].PbWorkerRoutine ; get worker routine address
+        mov     eax, [edx+PbWorkerRoutine] ; get worker routine address
         mov     edx, [esp + 16 + 4*4]   ; get current trap frame address
-        mov     [esi].PbIpiFrame, edx   ; save current trap frame address
+        mov     [esi+PbIpiFrame], edx   ; save current trap frame address
         call    eax                     ; call worker routine
         mov     bh, 1                   ; set return value
 
@@ -182,13 +182,13 @@ isr50:  test    bl, IPI_FREEZE          ; test if freeze request
 isr60:  mov     eax, _KiSynchPacket     ; get PRCB of requesting processor
         mov     edx, eax                ; clear low bit in packet address
         btr     edx, 0                  ;
-        push    [edx].PbCurrentPacket+8 ; push parameters on stack
-        push    [edx].PbCurrentPacket+4 ;
-        push    [edx].PbCurrentPacket+0 ;
+        push    [edx+PbCurrentPacket]+8 ; push parameters on stack
+        push    [edx+PbCurrentPacket]+4 ;
+        push    [edx+PbCurrentPacket]+0 ;
         push    eax                     ; push source processor block address
-        mov     eax, [edx].PbWorkerRoutine ; get worker routine address
+        mov     eax, [edx+PbWorkerRoutine] ; get worker routine address
         mov     edx, [esp + 16 + 4*4]   ; get current trap frame address
-        mov     [esi].PbIpiFrame, edx   ; save current trap frame address
+        mov     [esi+PbIpiFrame], edx   ; save current trap frame address
         call    eax                     ; call worker routine
         mov     bh, 1                   ; set return value
         jmp     isr10                   ; join common code
@@ -245,7 +245,7 @@ cPublicFpo 0, 2
         jnc     short is20              ; if nc, not in target set
 
 is10:   mov     eax, [edi]              ; get processor block address
-   lock or      [eax].PbRequestSummary, edx ; set request summary bit
+   lock or      [eax+PbRequestSummary], edx ; set request summary bit
 
 is20:   shr     ecx, 1                  ; shift out next bit
         lea     edi, [edi+4]            ; advance to next processor
@@ -312,13 +312,13 @@ cPublicFpo 5, 2
         mov     edi, [esp] + 20         ; get worker function parameter 1
         mov     esi, [esp] + 24         ; get worker function parameter 2
 
-        mov     [edx].PbTargetSet, ecx  ; set target processor set
-        mov     [edx].PbWorkerRoutine, eax ; set worker function address
+        mov     [edx+PbTargetSet], ecx  ; set target processor set
+        mov     [edx+PbWorkerRoutine], eax ; set worker function address
 
         mov     eax, [esp] + 28         ; get worker function parameter 3
-        mov     [edx].PbCurrentPacket, edi ; set work function parameters
-        mov     [edx].PbCurrentPacket + 4, esi ;
-        mov     [edx].PbCurrentPacket + 8, eax ;
+        mov     [edx+PbCurrentPacket], edi ; set work function parameters
+        mov     [edx+PbCurrentPacket] + 4, esi ;
+        mov     [edx+PbCurrentPacket] + 8, eax ;
 
 ;
 ; Determine whether one and only one bit is set in the target set.
@@ -331,7 +331,7 @@ cPublicFpo 5, 2
         sbb     edi, edi                ; compute result as one if the
         inc     edi                     ; target set has one bit set
         jnz     short isp5              ; if nz, target set has one bit
-        mov     [edx].PbPacketBarrier, ecx ; set packet barrier
+        mov     [edx+PbPacketBarrier], ecx ; set packet barrier
 isp5:   add     edx, edi                ; set low order bit if appropriate
 
 ;
@@ -343,11 +343,11 @@ isp5:   add     edx, edi                ; set low order bit if appropriate
         lea     edi, _KiProcessorBlock  ; get processor block array address
         jnc     short isp30             ; if nc, not in target set
 isp10:  mov     esi, [edi]              ; get processor block address
-isp20:  mov     eax, [esi].PbSignalDone ; check if packet being processed
+isp20:  mov     eax, [esi+PbSignalDone] ; check if packet being processed
         or      eax, eax                ;
         jne     isp40                   ; if ne, packet being processed
 
-   lock cmpxchg [esi].PbSignalDone, edx ; compare and exchange
+   lock cmpxchg [esi+PbSignalDone], edx ; compare and exchange
 
         jnz     short isp20             ; if nz, exchange failed
 
@@ -408,24 +408,24 @@ ifndef NT_UP
         btr     ecx, 0                          ; test and clear bit 0
         jc      short spd20                     ; if c set, only one bit set
         mov     edx, PCR[PcPrcb]                ; get current processor block address
-        mov     eax, [edx].PbSetMember          ; get processor bit
+        mov     eax, [edx+PbSetMember]          ; get processor bit
 if DBG
-        test    [ecx].PbTargetSet, eax
+        test    [ecx+PbTargetSet], eax
         jne     @f
         int     3
 @@:
 endif
 
-   lock xor     [ecx].PbTargetSet, eax          ; clear processor set member
+   lock xor     [ecx+PbTargetSet], eax          ; clear processor set member
         jnz     short spd10                     ; if nz, more targets to go
         xor     eax, eax                        ; clear packet barrier
 if DBG
-        cmp     [ecx].PbPacketBarrier, eax
+        cmp     [ecx+PbPacketBarrier], eax
         jne     @f
         int     3
 @@:
 endif
-        mov     [ecx].PbPacketBarrier, eax      ;
+        mov     [ecx+PbPacketBarrier], eax      ;
 
 spd10:  fstRET  KiIpiSignalPacketDone
 
@@ -437,12 +437,12 @@ spd10:  fstRET  KiIpiSignalPacketDone
 
 spd20:  xor     eax, eax                        ; clear target set
 if DBG
-        cmp     [ecx].PbTargetSet, eax
+        cmp     [ecx+PbTargetSet], eax
         jne     @f
         int     3
 @@:
 endif
-        mov     [ecx].PbTargetSet, eax          ;
+        mov     [ecx+PbTargetSet], eax          ;
 
 endif
 
@@ -492,25 +492,25 @@ ifndef NT_UP
         btr     ecx, 0                          ; test and clear bit 0
         jc      short sps10                     ; if c set, only one bit set
         mov     eax, PCR[PcPrcb]                ; get processor block address
-        mov     eax, [eax].PbSetMember          ; get processor bit
+        mov     eax, [eax+PbSetMember]          ; get processor bit
 
 if DBG
-        test    [ecx].PbTargetSet, eax          ; Make sure the bit is set in the mask
+        test    [ecx+PbTargetSet], eax          ; Make sure the bit is set in the mask
         jne     @f
         int     3
 @@:
 endif
 
-   lock xor     [ecx].PbTargetSet, eax          ; clear processor set member
+   lock xor     [ecx+PbTargetSet], eax          ; clear processor set member
         jnz     short sps20                     ; if nz, more targets to go
         xor     eax, eax                        ; clear packet barrier
 if DBG
-        cmp     [ecx].PbPacketBarrier, eax      ; Make sure the barrier is still set
+        cmp     [ecx+PbPacketBarrier], eax      ; Make sure the barrier is still set
         jne     @f
         int     3
 @@:
 endif
-        mov     [ecx].PbPacketBarrier, eax      ;
+        mov     [ecx+PbPacketBarrier], eax      ;
         jmp     short sps20                     ;
 
 ;
@@ -522,12 +522,12 @@ endif
 sps10:  xor     eax, eax                        ; clear target set
 
 if DBG
-        cmp    [ecx].PbTargetSet, eax          ; Make sure the bit is set in the mask
+        cmp    [ecx+PbTargetSet], eax          ; Make sure the bit is set in the mask
         jne     @f
         int     3
 @@:
 endif
-        mov     [ecx].PbTargetSet, eax          ;
+        mov     [ecx+PbTargetSet], eax          ;
 
 ;
 ; Wait for barrier value to change.
@@ -552,13 +552,13 @@ endif
 
 .errnz IPI_FREEZE - 4
         mov     eax, PCR[PcPrcb]                ; get processor block address
-   lock btr     [eax].PbRequestSummary, 2       ; Generate bus cycle
+   lock btr     [eax+PbRequestSummary], 2       ; Generate bus cycle
         jnc     short sps20                     ; Freeze pending?
 
 cPublicFpo 0,4
         push    ecx                             ; save target processor block
         push    edx                             ; save barrier address
-        stdCall _KiFreezeTargetExecution, <[eax].PbIpiFrame, 0> ;
+        stdCall _KiFreezeTargetExecution, <[eax+PbIpiFrame], 0> ;
         pop     edx                             ; restore barrier address
         pop     ecx                             ; restore target procssor block
         jmp     short sps20                     ;

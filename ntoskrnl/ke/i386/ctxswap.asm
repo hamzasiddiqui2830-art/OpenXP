@@ -118,7 +118,7 @@ cPublicFastCall KiSwapContext, 2
         mov     ebx, PCR[PcSelfPcr]     ; set address of PCR
         mov     edi, ecx                ; set old thread address
         mov     esi, edx                ; set next thread address
-        movzx   ecx, byte ptr [edi].ThWaitirql ; set APC interrupt bypass disable
+        movzx   ecx, byte ptr [edi+ThWaitirql] ; set APC interrupt bypass disable
 
         call    SwapContext             ; swap context
         mov     ebp, [esp+0]            ; restore registers
@@ -200,20 +200,20 @@ endif
 ; in the interrupted thread.  Terminate the exception list.
 ;
 
-        push    [ebx].PcExceptionList
-        mov     [ebx].PcExceptionList, EXCEPTION_CHAIN_END
+        push    [ebx+PcExceptionList]
+        mov     [ebx+PcExceptionList], EXCEPTION_CHAIN_END
 
 ;
 ; Switch to the DPC stack for this processor.
 ;
 
         mov     edx, esp
-        mov     esp, [ebx].PcPrcbData.PbDpcStack
+        mov     esp, [ebx+PcPrcbData].PbDpcStack
         push    edx
 
 .fpo (0, 0, 0, 1, 1, 0)
 
-        mov     ecx, [ebx].PcPrcb       ; get current PRCB address
+        mov     ecx, [ebx+PcPrcb]       ; get current PRCB address
         fstCall KiRetireDpcList         ; process the current DPC list
 
 ;
@@ -222,7 +222,7 @@ endif
 ;
 
         pop     esp
-        pop     [ebx].PcExceptionList
+        pop     [ebx+PcExceptionList]
         pop     ebp 
 .fpo (0, 0, 0, 0, 0, 0)
 
@@ -236,7 +236,7 @@ endif
 ;
 
 kdi40:  sti                             ; enable interrupts
-        cmp     byte ptr [ebx].PcPrcbData.PbQuantumEnd, 0 ; quantum end requested
+        cmp     byte ptr [ebx+PcPrcbData].PbQuantumEnd, 0 ; quantum end requested
         jne     kdi90                   ; if neq, quantum end request
 
 ;
@@ -244,7 +244,7 @@ kdi40:  sti                             ; enable interrupts
 ; processor.
 ;
 
-        cmp     dword ptr [ebx].PcPrcbData.PbNextThread, 0 ; check if next thread
+        cmp     dword ptr [ebx+PcPrcbData].PbNextThread, 0 ; check if next thread
         je      kdi70                   ; if eq, then no new thread
 
 ;
@@ -259,7 +259,7 @@ kdi40:  sti                             ; enable interrupts
         mov     [esp+8], esi            ; save registers
         mov     [esp+4], edi            ;
         mov     [esp+0], ebp            ;
-        mov     edi, [ebx].PcPrcbData.PbCurrentThread ; get current thread address (as old thread)
+        mov     edi, [ebx+PcPrcbData].PbCurrentThread ; get current thread address (as old thread)
 
 ;
 ; Raise IRQL to SYNCH level, set context swap busy for the old thread, and
@@ -269,8 +269,8 @@ kdi40:  sti                             ; enable interrupts
 ifndef NT_UP
 
         call    dword ptr [__imp__KeRaiseIrqlToSynchLevel@0] ; raise IRQL to SYNCH
-        mov     byte ptr [edi].ThSwapBusy, 1 ; set context swap busy
-        lea     ecx, [ebx].PcPrcbData.PbPrcbLock ; get PRCB lock address
+        mov     byte ptr [edi+ThSwapBusy], 1 ; set context swap busy
+        lea     ecx, [ebx+PcPrcbData].PbPrcbLock ; get PRCB lock address
    lock bts     dword ptr [ecx], 0      ; try to acquire PRCB lock
         jnc     short kdi50             ; if nc, PRCB lock acquired
         fstCall KefAcquireSpinLockAtDpcLevel ; acquire current PRCB lock
@@ -282,13 +282,13 @@ endif
 ; running thread, and swap context to the next thread.
 ;
 
-kdi50:  mov     esi, [ebx].PcPrcbData.PbNextThread ; get next thread address
-        and     dword ptr [ebx].PcPrcbData.PbNextThread, 0 ; clear next thread address
-        mov     [ebx].PcPrcbData.PbCurrentThread, esi ; set current thread address
+kdi50:  mov     esi, [ebx+PcPrcbData].PbNextThread ; get next thread address
+        and     dword ptr [ebx+PcPrcbData].PbNextThread, 0 ; clear next thread address
+        mov     [ebx+PcPrcbData].PbCurrentThread, esi ; set current thread address
         mov     byte ptr [esi]+ThState, Running ; set thread state to running
-        mov     byte ptr [edi].ThWaitReason, WrDispatchInt  ; set wait reason
+        mov     byte ptr [edi+ThWaitReason], WrDispatchInt  ; set wait reason
         mov     ecx, edi                ; set address of curent thread
-        lea     edx, [ebx].PcPrcbData   ; set address of PRCB
+        lea     edx, [ebx+PcPrcbData]   ; set address of PRCB
         fstCall KiQueueReadyThread      ; ready thread for execution
         mov     cl, APC_LEVEL           ; set APC interrupt bypass disable
         call    SwapContext             ; swap context
@@ -306,7 +306,7 @@ kdi70:  stdRET  _KiDispatchInterrupt    ; return
 ;      selected and the source thread lock has been acquired.
 ;
 
-kdi90:  mov     byte ptr [ebx].PcPrcbData.PbQuantumEnd, 0 ; clear quantum end indicator
+kdi90:  mov     byte ptr [ebx+PcPrcbData].PbQuantumEnd, 0 ; clear quantum end indicator
         stdCall _KiQuantumEnd           ; process quantum end
         stdRET  _KiDispatchInterrupt    ; return
 
@@ -381,7 +381,7 @@ cPublicFpo 0, 1
 
 ifndef NT_UP
 
-sc00:   cmp     byte ptr [esi].ThSwapBusy, 0 ; check if context swap busy
+sc00:   cmp     byte ptr [esi+ThSwapBusy], 0 ; check if context swap busy
         je      short sc01              ; if e, context swap idle
         YIELD                           ; yield execution for SMT system
         jmp     short sc00              ;
@@ -505,8 +505,8 @@ endif
 ; Check if the old process is the same as the new process.
 ;
 
-        mov     ebp, [esi].ThApcState.AsProcess ; get old process address
-        mov     eax, [edi].ThApcState.AsProcess ; get old process address
+        mov     ebp, [esi+ThApcState].AsProcess ; get old process address
+        mov     eax, [edi+ThApcState].AsProcess ; get old process address
         cmp     ebp, eax                        ; check if process match
         jz      short sc23                      ; if z, process match
 
@@ -556,7 +556,7 @@ sc23:                                   ;
 
 ifndef NT_UP
 
-        and     byte ptr [edi].ThSwapBusy, 0 ; clear old thread swap busy
+        and     byte ptr [edi+ThSwapBusy], 0 ; clear old thread swap busy
 
 endif
 
@@ -581,7 +581,7 @@ endif
 ; the NPX save area will be accessible in the same manner on all threads.
 ;
 
-        mov     eax, [esi].ThInitialStack ; get initial stack address
+        mov     eax, [esi+ThInitialStack] ; get initial stack address
         sub     eax, NPX_FRAME_LENGTH
 .errnz (EFLAGS_V86_MASK AND 0FF00FFFFh)
         test    byte ptr [eax] - KTRAP_FRAME_LENGTH + TsEFlags + 2, EFLAGS_V86_MASK / 10000h
@@ -610,7 +610,7 @@ sc24:   mov     ecx, [ebx]+PcTssCopy    ; get TSS address
 ; Restore thread exception list head and get APC bypass disable.
 ;
 
-        pop     [ebx].PcExceptionList   ; restore thread exception list head
+        pop     [ebx+PcExceptionList]   ; restore thread exception list head
         pop     ecx                     ; get APC bypass disable
 
 ;
@@ -625,7 +625,7 @@ sc24:   mov     ecx, [ebx]+PcTssCopy    ; get TSS address
 ; interrupt.
 ;
 
-        cmp     byte ptr [esi].ThApcState.AsKernelApcPending, 0 ; APC pending?
+        cmp     byte ptr [esi+ThApcState].AsKernelApcPending, 0 ; APC pending?
         jne     short sc80              ; if ne, kernel APC pending
         xor     eax, eax                ; set return value
         ret                             ; return
@@ -642,7 +642,7 @@ sc24:   mov     ecx, [ebx]+PcTssCopy    ; get TSS address
 ; pending.
 ;
 
-sc80:   cmp     word ptr [esi].ThSpecialApcDisable, 0 ; check if special APC disable
+sc80:   cmp     word ptr [esi+ThSpecialApcDisable], 0 ; check if special APC disable
         jne     short sc90              ; if ne, special APC disable
         test    cl, cl                  ; test for APC bypass disable
         jz      short sc90              ; if z, APC bypass enabled
@@ -717,7 +717,7 @@ ifndef NT_UP
 sc_save_npx_state:
         and     edx, NOT (CR0_MP+CR0_EM+CR0_TS) ; we need access to the NPX state
 
-        mov     ecx, [edi].ThInitialStack        ; get NPX save save area address
+        mov     ecx, [edi+ThInitialStack]        ; get NPX save save area address
         sub     ecx, NPX_FRAME_LENGTH
 
         cmp     ebp, edx                        ; Does CR0 need reloading?
@@ -751,7 +751,7 @@ _ScPatchFxb:
 _ScPatchFxe:
 
         mov     byte ptr [edi]+ThNpxState, NPX_STATE_NOT_LOADED ; set no NPX state
-        mov     dword ptr [ebx].PcPrcbData+PbNpxThread, 0  ; clear npx owner
+        mov     dword ptr [ebx+PcPrcbData]+PbNpxThread, 0  ; clear npx owner
         jmp     sc05
 endif
 
@@ -1320,8 +1320,8 @@ endif
 ;      cache.
 ;
 
-kid10:  lea     ecx, [ebx].PcPrcbData.PbPowerState
-        call    dword ptr [ecx].PpIdleFunction      ; (ecx) = Arg0
+kid10:  lea     ecx, [ebx+PcPrcbData].PbPowerState
+        call    dword ptr [ecx+PpIdleFunction]      ; (ecx) = Arg0
 
 ;
 ; Give the debugger an opportunity to gain control on debug systems.
@@ -1336,7 +1336,7 @@ if DBG
 ifndef NT_UP
 
         mov     eax, _KiIdleSummary     ; get idle summary
-        mov     ecx, [ebx].PcSetMember  ; get set member
+        mov     ecx, [ebx+PcSetMember]  ; get set member
         dec     ecx                     ; compute right bit mask
         and     eax, ecx                ; check if any lower bits set
         jnz     short CheckDpcList      ; if nz, not lowest numbered
@@ -1402,7 +1402,7 @@ endif
         jz      short CheckNextThread   ; if z, no DPC's or timers to process
         mov     cl, DISPATCH_LEVEL      ; set interrupt level
         fstCall HalClearSoftwareInterrupt ; clear software interrupt
-        lea     ecx, [ebx].PcPrcbData   ; set current PRCB address
+        lea     ecx, [ebx+PcPrcbData]   ; set current PRCB address
         fstCall KiRetireDpcList         ; process the current DPC list
 
 if DBG
@@ -1416,7 +1416,7 @@ endif
 ;
 
 CheckNextThread:                        ;
-        cmp     dword ptr [ebx].PcPrcbData.PbNextThread, 0 ; thread selected?
+        cmp     dword ptr [ebx+PcPrcbData].PbNextThread, 0 ; thread selected?
 
 ifdef NT_UP
 
@@ -1439,7 +1439,7 @@ ifndef NT_UP
 endif
 
         sti                             ; enable interrupts
-        mov     edi, [ebx].PcPrcbData.PbCurrentThread ; get idle thread address
+        mov     edi, [ebx+PcPrcbData].PbCurrentThread ; get idle thread address
 
 ;
 ; Set context swap busy for idle thread and acquire the PRCB lock.
@@ -1447,10 +1447,10 @@ endif
 
 ifndef NT_UP
 
-        mov     byte ptr [edi].ThSwapBusy, 1 ; set context swap busy
-   lock bts     dword ptr [ebx].PcPrcbData.PbPrcbLock, 0 ; try to acquire PRCB Lock
+        mov     byte ptr [edi+ThSwapBusy], 1 ; set context swap busy
+   lock bts     dword ptr [ebx+PcPrcbData].PbPrcbLock, 0 ; try to acquire PRCB Lock
         jnc     short kid33             ; if nc, PRCB lock acquired
-        lea     ecx, [ebx].PcPrcbData.PbPrcbLock ; get PRCB lock address
+        lea     ecx, [ebx+PcPrcbData].PbPrcbLock ; get PRCB lock address
         fstCall KefAcquireSpinLockAtDpcLevel ; acquire current PRCB lock
 
 endif
@@ -1461,7 +1461,7 @@ endif
 ; idle thread.
 ;
 
-kid33:  mov     esi, [ebx].PcPrcbData.PbNextThread ; get next thread address
+kid33:  mov     esi, [ebx+PcPrcbData].PbNextThread ; get next thread address
 
 ifndef NT_UP
                                         
@@ -1470,8 +1470,8 @@ ifndef NT_UP
 
 endif
 
-        and     dword ptr [ebx].PcPrcbData.PbNextThread, 0 ; clear next thread
-        mov     [ebx].PcPrcbData.PbCurrentThread, esi ; set new thread address
+        and     dword ptr [ebx+PcPrcbData].PbNextThread, 0 ; clear next thread
+        mov     [ebx+PcPrcbData].PbCurrentThread, esi ; set new thread address
         mov     byte  ptr [esi]+ThState, Running ; set thread state running
 
 ;
@@ -1481,8 +1481,8 @@ endif
 
 ifndef NT_UP
 
-        and     byte ptr [ebx].PcPrcbData.PbIdleSchedule, 0 ; clear idle schedule
-        and     dword ptr [ebx].PcPrcbData.PbPrcbLock, 0 ; release current PRCB lock
+        and     byte ptr [ebx+PcPrcbData].PbIdleSchedule, 0 ; clear idle schedule
+        and     dword ptr [ebx+PcPrcbData].PbPrcbLock, 0 ; release current PRCB lock
 
 endif
 
@@ -1508,23 +1508,23 @@ endif
 
 ifndef NT_UP
 
-kisame: and     dword ptr [ebx].PcPrcbData.PbNextThread, 0 ; clear next thread
-        and     dword ptr [ebx].PcPrcbData.PbPrcbLock, 0 ; release current PRCB lock
-        and     byte ptr [edi].ThSwapBusy, 0 ; set idle thread context swap idle
+kisame: and     dword ptr [ebx+PcPrcbData].PbNextThread, 0 ; clear next thread
+        and     dword ptr [ebx+PcPrcbData].PbPrcbLock, 0 ; release current PRCB lock
+        and     byte ptr [edi+ThSwapBusy], 0 ; set idle thread context swap idle
         jmp     kid30                   ;
 
 ;
 ; Call idle schedule if requested.
 ;
 
-kid40:  cmp     byte ptr [ebx].PcPrcbData.PbIdleSchedule, 0 ; check if idle schedule
+kid40:  cmp     byte ptr [ebx+PcPrcbData].PbIdleSchedule, 0 ; check if idle schedule
         je      kid10                   ; if e, idle schedule not requested
         sti                             ; enable interrupts
-        lea     ecx, [ebx].PcPrcbData   ; get current PRCB address
+        lea     ecx, [ebx+PcPrcbData]   ; get current PRCB address
         fstCall KiIdleSchedule          ; attempt to schedule thread
         test    eax, eax                ; test if new thread schedule
         mov     esi, eax                ; set new thread address
-        mov     edi, [ebx].PcPrcbData.PbIdleThread ; get idle thread address
+        mov     edi, [ebx+PcPrcbData].PbIdleThread ; get idle thread address
         jnz     short kid35             ; if nz, new thread scheduled
         jmp     kid30                   ;
 

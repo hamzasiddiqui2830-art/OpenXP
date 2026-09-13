@@ -201,8 +201,8 @@ cPublicProc _KiSystemStartup        ,1
         jnz     @f                          ; no
 
         ; P0 uses static memory for these
-        mov     dword ptr [ebx].LpbThread,      offset _KiIdleThread0
-        mov     dword ptr [ebx].LpbKernelStack, offset P0BootStack
+        mov     dword ptr [ebx+LpbThread],      offset _KiIdleThread0
+        mov     dword ptr [ebx+LpbKernelStack], offset P0BootStack
 
         push    KGDT_R0_PCR                 ; P0 needs FS set
         pop     fs
@@ -210,14 +210,14 @@ cPublicProc _KiSystemStartup        ,1
         ; Save processornumber in Prcb
         mov     byte ptr PCR[PcPrcbData+PbNumber], cl
 @@:
-        mov     eax, dword ptr [ebx].LpbThread
+        mov     eax, dword ptr [ebx+LpbThread]
         mov     dword ptr KissIdleThread, eax
 
-        lea     ecx, [eax].ThApcState.AsApcListHead ; initialize kernel APC list head
-        mov     [eax].ThApcState.AsApcListHead, ecx ;
-        mov     [eax].ThApcState.AsApcListHead+4, ecx ;
+        lea     ecx, [eax+ThApcState].AsApcListHead ; initialize kernel APC list head
+        mov     [eax+ThApcState].AsApcListHead, ecx ;
+        mov     [eax+ThApcState].AsApcListHead+4, ecx ;
 
-        mov     eax, dword ptr [ebx].LpbKernelStack
+        mov     eax, dword ptr [ebx+LpbKernelStack]
         mov     dword ptr KissIdleStack, eax
 
         stdCall   _KiInitializeMachineType

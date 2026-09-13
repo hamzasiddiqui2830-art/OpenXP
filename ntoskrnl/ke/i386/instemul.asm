@@ -231,7 +231,7 @@ opPrefix macro name
         public Opcode&name&Prefix
 Opcode&name&Prefix proc
 
-        or      [esi].RiPrefixFlags,PREFIX_&name
+        or      [esi+RiPrefixFlags],PREFIX_&name
         jmp     OpcodeGenericPrefix     ; dispatch to next handler
 
 Opcode&name&Prefix endp
@@ -270,13 +270,13 @@ cPublicProc _Ki386DispatchOpcode,1
         sub     esp,REGINFOSIZE
         mov     esi, esp                        ; scratch area
 
-        CsToLinearPM [ebp].TsSegCs, doerr       ; initialize reginfo
+        CsToLinearPM [ebp+TsSegCs], doerr       ; initialize reginfo
 
-        mov     edi,[ebp].TsEip                 ; get fault instruction address
-        cmp     edi,[esi].RiCsLimit             ; check eip
+        mov     edi,[ebp+TsEip]                 ; get fault instruction address
+        cmp     edi,[esi+RiCsLimit]             ; check eip
         ja      doerr
 
-        add     edi,[esi].RiCsBase
+        add     edi,[esi+RiCsBase]
         cmp     edi, _MmUserProbeAddress
         ja      doerr
 
@@ -394,8 +394,8 @@ OpcodeGenericPrefix proc
         ja      ogperr                          ; in case of pointless prefixes
 
         mov     eax,edi                         ; current linear address
-        sub     eax,[esi].RiCsBase              ; make address eip
-        cmp     eax,[esi].RiCsLimit             ; check eip
+        sub     eax,[esi+RiCsBase]              ; make address eip
+        cmp     eax,[esi+RiCsLimit]             ; check eip
         ja      ogperr
 
         cmp     edi, [_MmHighestUserAddress]
@@ -440,19 +440,19 @@ OpcodeGenericPrefix endp
         public Opcode0F
 Opcode0F proc
 
-        mov     eax,[ebp].TsEip                 ; get fault instruction address
-        mov     [esi].RiEip,eax
-        mov     [esi].RiTrapFrame,ebp
-        mov     [esi].RiPrefixFlags,ebx
-        mov     eax,dword ptr [ebp].TsEFlags
-        mov     [esi].RiEFlags,eax
+        mov     eax,[ebp+TsEip]                 ; get fault instruction address
+        mov     [esi+RiEip],eax
+        mov     [esi+RiTrapFrame],ebp
+        mov     [esi+RiPrefixFlags],ebx
+        mov     eax,dword ptr [ebp+TsEFlags]
+        mov     [esi+RiEFlags],eax
 
         call    VdmOpcode0F                     ; enables interrupts
         test    eax,0FFFFh
         jz      o0f20
 
-        mov     eax,[esi].RiEip
-        mov     [ebp].TsEip,eax
+        mov     eax,[esi+RiEip]
+        mov     [ebp+TsEip],eax
         mov     eax,1
 o0f20:
         ret
@@ -487,10 +487,10 @@ OpcodeINSB proc
         push    ebp                          ; Trap Frame
         push    ebx                          ; size of insb
 
-        movzx   eax,word ptr [ebp].TsSegEs
+        movzx   eax,word ptr [ebp+TsSegEs]
         shl     eax,16
         ; WARNING no support for 32bit edi
-        mov     ax,word ptr [ebp].TsEdi      ; don't support 32bit'ness
+        mov     ax,word ptr [ebp+TsEdi]      ; don't support 32bit'ness
         push    eax                          ; address
 
         xor     eax, eax
@@ -500,14 +500,14 @@ OpcodeINSB proc
 
         mov     eax, 1
         ; WARNING no support for 32bit ecx
-        movzx   ecx,word ptr [ebp].TsEcx
+        movzx   ecx,word ptr [ebp+TsEcx]
 @@:
 
         push    ecx                          ; number of io ops
         push    TRUE                         ; read op
         push    eax                          ; REP prefix
         push    1                            ; byte op
-        movzx   edx,word ptr [ebp].TsEdx
+        movzx   edx,word ptr [ebp+TsEdx]
         push    edx                          ; port number
         call    _Ki386VdmDispatchStringIo@32 ; use retval
 
@@ -542,10 +542,10 @@ OpcodeINSW proc
         push    ebp                             ; Trap frame
         push    ebx                             ; sizeof insw
 
-        movzx   eax,word ptr [ebp].TsSegEs
+        movzx   eax,word ptr [ebp+TsSegEs]
         shl     eax,16
         ; WARNING no support for 32bit edi
-        mov     ax,word ptr [ebp].TsEdi
+        mov     ax,word ptr [ebp+TsEdi]
         push    eax                             ; address
 
         xor     eax, eax
@@ -555,9 +555,9 @@ OpcodeINSW proc
 
         mov     eax, 1
         ; WARNING no support for 32bit ecx
-        movzx   ecx,word ptr [ebp].TsEcx
+        movzx   ecx,word ptr [ebp+TsEcx]
 @@:
-        movzx   edx,word ptr [ebp].TsEdx
+        movzx   edx,word ptr [ebp+TsEdx]
         push    ecx                             ; number of io ops
         push    TRUE                            ; read op
         push    eax                             ; REP prefix
@@ -596,10 +596,10 @@ OpcodeOUTSB proc
         push    ebp                           ; Trap Frame
         push    ebx                           ; size of outsb
 
-        movzx   eax,word ptr [ebp].TsSegDs
+        movzx   eax,word ptr [ebp+TsSegDs]
         shl     eax,16
         ; WARNING don't support 32bit'ness, esi
-        mov     ax,word ptr [ebp].TsEsi
+        mov     ax,word ptr [ebp+TsEsi]
         push    eax                           ; address
 
         xor     eax, eax
@@ -609,9 +609,9 @@ OpcodeOUTSB proc
 
         mov     eax, 1
         ; WARNING don't support 32bit'ness ecx
-        movzx   ecx,word ptr [ebp].TsEcx
+        movzx   ecx,word ptr [ebp+TsEcx]
 @@:
-        movzx   edx,word ptr [ebp].TsEdx
+        movzx   edx,word ptr [ebp+TsEdx]
         push    ecx                           ; number of io ops
         push    FALSE                         ; write op
         push    eax                           ; REP prefix
@@ -650,10 +650,10 @@ OpcodeOUTSW proc
         push    ebp                               ; Trap Frame
         push    ebx                               ; size of outsb
 
-        movzx   eax,word ptr [ebp].TsSegDs
+        movzx   eax,word ptr [ebp+TsSegDs]
         shl     eax,16
         ; WARNING don't support 32bit'ness esi
-        mov     ax,word ptr [ebp].TsEsi
+        mov     ax,word ptr [ebp+TsEsi]
         push    eax                               ; address
 
         xor     eax, eax
@@ -663,9 +663,9 @@ OpcodeOUTSW proc
 
         mov     eax, 1
         ; WARNING don't support 32bit'ness ecx
-        movzx   ecx,word ptr [ebp].TsEcx
+        movzx   ecx,word ptr [ebp+TsEcx]
 @@:
-        movzx   edx,word ptr [ebp].TsEdx
+        movzx   edx,word ptr [ebp+TsEdx]
 
         push    ecx                               ; number of io ops
         push    FALSE                             ; write op
@@ -714,18 +714,18 @@ OpcodeINTnn proc
         jmp     oi99
 
 oi10:
-        mov     eax,dword ptr [ebp].TsEFlags
+        mov     eax,dword ptr [ebp+TsEFlags]
         call    GetVirtualBits                   ; set interrupt flag
-        mov     [esi].RiEFlags,eax
-        movzx   eax,word ptr [ebp].TsHardwareSegSs
+        mov     [esi+RiEFlags],eax
+        movzx   eax,word ptr [ebp+TsHardwareSegSs]
         call    SsToLinear
         test    al,0FFh
         jz      oinerr
 
         inc     edi                             ; point to int #
         mov     eax,edi                         ; current linear address
-        sub     eax,[esi].RiCsBase              ; make address eip
-        cmp     eax,[esi].RiCsLimit             ; check eip
+        sub     eax,[esi+RiCsBase]              ; make address eip
+        cmp     eax,[esi+RiCsLimit]             ; check eip
         ja      oinerr
 
         cmp     edi, [_MmHighestUserAddress]
@@ -733,37 +733,37 @@ oi10:
 
         movzx   ecx,byte ptr [edi]              ; get int #
         inc     eax                             ; inc past end of instruction
-        mov     [esi].RiEip,eax                 ; save for pushint's benefit
+        mov     [esi+RiEip],eax                 ; save for pushint's benefit
         call    PushInt                         ; will return retcode in al
         test    al,0FFh
         jz      oinerr                          ; error!
 
-        mov     eax,[esi].RiEsp
-        mov     [ebp].TsHardwareEsp,eax
-        mov     ax,word ptr [esi].RiSegCs
+        mov     eax,[esi+RiEsp]
+        mov     [ebp+TsHardwareEsp],eax
+        mov     ax,word ptr [esi+RiSegCs]
         or      ax, 7                           ; R3 LDT selectors only
         cmp     ax, 8
         jge     short @f
-        test    dword ptr [esi].RiEFlags, EFLAGS_V86_MASK
+        test    dword ptr [esi+RiEFlags], EFLAGS_V86_MASK
         jnz     short @f
         mov     ax, KGDT_R3_DATA OR RPL_MASK
-@@:     mov     word ptr [ebp].TsSegCs,ax
-        mov     eax,[esi].RiEFlags
-        push    [ebp].TsEFlags
-        mov     [ebp].TsEFlags,eax
+@@:     mov     word ptr [ebp+TsSegCs],ax
+        mov     eax,[esi+RiEFlags]
+        push    [ebp+TsEFlags]
+        mov     [ebp+TsEFlags],eax
         ;
         ; Here we directly enable INT on TrapFrame.  This may break Kei386IOPLAllowed.
         ; Eventually, if we decide to support Kei386IoplAllowed.  We need to make it work
         ; first.  Today, it does NOT work.  We should remove the IOPL allowed stuff.
         ;
-        or      dword ptr [ebp].TsEFlags, EFLAGS_INTERRUPT_MASK
+        or      dword ptr [ebp+TsEFlags], EFLAGS_INTERRUPT_MASK
         xor     eax, [esp]
         test    eax, EFLAGS_V86_MASK
         pop     eax
         je      short @f
         stdCall _Ki386AdjustEsp0, <ebp>
-@@:     mov     eax,[esi].RiEip
-        mov     [ebp].TsEip,eax
+@@:     mov     eax,[esi+RiEip]
+        mov     [ebp+TsEip],eax
 oi99:
         mov     eax,1
         ret
@@ -832,8 +832,8 @@ OpcodeINBimm proc
         inc     ebx                             ; length count
         inc     edi
         mov     eax,edi                         ; current linear address
-        sub     eax,[esi].RiCsBase              ; make address eip
-        cmp     eax,[esi].RiCsLimit             ; check eip
+        sub     eax,[esi+RiCsBase]              ; make address eip
+        cmp     eax,[esi+RiCsLimit]             ; check eip
         ja      oibi20
 
         cmp     edi, [_MmHighestUserAddress]
@@ -881,8 +881,8 @@ OpcodeINWimm proc
         inc     ebx                             ; length count
         inc     edi
         mov     eax,edi                         ; current linear address
-        sub     eax,[esi].RiCsBase              ; make address eip
-        cmp     eax,[esi].RiCsLimit             ; check eip
+        sub     eax,[esi+RiCsBase]              ; make address eip
+        cmp     eax,[esi+RiCsLimit]             ; check eip
         ja      oiwi20
 
         cmp     edi, [_MmHighestUserAddress]
@@ -928,8 +928,8 @@ OpcodeOUTBimm proc
         inc     ebx                             ; length count
         inc     edi
         mov     eax,edi                         ; current linear address
-        sub     eax,[esi].RiCsBase              ; make address eip
-        cmp     eax,[esi].RiCsLimit             ; check eip
+        sub     eax,[esi+RiCsBase]              ; make address eip
+        cmp     eax,[esi+RiCsLimit]             ; check eip
         ja      oobi20
 
         cmp     edi, [_MmHighestUserAddress]
@@ -976,8 +976,8 @@ OpcodeOUTWimm proc
         inc     ebx                             ; length count
         inc     edi
         mov     eax,edi                         ; current linear address
-        sub     eax,[esi].RiCsBase              ; make address eip
-        cmp     eax,[esi].RiCsLimit             ; check eip
+        sub     eax,[esi+RiCsBase]              ; make address eip
+        cmp     eax,[esi+RiCsLimit]             ; check eip
         ja      oowi20
 
         cmp     edi, [_MmHighestUserAddress]
@@ -1021,7 +1021,7 @@ OpcodeOUTWimm endp
         public OpcodeINB
 OpcodeINB proc
 
-        movzx   eax,word ptr [ebp].TsEdx
+        movzx   eax,word ptr [ebp+TsEdx]
 
 ; TRUE - read op
 ; 1 - byte op
@@ -1075,7 +1075,7 @@ OpcodeINB endp
         public OpcodeINW
 OpcodeINW proc
 
-        movzx   eax,word ptr [ebp].TsEdx
+        movzx   eax,word ptr [ebp+TsEdx]
 
 ; TRUE - read operation
 ; 2 - word op
@@ -1109,7 +1109,7 @@ OpcodeINW endp
         public OpcodeOUTB
 OpcodeOUTB proc
 
-        movzx   eax,word ptr [ebp].TsEdx
+        movzx   eax,word ptr [ebp+TsEdx]
 
         cmp     eax, 03BCh
         je      short oob_printerVDD
@@ -1161,7 +1161,7 @@ OpcodeOUTB endp
         public OpcodeOUTW
 OpcodeOUTW proc
 
-        movzx   eax,word ptr [ebp].TsEdx
+        movzx   eax,word ptr [ebp+TsEdx]
 
 ; FALSE - write op
 ; 2 - word op
@@ -1205,10 +1205,10 @@ OpcodeCLI proc
         jmp     short oc99
 
 oc50:
-        mov     eax,[ebp].TsEFlags
+        mov     eax,[ebp+TsEFlags]
         and     eax,NOT EFLAGS_INTERRUPT_MASK
         call    SetVirtualBits
-        inc     dword ptr [ebp].TsEip
+        inc     dword ptr [ebp+TsEip]
         stdCall _VdmSetPMCliTimeStamp, <0>
 oc99:
         mov     eax,1
@@ -1242,10 +1242,10 @@ OpcodeCLI endp
 OpcodeSTI proc
 
         stdCall _VdmClearPMCliTimeStamp
-        mov     eax,[ebp].TsEFlags
+        mov     eax,[ebp+TsEFlags]
         or      eax,EFLAGS_INTERRUPT_MASK
         call    SetVirtualBits
-        inc     dword ptr [ebp].TsEip
+        inc     dword ptr [ebp+TsEip]
         mov     eax, ds:FIXED_NTVDMSTATE_LINEAR
         test    eax,VDM_INTERRUPT_PENDING
         jz      os10
@@ -1278,7 +1278,7 @@ OpcodeSTI endp
 
 CheckVdmFlags proc
 
-        mov     eax,[esi].RiEFlags
+        mov     eax,[esi+RiEFlags]
         and     eax,EFLAGS_V86_MASK
 
         ;
@@ -1558,7 +1558,7 @@ vredbg:
         ;
 vrevdm:
         mov     esi,[ebp]
-        cmp     word ptr [esi].TsSegCs, KGDT_R3_CODE OR RPL_MASK  ; int sim after fault?
+        cmp     word ptr [esi+TsSegCs], KGDT_R3_CODE OR RPL_MASK  ; int sim after fault?
         je      vre28
 if DEVL
         cmp     word ptr [ebp + 8],11
@@ -1576,22 +1576,22 @@ if DBG
 endif
 
         mov     RI.RiTrapFrame,esi
-        mov     eax,[esi].TsHardwareSegSs
+        mov     eax,[esi+TsHardwareSegSs]
         mov     RI.RiSegSs,eax
-        mov     eax,[esi].TsHardwareEsp
+        mov     eax,[esi+TsHardwareEsp]
         mov     RI.RiEsp,eax
-        mov     eax,[esi].TsEFlags
+        mov     eax,[esi+TsEFlags]
         mov     RI.RiEFlags,eax
-        mov     eax,[esi].TsEip
+        mov     eax,[esi+TsEip]
         mov     RI.RiEip,eax
-        mov     eax,[esi].TsSegCs
+        mov     eax,[esi+TsSegCs]
         mov     RI.RiSegCs,eax
         lea     esi,RI
         call    CsToLinear                      ; uses eax as selector
         test    al,0FFh
         jz      vrerr
 
-        mov     eax,[esi].RiSegSs
+        mov     eax,[esi+RiSegSs]
         call    SsToLinear
         test    al,0FFh
         jz      vrerr
@@ -1603,18 +1603,18 @@ endif
 
         mov     esi,RI.RiTrapFrame
         mov     eax,RI.RiEsp
-        mov     [esi].TsHardwareEsp,eax
+        mov     [esi+TsHardwareEsp],eax
         xor     bl, bl                           ; R3 mask. 0 on V86 mode
-        test    dword ptr [esi].TsEFlags, EFLAGS_V86_MASK ;
+        test    dword ptr [esi+TsEFlags], EFLAGS_V86_MASK ;
         jnz     @F                               ;
         mov     bl, 7                            ; protected mode, R3 LDT selectors only
 @@:
         mov     eax,RI.RiSegSs
         or      al, bl
-        mov     [esi].TsHardwareSegSs,eax
+        mov     [esi+TsHardwareSegSs],eax
         mov     eax,RI.RiEFlags
-        push    [esi].TsEFlags
-        mov     [esi].TsEFlags,eax
+        push    [esi+TsEFlags]
+        mov     [esi+TsEFlags],eax
         xor     eax, [esp]
         test    eax, EFLAGS_V86_MASK
         pop     eax
@@ -1626,15 +1626,15 @@ endif
         or      al, bl
         cmp     eax, 8
         jae     short @f
-        test    dword ptr [esi].TsEFlags, EFLAGS_V86_MASK ;
+        test    dword ptr [esi+TsEFlags], EFLAGS_V86_MASK ;
         jnz     short @f                               ;
         mov     eax, KGDT_R3_CODE OR RPL_MASK
-@@:     mov     [esi].TsSegCs,eax
+@@:     mov     [esi+TsSegCs],eax
         mov     eax,RI.RiEip
-        mov     [esi].TsEip,eax
+        mov     [esi+TsEip],eax
         cmp     word ptr [ebp + 8],1
         jne     vre28
-        and     dword ptr [esi].TsEFlags, NOT EFLAGS_TF_MASK
+        and     dword ptr [esi+TsEFlags], NOT EFLAGS_TF_MASK
 
 vre28:
         popad
@@ -1720,18 +1720,18 @@ cPublicProc _Ki386VdmSegmentNotPresent,0
         push    PCR[PcExceptionList]
         mov     PCR[PcExceptionList], esp
 
-        mov     edi,[edi].TeVdm
+        mov     edi,[edi+TeVdm]
         xor     ebx, ebx
         cmp     edi, _MmUserProbeAddress     ; probe the TeVdm
         jae     short reflect
 
-        lea     esi,[edi].VtDpmiInfo         ; (esi)->dpmi info struct
-        mov     edi, [edi].VtFaultTable      ;
+        lea     esi,[edi+VtDpmiInfo]         ; (esi)->dpmi info struct
+        mov     edi, [edi+VtFaultTable]      ;
         lea     edi,[edi+ecx]                ; (edi)->FaultHandler
         cmp     edi, _MmUserProbeAddress     ; probe the table address
         jae     short reflect
 
-        cmp     word ptr [esi].VpLockCount, 0 ; switching stacks?
+        cmp     word ptr [esi+VpLockCount], 0 ; switching stacks?
         jz      short seg_not_pres           ; yes, we can handle it
                                              ; no, let normal code check
                                              ; for stack faults
@@ -1767,7 +1767,7 @@ seg_not_pres:
 if DEVL
         inc     _ExVdmSegmentNotPresent
 endif
-        inc     word ptr [esi].VpLockCount
+        inc     word ptr [esi+VpLockCount]
 
         ;
         ; (esi)->dpmi info struct
@@ -1777,52 +1777,52 @@ endif
         ; save stuff just like SwitchToHandlerStack does
         ;
 
-        mov     eax, [ebp].TsEip
-        mov     [esi].VpSaveEip, eax
-        mov     eax, [ebp].TsHardwareEsp
-        mov     [esi].VpSaveEsp, eax
-        mov     ax, [ebp].TsHardwareSegSs
-        mov     [esi].VpSaveSsSelector, ax
+        mov     eax, [ebp+TsEip]
+        mov     [esi+VpSaveEip], eax
+        mov     eax, [ebp+TsHardwareEsp]
+        mov     [esi+VpSaveEsp], eax
+        mov     ax, [ebp+TsHardwareSegSs]
+        mov     [esi+VpSaveSsSelector], ax
 
-        movzx   eax,word ptr [esi].VpSsSelector ; (eax) = PM stack selector
+        movzx   eax,word ptr [esi+VpSsSelector] ; (eax) = PM stack selector
         sub     esp, REGINFOSIZE             ; allocate reginfo table on stack
         push    esi                          ; save dpmi info
         mov     esi, esp
         add     esi, 4                       ; (esi)->RegInfo
-        mov     ecx, dword ptr [ebp].TsEFlags
-        mov     [esi].RiEFlags,ecx           ; initialize the  reginfo table
+        mov     ecx, dword ptr [ebp+TsEFlags]
+        mov     [esi+RiEFlags],ecx           ; initialize the  reginfo table
         call    SsToLinear                   ; with eax and esi
         test    al,0FFh                      ; is al == 0?
         jz      short reflect_1              ; yes, failed
 
-        mov     ebx, [esi].RiSsBase          ; (ebx) = Base of PM Stack
+        mov     ebx, [esi+RiSsBase]          ; (ebx) = Base of PM Stack
         pop     esi                          ; (esi)->dpmi info
         add     esp, REGINFOSIZE             ; remove RegInfo from stack
         cmp     ebx, _MmUserProbeAddress     ; probe the PM stack base addr
         jae     short reflect                ;   make sure it is not Kmode addr
 
-        mov     eax, [ebp].TsEFlags
+        mov     eax, [ebp+TsEFlags]
         call    GetVirtualBits               ; (eax) = app's eflags
         push    esi
         mov     edx, 0fe0h                   ; dpmistack offset (per win31)
-        test    word ptr [esi].VpFlags, 1    ; 32-bit frame?
+        test    word ptr [esi+VpFlags], 1    ; 32-bit frame?
         jz      short @f
 
         sub     edx, 8 * 4
         add     edx, ebx
-        mov     esi, [ebp].TsHardwareEsp
-        mov     ecx, [ebp].TsHardwareSegSs
+        mov     esi, [ebp+TsHardwareEsp]
+        mov     ecx, [ebp+TsHardwareSegSs]
         mov     [edx + 20], eax              ; push flags
         mov     [edx + 24], esi              ; put esp on new stack
         mov     [edx + 28], ecx              ; put ss on new stack
-        mov     ecx, [ebp].TsSegCs
-        mov     eax, [ebp].TsEip
-        mov     esi, [ebp].TsErrCode
+        mov     ecx, [ebp+TsSegCs]
+        mov     eax, [ebp+TsEip]
+        mov     esi, [ebp+TsErrCode]
         mov     [edx + 16], ecx              ; push cs
         mov     [edx + 12], eax              ; push ip
         mov     [edx + 8], esi               ; push error code
         pop     esi
-        mov     ecx, [esi].VpDosxFaultIretD
+        mov     ecx, [esi+VpDosxFaultIretD]
         mov     eax, ecx
         shr     eax, 16
         and     ecx, 0ffffh
@@ -1832,35 +1832,35 @@ endif
 @@:
         sub     edx, 8 * 2
         add     edx, ebx
-        mov     esi, [ebp].TsHardwareEsp
-        mov     ecx, [ebp].TsHardwareSegSs
+        mov     esi, [ebp+TsHardwareEsp]
+        mov     ecx, [ebp+TsHardwareSegSs]
         mov     [edx + 10], ax               ; push flags
         mov     [edx + 12], si               ; put esp on new stack
         mov     [edx + 14], cx               ; put ss on new stack
-        mov     ecx, [ebp].TsSegCs
-        mov     eax, [ebp].TsEip
-        mov     esi, [ebp].TsErrCode
+        mov     ecx, [ebp+TsSegCs]
+        mov     eax, [ebp+TsEip]
+        mov     esi, [ebp+TsErrCode]
         mov     [edx + 8], cx                ; push cs
         mov     [edx + 6], ax                ; push ip
         mov     [edx + 4], si                ; push error code
         pop     esi
-        mov     ecx, [esi].VpDosxFaultIret
+        mov     ecx, [esi+VpDosxFaultIret]
         mov     eax, ecx
         shr     eax, 16
         mov     [edx + 2], ax                ; push fault iret seg
         mov     [edx], cx                    ; push fault iret offset
 
 vsnp_update:
-        mov     eax,[edi].VfEip
+        mov     eax,[edi+VfEip]
         sub     edx, ebx
-        mov     cx, word ptr [edi].VfCsSelector
-        mov     bx, word ptr [esi].VpSsSelector
-        test    dword ptr [edi].VfFlags, VDM_INT_INT_GATE
+        mov     cx, word ptr [edi+VfCsSelector]
+        mov     bx, word ptr [esi+VpSsSelector]
+        test    dword ptr [edi+VfFlags], VDM_INT_INT_GATE
         jz      short @f
 
         lea     esi,ds:FIXED_NTVDMSTATE_LINEAR
         MPLOCK and      [esi],NOT VDM_VIRTUAL_INTERRUPTS
-        and     dword ptr [ebp].TsEflags, 0FFF7FFFFH ; clear VIF
+        and     dword ptr [ebp+TsEflags], 0FFF7FFFFH ; clear VIF
 @@:
         or      cx, 7                       ; R3 LDT selectors only
         or      bx, 7                       ; R3 LDT selectors only
@@ -1871,10 +1871,10 @@ vsnp_update:
         jge     short @f
 
         mov     cx, KGDT_R3_CODE OR RPL_MASK
-@@:     mov     [ebp].TsSegCs, cx
-        mov     [ebp].TsEip, eax
-        mov     [ebp].TsHardwareEsp,edx
-        mov     [ebp].TsHardwareSegSs,bx
+@@:     mov     [ebp+TsSegCs], cx
+        mov     [ebp+TsEip], eax
+        mov     [ebp+TsHardwareEsp],edx
+        mov     [ebp+TsHardwareSegSs],bx
 
         ;
         ; WARNING: Here we directly unlink the exception handler from the
@@ -2020,11 +2020,11 @@ PushInt proc
         mov     PCR[PcExceptionList], esp
 
 
-        mov     eax,[eax].TbVdm
+        mov     eax,[eax+TbVdm]
         cmp     eax, _MmUserProbeAddress
         jae     pierr
 
-        mov     eax, [eax].VtInterruptTable
+        mov     eax, [eax+VtInterruptTable]
         lea     eax,[eax + ecx*8]
         cmp     eax, _MmUserProbeAddress
         jae     pierr
@@ -2032,8 +2032,8 @@ PushInt proc
         ;
         ; Get SP
         ;
-        mov     edi,[ebp].TsHardwareEsp
-        test    [esi].RiSsFlags,SEL_TYPE_BIG
+        mov     edi,[ebp+TsHardwareEsp]
+        test    [esi+RiSsFlags],SEL_TYPE_BIG
         jnz     short @f
 
         movzx   edi,di                          ; zero high bits for 64k stack
@@ -2041,7 +2041,7 @@ PushInt proc
         ;
         ; Update SP
         ;
-@@:     test    [eax].ViFlags,dword ptr VDM_INT_32
+@@:     test    [eax+ViFlags],dword ptr VDM_INT_32
         jz      short @f
 
         ;
@@ -2051,7 +2051,7 @@ PushInt proc
         jb      pierr                           ; no, go fault
 
         sub     edi,12
-        mov     [esi].RiEsp,edi
+        mov     [esi+RiEsp],edi
         jmp     short pi130
 
         ;
@@ -2061,18 +2061,18 @@ PushInt proc
         jb      pierr                           ; no, go fault
 
         sub     edi,6
-        mov     [esi].RiEsp,edi
+        mov     [esi+RiEsp],edi
 
         ;
         ; Check limit
         ;
-pi130:  test    [esi].RiSsFlags,SEL_TYPE_ED
+pi130:  test    [esi+RiSsFlags],SEL_TYPE_ED
         jz      short pi140
 
         ;
         ; Expand down, Sp must be above limit
         ;
-        cmp     edi,[esi].RiSsLimit
+        cmp     edi,[esi+RiSsLimit]
         jna     pierr
 
         jmp     short pi150
@@ -2080,25 +2080,25 @@ pi130:  test    [esi].RiSsFlags,SEL_TYPE_ED
         ;
         ; Normal, Sp must be below limit
         ;
-pi140:  cmp     edi,[esi].RiSsLimit
+pi140:  cmp     edi,[esi+RiSsLimit]
         jnb     pierr
 
         ;
         ; Get base of ss
         ;
-pi150:  mov     ebx,[esi].RiSsBase
-        test    [eax].ViFlags,dword ptr VDM_INT_32
+pi150:  mov     ebx,[esi+RiSsBase]
+        test    [eax+ViFlags],dword ptr VDM_INT_32
         jz      short pi160
 
         ;
         ; "push" 32 bit iret frame
         ;
-        mov     edx,[esi].RiEip
+        mov     edx,[esi+RiEip]
         mov     [edi + ebx],edx
-        mov     dx,word ptr [ebp].TsSegCs
+        mov     dx,word ptr [ebp+TsSegCs]
         mov     [edi + ebx] + 4,edx
         push    eax
-        mov     eax,[esi].RiEFlags
+        mov     eax,[esi+RiEFlags]
         call    GetVirtualBits
 
         mov     [edi + ebx] + 8,eax
@@ -2108,12 +2108,12 @@ pi150:  mov     ebx,[esi].RiSsBase
         ;
         ; push 16 bit iret frame
         ;
-pi160:  mov     dx,word ptr [esi].RiEip
+pi160:  mov     dx,word ptr [esi+RiEip]
         mov     [edi + ebx],dx
-        mov     dx,word ptr [ebp].TsSegCs
+        mov     dx,word ptr [ebp+TsSegCs]
         mov     [edi + ebx] + 2,dx
         push    eax
-        mov     eax,[esi].RiEFlags
+        mov     eax,[esi+RiEFlags]
         call    GetVirtualBits
 
         mov     [edi + ebx] + 4,ax
@@ -2123,12 +2123,12 @@ pi160:  mov     dx,word ptr [esi].RiEip
         ; Update CS and IP
         ;
 pi170:  mov     ebx,eax                                 ; save int info
-        mov     dx,[eax].ViCsSelector
-        mov     word ptr [esi].RiSegCs,dx
-        mov     edx,[eax].ViEip
-        mov     [esi].RiEip,edx
+        mov     dx,[eax+ViCsSelector]
+        mov     word ptr [esi+RiSegCs],dx
+        mov     edx,[eax+ViEip]
+        mov     [esi+RiEip],edx
 
-        movzx   eax, word ptr [esi].RiSegCs
+        movzx   eax, word ptr [esi+RiSegCs]
         call    CsToLinear                      ; uses eax as selector
 
         test    al,0ffh
@@ -2137,7 +2137,7 @@ pi170:  mov     ebx,eax                                 ; save int info
         ;
         ; Check for destination not present
         ;
-        test    [esi].RiCsFlags,SEL_TYPE_NP
+        test    [esi+RiCsFlags],SEL_TYPE_NP
         jz      pierr
 
         mov     al,0ffh                         ; succeeded
@@ -2146,27 +2146,27 @@ pi170:  mov     ebx,eax                                 ; save int info
         ;
         ; Check handler address
         ;
-pi175:  mov     edx,[esi].RiEip
-        cmp     edx,[esi].RiCsLimit
+pi175:  mov     edx,[esi+RiEip]
+        cmp     edx,[esi+RiCsLimit]
         jnb     short pierr
 
         ;
         ; Turn off the trap flag
         ;
-pi180:  and     [esi].RiEFlags,NOT EFLAGS_TF_MASK
+pi180:  and     [esi+RiEFlags],NOT EFLAGS_TF_MASK
 
         ;
         ; Turn off virtual interrupts if necessary
         ;
-        test    [ebx].ViFlags,dword ptr VDM_INT_INT_GATE
+        test    [ebx+ViFlags],dword ptr VDM_INT_INT_GATE
         ; n.b. We know al is non-zero, because we succeeded in cstolinear
         jz      short pi80
 
 pi75:   lea     ebx,ds:FIXED_NTVDMSTATE_LINEAR
         MPLOCK and [ebx], NOT EFLAGS_INTERRUPT_MASK
 
-pi80:   and     [esi].RiEFlags,NOT (EFLAGS_IOPL_MASK OR EFLAGS_NT_MASK OR EFLAGS_V86_MASK)
-        or      [esi].RiEFlags,EFLAGS_INTERRUPT_MASK
+pi80:   and     [esi+RiEFlags],NOT (EFLAGS_IOPL_MASK OR EFLAGS_NT_MASK OR EFLAGS_V86_MASK)
+        or      [esi+RiEFlags],EFLAGS_INTERRUPT_MASK
 
 pi90:
 
@@ -2215,24 +2215,24 @@ PushIntExceptionHandler endp
         public CsToLinear
 CsToLinear proc
 
-        test    [esi].RiEFlags,EFLAGS_V86_MASK
+        test    [esi+RiEFlags],EFLAGS_V86_MASK
         jz      ctl10
 
         shl     eax,4
-        mov     [esi].RiCsBase,eax
-        mov     [esi].RiCsLimit,0FFFFh
-        mov     [esi].RiCsFlags,0
+        mov     [esi+RiCsBase],eax
+        mov     [esi+RiCsLimit],0FFFFh
+        mov     [esi+RiCsFlags],0
         mov     eax,1
         ret
 
 
 ctl10:
         push    edx                             ; WARNING volatile regs!!!
-        lea     edx,[esi].RiCsLimit
+        lea     edx,[esi+RiCsLimit]
         push    edx
-        lea     edx,[esi].RiCsBase
+        lea     edx,[esi+RiCsBase]
         push    edx
-        lea     edx,[esi].RiCsFlags
+        lea     edx,[esi+RiCsFlags]
         push    edx
         push    eax                             ; push selector
 
@@ -2242,15 +2242,15 @@ ctl10:
         or      al,al
         jz      ctlerr
 
-        test    [esi].RiCsFlags,SEL_TYPE_EXECUTE
+        test    [esi+RiCsFlags],SEL_TYPE_EXECUTE
         jz      ctlerr
 
-        test    [esi].RiCsFlags,SEL_TYPE_2GIG
+        test    [esi+RiCsFlags],SEL_TYPE_2GIG
         jz      ctl30
 
         ; Correct limit value for granularity
-        shl     [esi].RiCsLimit,12
-        or      [esi].RiCsLimit,0FFFh
+        shl     [esi+RiCsLimit],12
+        or      [esi+RiCsLimit],0FFFh
 ctl30:
         mov     eax,1
         ret
@@ -2278,15 +2278,15 @@ CsToLinear endp
 ;
         public CheckEip
 CheckEip proc
-        mov     eax,[esi].RiEip
-        test    [esi].RiEFlags,EFLAGS_V86_MASK
+        mov     eax,[esi+RiEip]
+        test    [esi+RiEFlags],EFLAGS_V86_MASK
         jz      ce20
 
-        and     eax,[esi].RiCsLimit
-        mov     [esi].RiEip,eax
+        and     eax,[esi+RiCsLimit]
+        mov     [esi+RiEip],eax
         jmp     ce40
 
-ce20:   cmp     eax,[esi].RiCsLimit
+ce20:   cmp     eax,[esi+RiCsLimit]
         ja      ceerr
 ce40:   mov     eax,1
 ce50:   ret
@@ -2317,22 +2317,22 @@ CheckEip endp
         public SsToLinear
 SsToLinear proc
 
-        test    [esi].RiEFlags,EFLAGS_V86_MASK
+        test    [esi+RiEFlags],EFLAGS_V86_MASK
         jz      stl10
 
         shl     eax,4
-        mov     [esi].RiSsBase,eax
-        mov     [esi].RiSsLimit,0FFFFh
-        mov     [esi].RiSsFlags,0
+        mov     [esi+RiSsBase],eax
+        mov     [esi+RiSsLimit],0FFFFh
+        mov     [esi+RiSsFlags],0
         mov     eax,1
         ret
 
 stl10:  push    ecx
-        lea     ecx,[esi].RiSsLimit
+        lea     ecx,[esi+RiSsLimit]
         push    ecx
-        lea     ecx,[esi].RiSsBase
+        lea     ecx,[esi+RiSsBase]
         push    ecx
-        lea     ecx,[esi].RiSsFlags
+        lea     ecx,[esi+RiSsFlags]
         push    ecx
         push    eax                             ;selector
 
@@ -2342,18 +2342,18 @@ stl10:  push    ecx
         or      al,al
         jz      stlerr
 
-        test    [esi].RiSsFlags,SEL_TYPE_WRITE
+        test    [esi+RiSsFlags],SEL_TYPE_WRITE
         jz      stlerr
 
-        test    [esi].RiSsFlags,SEL_TYPE_2GIG
+        test    [esi+RiSsFlags],SEL_TYPE_2GIG
         jz      stl30
 
         ; Correct limit value for granularity
 
-        mov     eax,[esi].RiSsLimit
+        mov     eax,[esi+RiSsLimit]
         shl     eax,12
         or      eax,0FFFh
-        mov     [esi].RiSsLimit,eax
+        mov     [esi+RiSsLimit],eax
 stl30:
         mov     eax,1
 stl40:  ret
@@ -2382,15 +2382,15 @@ SsToLinear endp
 ;
         public CheckEsp
 CheckEsp proc
-        mov     eax,[esi].RiEsp
-        test    [esi].RiEFlags,EFLAGS_V86_MASK
+        mov     eax,[esi+RiEsp]
+        test    [esi+RiEFlags],EFLAGS_V86_MASK
         jz      cs20
 
-        and     eax,[esi].RiSsLimit
-        mov     [esi].RiEsp,eax
+        and     eax,[esi+RiSsLimit]
+        mov     [esi+RiEsp],eax
         jmp     cs40
 
-cs20:   test    [esi].RiSsFlags,SEL_TYPE_BIG
+cs20:   test    [esi+RiSsFlags],SEL_TYPE_BIG
         jnz     cs25
 
         and     eax,0FFFFh                      ; only use 16 bit for 16 bit
@@ -2398,21 +2398,21 @@ cs25:
         cmp     ecx, eax                        ; StackOffset > SP?
         ja      cserr                           ; yes error
         dec     eax                             ; make limit checks work
-        test    [esi].RiSsFlags,SEL_TYPE_ED     ; Expand down?
+        test    [esi+RiSsFlags],SEL_TYPE_ED     ; Expand down?
         jz      cs30                            ; jif no
 
 ;
 ;       Expand Down
 ;
         sub     eax, ecx                        ; New SP
-        cmp     eax,[esi].RiSsLimit             ; NewSp < Limit?
+        cmp     eax,[esi+RiSsLimit]             ; NewSp < Limit?
         jb      cserr
         jmp     cs40
 
 ;
 ;       Not Expand Down
 ;
-cs30:   cmp     eax,[esi].RiSsLimit
+cs30:   cmp     eax,[esi+RiSsLimit]
         ja      cserr
 
 cs40:   mov     eax,1
@@ -2462,26 +2462,26 @@ SwitchToHandlerStack proc
         push    PCR[PcExceptionList]        ; Set next pointer
         mov     PCR[PcExceptionList],esp    ; Link us on
 
-        cmp     word ptr [edi].VpLockCount, 0   ; already switched?
+        cmp     word ptr [edi+VpLockCount], 0   ; already switched?
         jnz     short @f                        ; yes
 
-        mov     eax, [esi].RiEip
-        mov     [edi].VpSaveEip, eax
-        mov     eax, [esi].RiEsp
-        mov     [edi].VpSaveEsp, eax
-        mov     eax, [esi].RiSegSs
-        mov     [edi].VpSaveSsSelector, ax
+        mov     eax, [esi+RiEip]
+        mov     [edi+VpSaveEip], eax
+        mov     eax, [esi+RiEsp]
+        mov     [edi+VpSaveEsp], eax
+        mov     eax, [esi+RiSegSs]
+        mov     [edi+VpSaveSsSelector], ax
 
-        movzx   eax,word ptr [edi].VpSsSelector
+        movzx   eax,word ptr [edi+VpSsSelector]
 
         pop     PCR[PcExceptionList]        ; Remove our exception handle
         add     esp, 4                      ; clear stack
         pop     ebp
 
-        mov     [esi].RiSegSs,eax
-        mov     dword ptr [esi].RiEsp,1000h     ; dpmi stack offset
+        mov     [esi+RiSegSs],eax
+        mov     dword ptr [esi+RiEsp],1000h     ; dpmi stack offset
 
-        movzx   eax, word ptr [esi].RiSegSs
+        movzx   eax, word ptr [esi+RiSegSs]
         push    ecx
         call    SsToLinear                      ; compute new base
         pop     ecx
@@ -2494,7 +2494,7 @@ SwitchToHandlerStack proc
         mov     PCR[PcExceptionList],esp    ; Link us on
 
 @@:
-        inc     word ptr [edi].VpLockCount      ; maintain lock count
+        inc     word ptr [edi+VpLockCount]      ; maintain lock count
 
         pop     PCR[PcExceptionList]        ; Remove our exception handle
         add     esp, 4                      ; clear stack
@@ -2555,18 +2555,18 @@ GetHandlerAddress proc
         mov     eax,VDM_FAULT_HANDLER_SIZE
         mul     ecx
         mov     edi,PCR[PcTeb]
-        mov     edi,[edi].TeVdm
+        mov     edi,[edi+TeVdm]
         cmp     edi, _MmUserProbeAddress        ; Probe the VMD structure
         jae     short GetHandlerAddress_fault_resume
 
-        mov     edi,[edi].VtFaultTable
+        mov     edi,[edi+VtFaultTable]
         cmp     edi, _MmUserProbeAddress
         jae     short GetHandlerAddress_fault_resume
 
         movzx   ecx,word ptr [edi + eax].VfCsSelector
-        mov     [esi].RiSegCs,ecx
+        mov     [esi+RiSegCs],ecx
         mov     ecx,[edi + eax].VfEip
-        mov     [esi].RiEip,ecx
+        mov     [esi+RiEip],ecx
         mov     eax,1
 
         jmp     short GetHandlerAddress_Exit
@@ -2617,7 +2617,7 @@ PushException Proc
         push    edi
         push    esi
 
-        test    [esi].RiEflags,EFLAGS_V86_MASK
+        test    [esi+RiEflags],EFLAGS_V86_MASK
         jz      pe40
 
 ;
@@ -2626,11 +2626,11 @@ PushException Proc
         cmp     ecx, 7                  ; device not available fault
         ja      peerr                   ; per win3.1, no exceptions
                                         ; above 7 for v86 mode
-        mov     edx,[esi].RiEsp
-        mov     ebx,[esi].RiSsBase
+        mov     edx,[esi+RiEsp]
+        mov     ebx,[esi+RiSsBase]
         and     edx,0FFFFh              ; only use a 16 bit sp
         sub     dx,2
-        mov     eax,[esi].RiEFlags
+        mov     eax,[esi+RiEFlags]
         push    ecx
         call    GetVirtualBits
         pop     ecx
@@ -2645,10 +2645,10 @@ PushException Proc
 
         mov     [ebx+edx],ax            ; push flags
         sub     dx,2
-        mov     ax,word ptr [esi].RiSegCs
+        mov     ax,word ptr [esi+RiSegCs]
         mov     [ebx+edx],ax            ; push cs
         sub     dx,2
-        mov     ax,word ptr [esi].RiEip
+        mov     ax,word ptr [esi+RiEip]
         mov     [ebx+edx],ax            ; push ip
 
         mov     eax,[ecx*4]             ; get new cs:ip value
@@ -2658,19 +2658,19 @@ PushException Proc
 
         push    eax
         movzx   eax,ax
-        mov     [esi].RiEip,eax
+        mov     [esi+RiEip],eax
         pop     eax
         shr     eax,16
-        mov     [esi].RiSegCs,eax
-        mov     word ptr [esi].RiEsp,dx
+        mov     [esi+RiSegCs],eax
+        mov     word ptr [esi+RiEsp],dx
         jmp     pe60
 
 ;
 ; Push PM exception
 ;
 pe40:
-        push    [esi].RiEsp                     ; save for stack frame
-        push    [esi].RiSegSs
+        push    [esi+RiEsp]                     ; save for stack frame
+        push    [esi+RiSegSs]
 
 ;
 ; Install exception handler
@@ -2682,7 +2682,7 @@ pe40:
         mov     PCR[PcExceptionList],esp    ; Link us on
 
         mov     edi,PCR[PcTeb]
-        mov     edi, [edi].TeVdm
+        mov     edi, [edi+TeVdm]
 
 
         pop     PCR[PcExceptionList]        ; Remove our exception handle
@@ -2691,16 +2691,16 @@ pe40:
 
         cmp     edi, _MmUserProbeAddress
         jae     peerr1
-        lea     edi,[edi].VtDpmiInfo
+        lea     edi,[edi+VtDpmiInfo]
         call    SwitchToHandlerStack
         test    al,0FFh
         jz      peerr1                          ; pop off stack and exit
 
-        sub     [esi].RiEsp, 20h                ; win31 undocumented feature
+        sub     [esi+RiEsp], 20h                ; win31 undocumented feature
 
-        mov     ebx,[esi].RiSsBase
-        mov     edx,[esi].RiEsp
-        test    [esi].RiSsFlags,SEL_TYPE_BIG
+        mov     ebx,[esi+RiSsBase]
+        mov     edx,[esi+RiEsp]
+        test    [esi+RiSsFlags],SEL_TYPE_BIG
         jnz     short @f
         movzx   edx,dx                          ; zero high bits for 64k stack
 @@:
@@ -2714,7 +2714,7 @@ pe40:
         push    PCR[PcExceptionList]        ; Set next pointer
         mov     PCR[PcExceptionList],esp    ; Link us on
 
-        test    word ptr [edi].VpFlags, 1   ; 32 bit app?
+        test    word ptr [edi+VpFlags], 1   ; 32 bit app?
 
         pop     PCR[PcExceptionList]        ; Remove our exception handle
 
@@ -2734,7 +2734,7 @@ pe40:
         jz      peerr1                          ; pop off stack and exit
 
         sub     edx,8*2
-        mov     [esi].RiEsp,edx
+        mov     [esi+RiEsp],edx
 
 ;
 ; Install exception handler
@@ -2755,7 +2755,7 @@ pe40:
         pop     ebp
         lea     esp, [esp+8]                ; clear stack
 
-        mov     eax,[esi].RiEFlags
+        mov     eax,[esi+RiEFlags]
         push    ecx
         call    GetVirtualBits
         pop     ecx
@@ -2770,14 +2770,14 @@ pe40:
         mov     PCR[PcExceptionList],esp    ; Link us on
 
         mov     [ebx+edx+10],ax                 ; push flags
-        movzx   eax,word ptr [esi].RiSegCs
+        movzx   eax,word ptr [esi+RiSegCs]
         mov     [ebx+edx+8],ax                  ; push cs
-        mov     eax,[esi].RiEip
+        mov     eax,[esi+RiEip]
         mov     [ebx+edx+6],ax                  ; push ip
         mov     eax,RI.RiTrapFrame
-        mov     eax,[eax].TsErrCode
+        mov     eax,[eax+TsErrCode]
         mov     [ebx+edx+4],ax                  ; push error code
-        mov     eax,[edi].VpDosxFaultIret
+        mov     eax,[edi+VpDosxFaultIret]
         mov     [ebx+edx],eax                   ; push iret address
 
         pop     PCR[PcExceptionList]        ; Remove our exception handle
@@ -2798,7 +2798,7 @@ pe45:
         jz      peerr1                          ; pop off stack and exit
 
         sub     edx,8*4
-        mov     [esi].RiEsp,edx
+        mov     [esi+RiEsp],edx
 
         push    ebp
         push    esp                         ; Pass current Esp to handler
@@ -2817,7 +2817,7 @@ pe45:
         pop     ebp
         lea     esp, [esp+8]                ; drop ss etc
 
-        mov     eax,[esi].RiEFlags
+        mov     eax,[esi+RiEFlags]
         push    ecx
         call    GetVirtualBits
         pop     ecx
@@ -2829,17 +2829,17 @@ pe45:
         mov     PCR[PcExceptionList],esp    ; Link us on
 
         mov     [ebx+edx+20],eax                ; push flags
-        movzx   eax,word ptr [esi].RiSegCs
+        movzx   eax,word ptr [esi+RiSegCs]
         mov     [ebx+edx+16],eax                ; push cs
-        mov     eax,[esi].RiEip
+        mov     eax,[esi+RiEip]
         mov     [ebx+edx+12],eax                ; push ip
         mov     eax,RI.RiTrapFrame
-        mov     eax,[eax].TsErrCode
+        mov     eax,[eax+TsErrCode]
         mov     [ebx+edx+8],eax                 ; push error code
-        mov     eax,[edi].VpDosxFaultIretD
+        mov     eax,[edi+VpDosxFaultIretD]
         shr     eax, 16
         mov     [ebx+edx+4],eax                 ; push iret seg
-        mov     eax,[edi].VpDosxFaultIretD
+        mov     eax,[edi+VpDosxFaultIretD]
         and     eax, 0ffffh
         mov     [ebx+edx],eax                   ; push iret offset
 
@@ -2854,14 +2854,14 @@ pe50:
         jz      peerr
 
 pe60:   push    ecx
-        movzx   eax,word ptr [esi].RiSegCs
+        movzx   eax,word ptr [esi+RiSegCs]
         call    CsToLinear                      ; uses eax as selector
         pop     ecx
         test    al,0FFh
         jz      peerr
 
-        mov     eax,[esi].RiEip
-        cmp     eax,[esi].RiCsLimit
+        mov     eax,[esi+RiEip]
+        cmp     eax,[esi+RiCsLimit]
         ja      peerr
 
         mov     eax,VDM_FAULT_HANDLER_SIZE
@@ -2876,18 +2876,18 @@ pe60:   push    ecx
         mov     PCR[PcExceptionList],esp    ; Link us on
 
         mov     edi,PCR[PcTeb]
-        mov     edi,[edi].TbVdm
+        mov     edi,[edi+TbVdm]
 
         cmp     edi, _MmUserProbeAddress
         jb      @f
         mov     edi, _MmUserProbeAddress
-@@:     mov     edi,[edi].VtFaultTable
+@@:     mov     edi,[edi+VtFaultTable]
         add     edi,eax
         cmp     edi, _MmUserProbeAddress
         jb      @f
         mov     edi, _MmUserProbeAddress
-@@:     mov     eax,[esi].RiEFlags  ;WARNING 16 vs 32
-        test    dword ptr [edi].VfFlags,VDM_INT_INT_GATE
+@@:     mov     eax,[esi+RiEFlags]  ;WARNING 16 vs 32
+        test    dword ptr [edi+VfFlags],VDM_INT_INT_GATE
 
         pop     PCR[PcExceptionList]        ; Remove our exception handle
 
@@ -2905,7 +2905,7 @@ pe70:   push    ecx
         mov     ecx,eax
         call    CheckVdmFlags
         and     ecx,NOT EFLAGS_TF_MASK
-        mov     [esi].RiEFlags,ecx
+        mov     [esi+RiEFlags],ecx
         pop     ecx
         mov     eax,1                   ; success
 pe80:   pop     esi

@@ -497,8 +497,8 @@ cPublicFastCall __cap_KeAcquireQueuedSpinLock,1
         sub     esp, 8          ; make room to save time
         push    ecx             ; save args
         rdtsc                   ; get time
-        mov     [esp].4, eax    ; save low part
-        mov     [esp].8, edx    ; save high part
+        mov     [esp+4], eax    ; save low part
+        mov     [esp+8], edx    ; save high part
         mov     ecx, [esp]      ; restore arg
         fstCall KiQueueStatAcquireQueuedLock
 acqst:  mov     ecx, esp        ; set arg pointer for data accum
@@ -513,8 +513,8 @@ cPublicFastCall __cap_KeAcquireQueuedSpinLockRaiseToSynch,1
         sub     esp, 8          ; make room to save time
         push    ecx             ; save args
         rdtsc                   ; get time
-        mov     [esp].4, eax    ; save low part
-        mov     [esp].8, edx    ; save high part
+        mov     [esp+4], eax    ; save low part
+        mov     [esp+8], edx    ; save high part
         mov     ecx, [esp]      ; restore arg
         fstCall KiQueueStatAcquireQueuedLockRTS
         jmp     short acqst     ; use common code to finish
@@ -562,8 +562,8 @@ cPublicFastCall KeAcquireQueuedSpinLockAtDpcLevel,1
         sub     esp, 8          ; make room to save time
         push    ecx             ; save args
         rdtsc                   ; get time
-        mov     [esp].4, eax    ; save low part
-        mov     [esp].8, edx    ; save high part
+        mov     [esp+4], eax    ; save low part
+        mov     [esp+8], edx    ; save high part
         mov     ecx, [esp]      ; restore arg
         fstCall KiAcquireQueuedLock
         mov     ecx, esp
@@ -648,8 +648,8 @@ cPublicFpo 0,0
 ifndef NT_UP
 
         xor     eax, eax                 ; set next link to NULL
-        mov     [edx].LqhNext, eax       ;
-        mov     [edx].LqhLock, ecx       ; set spin lock address
+        mov     [edx+LqhNext], eax       ;
+        mov     [edx+LqhLock], ecx       ; set spin lock address
         lea     ecx, dword ptr [edx+LqhNext] ; compute address of lock queue
         jmp     short @KeAcquireQueuedSpinLockAtDpcLevel@4 ; finish in common code
 
@@ -715,7 +715,7 @@ ifndef NT_UP
 
         ; Get address of the actual lock.
 
-        mov     edx, [ecx].LqLock
+        mov     edx, [ecx+LqLock]
 
 ifdef CAPKERN_SYNCH_POINTS
         push    edx
@@ -739,7 +739,7 @@ endif
         ; bit 1 is LOCK_QUEUE_OWNER.
 
         or      edx, LOCK_QUEUE_OWNER           ; mark self as lock owner
-        mov     [ecx].LqLock, edx
+        mov     [ecx+LqLock], edx
 
         ; lock has been acquired, return.
 
@@ -777,9 +777,9 @@ endif
         ; above) to point to THIS processor's lock queue entry.
 
         or      edx, LOCK_QUEUE_WAIT            ; set lock bit
-        mov     [ecx].LqLock, edx
+        mov     [ecx+LqLock], edx
 
-        mov     [eax].LqNext, ecx               ; set previous acquirer's
+        mov     [eax+LqNext], ecx               ; set previous acquirer's
                                                 ; next field.
 
 ifdef CAPKERN_SYNCH_POINTS
@@ -789,7 +789,7 @@ ifdef CAPKERN_SYNCH_POINTS
 
         ; Wait.
 aqsl30: inc     edx
-        test    [ecx].LqLock, LOCK_QUEUE_WAIT   ; check if still waiting
+        test    [ecx+LqLock], LOCK_QUEUE_WAIT   ; check if still waiting
         jz      short aqsl40                    ; jif lock acquired
         YIELD                                   ; fire avoidance.
         jmp     short aqsl30                    ; else, continue waiting
@@ -802,7 +802,7 @@ aqsl40: push    edx
 else
         ; Wait.
 @@:
-        test    [ecx].LqLock, LOCK_QUEUE_WAIT   ; check if still waiting
+        test    [ecx+LqLock], LOCK_QUEUE_WAIT   ; check if still waiting
         jz      short aqsl20                    ; jif lock acquired
         YIELD                                   ; fire avoidance.
         jmp     short @b                        ; else, continue waiting
@@ -892,8 +892,8 @@ cPublicFpo 0,0
 ifndef NT_UP
 
         mov     eax, ecx                        ; need in eax for cmpxchg
-        mov     edx, [ecx].LqNext
-        mov     ecx, [ecx].LqLock
+        mov     edx, [ecx+LqNext]
+        mov     ecx, [ecx+LqLock]
 
 ifdef CAPKERN_SYNCH_POINTS
         push    ecx
@@ -925,7 +925,7 @@ if DBG
                                                 ; tests CF
 endif
 
-        mov     [eax].LqLock, ecx               ; clear lock bit in queue entry
+        mov     [eax+LqLock], ecx               ; clear lock bit in queue entry
         jnz     short rqsl40                    ; jif another processor waits
                                                 ; tests ZF
 
@@ -953,13 +953,13 @@ ifndef NT_UP
         ; to that processor by getting the address of its LockQueue
         ; entry, turning ON its owner bit and OFF its wait bit.
 
-rqsl40: xor     [edx].LqLock, (LOCK_QUEUE_OWNER+LOCK_QUEUE_WAIT)
+rqsl40: xor     [edx+LqLock], (LOCK_QUEUE_OWNER+LOCK_QUEUE_WAIT)
 
         ; Done, the other processor now owns the lock, clear the next
         ; field in my LockQueue entry (to preserve the order for entering
         ; the queue again) and return.
 
-        mov     [eax].LqNext, 0
+        mov     [eax+LqNext], 0
         fstRET  KeReleaseQueuedSpinLockFromDpcLevel
 
         ; We get here if another processor is attempting to acquire
@@ -972,7 +972,7 @@ rqsl60: push    ecx
         xor     ecx, ecx
 
 rqsl70: inc     ecx
-        mov     edx, [eax].LqNext
+        mov     edx, [eax+LqNext]
         test    edx, edx                        ; check if still 0
         jnz     short rqsl80                    ; jif Next field now set.
         YIELD                                   ; wait a bit
@@ -984,7 +984,7 @@ rqsl80: push    ecx
         add     esp, 12
         jmp     short rqsl40
 else
-rqsl60: mov     edx, [eax].LqNext
+rqsl60: mov     edx, [eax+LqNext]
         test    edx, edx                        ; check if still 0
         jnz     short rqsl40                    ; jif Next field now set.
         YIELD                                   ; wait a bit
@@ -1046,7 +1046,7 @@ ifndef NT_UP
 
         ; Get address of Lock Queue entry
 
-        mov     edx, [ecx].LqLock
+        mov     edx, [ecx+LqLock]
 
 ifdef CAPKERN_SYNCH_POINTS
         push    edx
@@ -1069,7 +1069,7 @@ endif
         ; bit 1 is LOCK_QUEUE_OWNER.
 
         or      edx, LOCK_QUEUE_OWNER           ; mark self as lock owner
-        mov     [ecx].LqLock, edx
+        mov     [ecx+LqLock], edx
 
 ifdef QLOCK_STAT_GATHER
 

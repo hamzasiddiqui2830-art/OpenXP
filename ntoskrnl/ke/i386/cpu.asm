@@ -72,6 +72,12 @@ INIT    SEGMENT DWORD PUBLIC 'CODE'
 ;    VOID
 ;    )
 ;
+; Routine Description:
+;
+;    This function determines type of processor (80486, 80386),
+;    and it's corresponding stepping.  The results are saved in
+;    the current processor's PRCB.
+;
 ;--
 cPublicProc _KiSetProcessorType,0
 
@@ -155,7 +161,6 @@ cpu_has_cpuid:
         cmp     edx, CPUID_0_INTEL_EDX
         jne     short cpu_non_genuineintel
 
-
         ;
         ; GenuineIntel, check for Family=6
         ;
@@ -164,7 +169,7 @@ cpu_has_cpuid:
 
         mov     ebx, eax
         mov     edx, eax
-        mov     ecx, eax                
+        mov     ecx, eax
 
         and     edx, 0F00h              ; get the Family
         cmp     edx, 0600h
@@ -174,14 +179,13 @@ cpu_has_cpuid:
         and     ebx, 0F00h              ; (bh) = CpuType
         jmp     short extended_model
 
-
 cpu_non_genuineintel:
 
         mov     eax, 1                  ; get the family and stepping
         cpuid
 
         mov     ebx, eax
-        mov     edx, eax                
+        mov     edx, eax
         mov     ecx, eax
 
         and     edx, 0F00h              ; get the Family
@@ -189,7 +193,7 @@ cpu_non_genuineintel:
 cpu_not_family_6:
         cmp     edx, 0F00h
         jne     short cpu_not_extended  ; Family less than F
-    
+
         and     ebx, 0FF00000h
         shr     ebx, 12
         add     ebx, edx
@@ -224,32 +228,32 @@ cpu_save_stepping:
         pop     edi
         stdRET  _KiSetProcessorType
 
-PUBLIC cpuid_trap
+;
+; cpuid_trap - handles CPUID fault, restores IDT, continues at cpuid_unsupported
+; Kept inside _KiSetProcessorType so it can reference cpuid_unsupported
+;
 cpuid_trap:
         mov     ecx, PCR[PcIdt]         ; Address of IDT
         pop     dword ptr [ecx+34h]     ; restore trap6 handler
         pop     dword ptr [ecx+30h]
         jmp     cpuid_unsupported       ; Go get processor information
 
+;
+; CpuIdTrap6Handler - temporary int 6 handler for CPUID
+; Kept inside _KiSetProcessorType so it can reference cpuid_trap
+;
+CpuIdTrap6Handler:
+        mov     [esp+IretEip],offset cpuid_trap
+        iretd
+
 stdENDP _KiSetProcessorType
 
 ;++
 ;
-; CpuIdTrap6Handler
-;
-;    Temporary int 6 handler - assumes the cause of the exception was the
-;    attempted CPUID instruction.
-;--
-
-CpuIdTrap6Handler   proc
-
-        mov     [esp+IretEip],offset cpuid_trap
-        iretd
-
-CpuIdTrap6Handler  endp
-
-;++
-; Get386Stepping
+; USHORT
+; Get386Stepping (
+;    VOID
+;    )
 ;--
 
         public  Get386Stepping
@@ -278,7 +282,11 @@ G3s10:
 Get386Stepping  endp
 
 ;++
-; Get486Stepping
+;
+; USHORT
+; Get486Stepping (
+;    VOID
+;    )
 ;--
 
         public  Get486Stepping
@@ -313,7 +321,11 @@ G4s20:  mov     ax, 300h                ; Set to D stepping
 Get486Stepping          endp
 
 ;++
-; Check486AStepping
+;
+; BOOLEAN
+; Check486AStepping (
+;    VOID
+;    )
 ;--
         public  Check486AStepping
 Check486AStepping       proc    near
@@ -332,7 +344,11 @@ cas10:  clc
 Check486AStepping       endp
 
 ;++
-; Check486BStepping
+;
+; BOOLEAN
+; Check486BStepping (
+;    VOID
+;    )
 ;--
         public  Check486BStepping
 Check486BStepping       proc
@@ -357,7 +373,6 @@ c4bs50:
         nop
         clc                             ; it is C step
         jmp     short c4bs70
-PUBLIC c4bs60
 c4bs60: stc                             ; it's B step
 c4bs70: pop     dword ptr [ebx+34h]     ; restore old int 6 vector
         pop     dword ptr [ebx+30h]
@@ -365,23 +380,22 @@ c4bs70: pop     dword ptr [ebx+34h]     ; restore old int 6 vector
         pop     ebx
         ret
 
-        ret
+;
+; Temporary486Int6 - temporary int 6 handler for DR4/5 access
+; Kept inside Check486BStepping so it can reference c4bs60
+;
+Temporary486Int6:
+        mov     [esp+IretEip],offset c4bs60 ; set EIP to stc instruction
+        iretd
 
 Check486BStepping       endp
 
 ;++
-; Temporary486Int6
-;--
-
-Temporary486Int6        proc
-
-        mov     [esp+IretEip],offset c4bs60 ; set EIP to stc instruction
-        iretd
-
-Temporary486Int6        endp
-
-;++
-; Check486CStepping
+;
+; BOOLEAN
+; Check486CStepping (
+;    VOID
+;    )
 ;--
 
 FpControl       equ     [ebp - 2]
@@ -428,7 +442,11 @@ c4ds10: mov     esp, ebp
 Check486CStepping       endp
 
 ;++
-; Check386B0
+;
+; BOOLEAN
+; Check386B0 (
+;    VOID
+;    )
 ;--
 
 Check386B0      proc
@@ -457,7 +475,6 @@ b1c50:
         nop
         stc                             ; assume B0
         jecxz    short b1c70            ; jmp if B0
-PUBLIC b1c60
 b1c60:  clc
 b1c70:  pop     dword ptr [ebx+34h]     ; restore old int 6 vector
         pop     dword ptr [ebx+30h]
@@ -465,21 +482,22 @@ b1c70:  pop     dword ptr [ebx+34h]     ; restore old int 6 vector
         pop     ebx
         ret
 
-Check386B0      endp
-
-;++
-; TemporaryInt6
-;--
-
-TemporaryInt6    proc
-
+;
+; TemporaryInt6 - temporary int 6 handler for XTBS instruction
+; Kept inside Check386B0 so it can reference b1c60
+;
+TemporaryInt6:
         mov     [esp+IretEip],offset b1c60 ; set IP to clc instruction
         iretd
 
-TemporaryInt6   endp
+Check386B0      endp
 
 ;++
-; Check386D1
+;
+; BOOLEAN
+; Check386D1 (
+;    VOID
+;    )
 ;--
 
 Check386D1      proc
@@ -503,7 +521,6 @@ Check386D1      proc
         popfd                           ; cause a single step trap
         rep movsb
 
-PUBLIC d1c60
 d1c60:  add     esp,4                   ; clean off stack
         pop     dword ptr [ebx+0ch]     ; restore old int 1 vector
         pop     dword ptr [ebx+08h]
@@ -514,22 +531,23 @@ d1cx:
         pop     ebx
         ret
 
-Check386D1      endp
-
-;++
-; TemporaryInt1
-;--
-
-TemporaryInt1   proc
-
+;
+; TemporaryInt1 - temporary int 1 handler for trace trap
+; Kept inside Check386D1 so it can reference d1c60
+;
+TemporaryInt1:
         and     DWORD PTR [esp+IretEFlags], NOT EFLAGS_TF ; clear caller's Trace Flag
         mov     [esp+IretEip],offset d1c60     ; set IP to next instruction
         iretd
 
-TemporaryInt1   endp
+Check386D1      endp
 
 ;++
-; MultiplyTest
+;
+; BOOLEAN
+; MultiplyTest (
+;    VOID
+;    )
 ;--
 
 MultiplyTest    proc
@@ -547,7 +565,11 @@ mltx:
 MultiplyTest    endp
 
 ;++
-; Multiply
+;
+; BOOLEAN
+; Multiply (
+;    VOID
+;    )
 ;--
 
 Multiply        proc
@@ -571,7 +593,11 @@ mlpx:
 Multiply        endp
 
 ;++
-; KiIsNpxPresent
+;
+; BOOLEAN
+; KiIsNpxPresent(
+;     VOID
+;     );
 ;--
 
 cPublicProc _KiIsNpxPresent,0
@@ -612,7 +638,15 @@ stdENDP _KiIsNpxPresent
 
 
 ;++
-; CPUID
+;
+; VOID
+; CPUID (
+;     ULONG   InEax,
+;     PULONG  OutEax,
+;     PULONG  OutEbx,
+;     PULONG  OutEcx,
+;     PULONG  OutEdx
+;     );
 ;--
 cPublicProc _CPUID,5
 
@@ -648,7 +682,11 @@ _TEXT   SEGMENT DWORD PUBLIC 'CODE'      ; Put IdleLoop in text section
         ASSUME  DS:FLAT, ES:FLAT, SS:NOTHING, FS:NOTHING, GS:NOTHING
 
 ;++
-; RDTSC
+;
+; LONGLONG
+; RDTSC (
+;       VOID
+;     );
 ;--
 cPublicProc _RDTSC
     rdtsc
@@ -657,7 +695,12 @@ cPublicProc _RDTSC
 stdENDP _RDTSC
 
 ;++
-; RDMSR (fastcall)
+;
+; ULONGLONG
+; FASTCALL
+; RDMSR (
+;   IN ULONG MsrRegister
+;   );
 ;--
 ; Explicit fastcall declaration (replaces cPublicFastCall/fstRET/fstENDP)
 PUBLIC @RDMSR@4
@@ -668,7 +711,12 @@ PUBLIC @RDMSR@4
 
 
 ;++
-; WRMSR
+;
+; VOID
+; WRMSR (
+;   IN ULONG MsrRegister
+;   IN LONGLONG MsrValue
+;   );
 ;--
 cPublicProc _WRMSR, 3
     mov     ecx, [esp+4]
@@ -679,7 +727,11 @@ cPublicProc _WRMSR, 3
 stdENDP _WRMSR
 
 ;++
-; KeYieldProcessor
+;
+; VOID
+; KeYieldProcessor (
+;   VOID
+;   );
 ;--
 cPublicProc _KeYieldProcessor
     YIELD

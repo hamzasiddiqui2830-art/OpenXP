@@ -33,6 +33,11 @@ IretEip     equ 0
 IretCs      equ 4
 IretEFlags  equ 8
 
+; Labels referenced across PROC boundaries must be PUBLIC in MASM 14.x
+PUBLIC cpuid_trap
+PUBLIC c4bs60
+PUBLIC b1c60
+PUBLIC d1c60
 ;
 ; constant for i386 32-bit multiplication test
 ;
@@ -873,7 +878,7 @@ Check386D1      endp
 
 TemporaryInt1   proc
 
-        and     [esp+IretEFlags],not EFLAGS_TF ; clear caller's Trace Flag
+        and     DWORD PTR [esp+IretEFlags], NOT EFLAGS_TF ; clear caller's Trace Flag
         mov     [esp+IretEip],offset d1c60     ; set IP to next instruction
         iretd
 
@@ -1008,7 +1013,7 @@ cPublicProc _KiIsNpxPresent,0
         or      eax, CR0_ET
         mov     edx, 1
 
-        cmp     PCR[PcPrcbData+PbCpuType], 3h
+        cmp     BYTE PTR PCR[PcPrcbData+PbCpuType], 3h
         jbe     Inp10
 
         or      eax, CR0_NE

@@ -66,10 +66,10 @@ PUBLICP2 macro Func, N
     public Func&@&N
 endm
 
-EXTRNP macro Func, N, Thunk, FastCall
+EXTRNP  macro   Func,N,Thunk,FastCall
     IFB <N>
         IFNDEF Func&@0
-            extrn Func&@0:NEAR
+            EXTRN Func&@0:NEAR
         ENDIF
     ELSE
         IFB <FastCall>
@@ -79,15 +79,21 @@ EXTRNP macro Func, N, Thunk, FastCall
                 EXTRNTHUNK Func, %(N*4)
             ENDIF
         ELSE
-            cFCall&@&Func equ (N*4)
+            ; Fastcall: decorated name is @Func@N
+            cFCall@&Func equ (N*4)
             IFB <Thunk>
-                EXTRNP2 &@&Func, %(N*4)
+                IFNDEF @&Func&@%(N*4)
+                    EXTRN @&Func&@%(N*4):NEAR
+                ENDIF
             ELSE
-                EXTRNTHUNK &@&Func, %(N*4)
+                IFNDEF __imp_@&Func&@%(N*4)
+                    EXTRN __imp_@&Func&@%(N*4):DWORD
+                ENDIF
             ENDIF
         ENDIF
     ENDIF
 endm
+
 
 EXTRNP2 macro Func, N
     IFNDEF Func&@&N
@@ -153,18 +159,18 @@ stdPROCF macro Func, N, ArgList
     Func proc ArgList
 endm
 
-cPublicFastCall macro Func, N, ArgList
-    align dword
-    PUBLICP &@&Func, N
+cPublicFastCall macro Func,N,ArgList
+    ALIGN DWORD
+    PUBLICP @&Func, N
     IFB <N>
-        stdPROCF &@&Func, 0, <ArgList>
+        stdPROCF @&Func, 0, <ArgList>
     ELSE
-        stdPROCF &@&Func, N, <ArgList>
+        stdPROCF @&Func, N, <ArgList>
     ENDIF
 endm
 
-fstRET macro Func
-    ret cByte&@&Func
+fstRET  macro   Func
+    ret     cByte@&Func
 endm
 
 stdRET macro Func
@@ -177,8 +183,8 @@ cPublicFpo macro FpoLocals, FpoParams
     ; Use .ALLOCSTACK / .PUSHREG if manual frame definition is required.
 endm
 
-fstENDP macro Func
-    &@&Func endp
+fstENDP macro   Func
+    @&Func  endp
 endm
 
 stdENDP macro Func
@@ -204,16 +210,16 @@ stdCall macro Func, ArgList
     stdCallCall Func, %(Bytes)
 endm
 
-fstCall macro Func, ArgList
+fstCall macro   Func,ArgList
     LOCAL Bytes
-    RevPush <ArgList>, Bytes
-    Bytes = Bytes * 4
+
+    RevPush <ArgList>,Bytes
+    Bytes = Bytes*4
 
     IF Bytes eq 0
-        stdCallCall &@&Func, %cFCall&@&Func
+        stdCallCall @&Func, %cFCall@&Func
     ELSE
-        ; must have 2 register params
-        stdCallCall &@&Func, %(Bytes+8)
+        stdCallCall @&Func, %(Bytes+8)
     ENDIF
 endm
 

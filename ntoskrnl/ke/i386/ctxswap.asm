@@ -594,6 +594,8 @@ ENDIF
 ;++
 ; _KeFlushCurrentTb
 ; Note: Not declared as PROC/ENDP to allow ktb00/ktb_gb/ktb_eb to be PUBLIC
+;       Also uses plain "ret" instead of stdRET because cByte_ symbol is not
+;       defined when cPublicProc is not used.
 ;--
 
         PUBLIC  ktb00
@@ -607,14 +609,14 @@ _KeFlushCurrentTb:
 
 ktb00:  mov     eax, cr3                ; (eax) = directory table base
         mov     cr3, eax                ; flush TLB
-        stdRET    _KeFlushCurrentTb
+        ret                             ; plain ret (no cByte_ symbol available)
 
 ktb_gb: mov     eax, cr4                ; *** see Ki386EnableGlobalPage ***
         and     eax, not CR4_PGE        ; This version gets copied into
         mov     cr4, eax                ; ktb00 at initialization time if needed.
         or      eax, CR4_PGE
         mov     cr4, eax
-ktb_eb: stdRET    _KeFlushCurrentTb
+ktb_eb: ret                             ; plain ret (no cByte_ symbol available)
 
 ; Note: No "endp" since not declared as PROC
 
@@ -752,6 +754,8 @@ stdENDP _Ki386EnableXMMIExceptions
 ;++
 ; _Ki386EnableCurrentLargePage
 ; Note: Not declared as PROC/ENDP to allow _Ki386EnableCurrentLargePageEnd to be PUBLIC
+;       Also uses plain "ret" instead of stdRET because cByte_ symbol is not
+;       defined when cPublicProc is not used.
 ;--
 
         PUBLIC  _Ki386EnableCurrentLargePageEnd
@@ -789,7 +793,7 @@ OriginalMapping:
         mov     cr3, eax                ; restore original Cr3
         popfd                           ; restore interrupts
 
-        stdRET  _Ki386EnableCurrentLargePage
+        ret                             ; plain ret (no cByte_ symbol available)
 
 _Ki386EnableCurrentLargePageEnd:
 

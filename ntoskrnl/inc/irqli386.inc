@@ -234,12 +234,13 @@ endm
 ;
 ;   Arguments:
 ;       Irql - provides the value for the desired new IRQL.
+;       NoOld - Optional. Accepted for API compatibility but ignored in the
+;               non-APIC path since KfRaiseIrql returns old IRQL in eax.
 ;
 ;   Return Value:
-;       Unless the NoOld flag is supplied, eax contains the zero-extended
-;       value of the IRQL before raising.
+;       EAX contains the zero-extended value of the IRQL before raising.
 ;--
-RaiseIrql macro Irql
+RaiseIrql macro Irql, nooldirql
     IFIDN <Irql>, <cl>
     ELSE
         IFIDN <Irql>, <ecx>

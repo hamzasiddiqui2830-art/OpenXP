@@ -133,7 +133,7 @@ kdi00:  cli                             ; disable interrupts
         or      eax, [ebx+PcPrcbData+PbTimerRequest] ; merge timer request
 
 IFNDEF NT_UP
-        or      eax, [ebx+PcPrcbData+PbDeferredReadyListHead] ; merge deferred list head
+        or      eax, DWORD PTR [ebx+PcPrcbData+PbDeferredReadyListHead] ; merge deferred list head
 ENDIF
 
         jz      short kdi40             ; if z, no DPC's or timers to process
@@ -600,7 +600,10 @@ ENDIF
         PUBLIC  ktb_gb
         PUBLIC  ktb_eb
 
-cPublicProc _KeFlushCurrentTb, 0
+; Note: _KeFlushCurrentTb is NOT declared as PROC/ENDP to allow ktb00/ktb_gb/ktb_eb
+; labels to be PUBLIC (MASM 14.x doesn't allow PUBLIC on labels inside PROC)
+
+_KeFlushCurrentTb:
 
 ktb00:  mov     eax, cr3                ; (eax) = directory table base
         mov     cr3, eax                ; flush TLB
@@ -613,7 +616,7 @@ ktb_gb: mov     eax, cr4                ; *** see Ki386EnableGlobalPage ***
         mov     cr4, eax
 ktb_eb: stdRET    _KeFlushCurrentTb
 
-stdENDP _KeFlushCurrentTb
+; Note: No "endp" since not declared as PROC
 
         PAGE ,132
         SUBTTL  "Flush Data Cache"
@@ -748,11 +751,15 @@ stdENDP _Ki386EnableXMMIExceptions
 
 ;++
 ; _Ki386EnableCurrentLargePage
+; Note: Not declared as PROC/ENDP to allow _Ki386EnableCurrentLargePageEnd to be PUBLIC
 ;--
 
         PUBLIC  _Ki386EnableCurrentLargePageEnd
 
-cPublicProc _Ki386EnableCurrentLargePage, 2
+; Note: _Ki386EnableCurrentLargePage is NOT declared as PROC/ENDP to allow
+; _Ki386EnableCurrentLargePageEnd label to be PUBLIC
+
+_Ki386EnableCurrentLargePage:
         mov     ecx, [esp+4]            ; (ecx)-> IdentityAddr
         mov     edx, [esp+8]            ; (edx)-> IdentityCr3
         pushfd                          ; save current IF state
@@ -786,7 +793,7 @@ OriginalMapping:
 
 _Ki386EnableCurrentLargePageEnd:
 
-stdENDP _Ki386EnableCurrentLargePage
+; Note: No "endp" since not declared as PROC
 
 INIT    ends
 
@@ -972,7 +979,7 @@ CheckDpcList:
 
 IFNDEF NT_UP
 
-        or      eax, [ebx+PcPrcbData+PbDeferredReadyListHead] ; merge deferred list
+        or      eax, DWORD PTR [ebx+PcPrcbData+PbDeferredReadyListHead] ; merge deferred list
 
 ENDIF
 
@@ -1056,7 +1063,7 @@ ENDIF
 IFNDEF NT_UP
 
         and     byte ptr [ebx+PcPrcbData+PbIdleSchedule], 0 ; clear idle schedule
-        and     dword ptr [ebx+PcPrcbData+PbPrcbLock], 0 ; release PRCB lock
+        and     DWORD PTR [ebx+PcPrcbData+PbPrcbLock], 0 ; release PRCB lock
 
 ENDIF
 
@@ -1080,7 +1087,7 @@ ENDIF
 IFNDEF NT_UP
 
 kisame: and     dword ptr [ebx+PcPrcbData+PbNextThread], 0 ; clear next thread
-        and     dword ptr [ebx+PcPrcbData+PbPrcbLock], 0 ; release PRCB lock
+        and     DWORD PTR [ebx+PcPrcbData+PbPrcbLock], 0 ; release PRCB lock
         and     byte ptr [edi+ThSwapBusy], 0 ; set idle thread context swap idle
         jmp     kid30                   ;
 

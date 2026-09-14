@@ -133,7 +133,8 @@ kdi00:  cli                             ; disable interrupts
         or      eax, [ebx+PcPrcbData+PbTimerRequest] ; merge timer request
 
 IFNDEF NT_UP
-        or      eax, DWORD PTR [ebx+PcPrcbData+PbDeferredReadyListHead] ; merge deferred list head
+        mov     ecx, [ebx+PcPrcbData+PbDeferredReadyListHead] ; load deferred list head
+        or      eax, ecx
 ENDIF
 
         jz      short kdi40             ; if z, no DPC's or timers to process

@@ -128,7 +128,7 @@ cPublicProc _KiDispatchInterrupt, 0
 ;
 
          mov     ebx, PCR[PcSelfPcr]     ; get address of PCR
-@@:     cli                             ; disable interrupts
+kid00:   cli                             ; disable interrupts
          mov     eax, [ebx+PcPrcbData+PbDpcQueueDepth] ; get DPC queue depth
          or      eax, [ebx+PcPrcbData+PbTimerRequest] ; merge timer request
 
@@ -1017,7 +1017,7 @@ IF DBG
 
 ENDIF
 
-         jmp     short @B
+         jmp     short kid00
 
 @KiIdleLoop@0 endp
 

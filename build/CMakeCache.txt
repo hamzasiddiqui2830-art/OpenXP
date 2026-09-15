@@ -14,40 +14,43 @@
 # EXTERNAL cache entries
 ########################
 
+//Build checked kernel with debug features
+BUILD_CHECKED_KERNEL:BOOL=OFF
+
+//Build the legacy chkreg user-mode utility
+BUILD_CHKREG:BOOL=OFF
+
+//Build ntoskrnl test targets
+BUILD_NTOSKRNL_TESTS:BOOL=OFF
+
+//Build the legacy RTL boot libraries
+BUILD_RTL_BOOT_TARGETS:BOOL=OFF
+
 //Path to a program.
 CMAKE_ADDR2LINE:FILEPATH=/usr/bin/addr2line
 
 //Path to a program.
 CMAKE_AR:FILEPATH=/usr/bin/ar
 
-//ASM compiler
-CMAKE_ASM_COMPILER:FILEPATH=/usr/bin/cc
+//ASM_MASM compiler
+CMAKE_ASM_MASM_COMPILER:FILEPATH=ml
 
-//A wrapper around 'ar' adding the appropriate '--plugin' option
-// for the GCC compiler
-CMAKE_ASM_COMPILER_AR:FILEPATH=/usr/bin/gcc-ar
+//Flags used by the ASM_MASM compiler during all build types.
+CMAKE_ASM_MASM_FLAGS:STRING=
 
-//A wrapper around 'ranlib' adding the appropriate '--plugin' option
-// for the GCC compiler
-CMAKE_ASM_COMPILER_RANLIB:FILEPATH=/usr/bin/gcc-ranlib
+//Flags used by the ASM_MASM compiler during DEBUG builds.
+CMAKE_ASM_MASM_FLAGS_DEBUG:STRING=
 
-//Flags used by the ASM compiler during all build types.
-CMAKE_ASM_FLAGS:STRING=
+//Flags used by the ASM_MASM compiler during MINSIZEREL builds.
+CMAKE_ASM_MASM_FLAGS_MINSIZEREL:STRING=
 
-//Flags used by the ASM compiler during DEBUG builds.
-CMAKE_ASM_FLAGS_DEBUG:STRING=-g
+//Flags used by the ASM_MASM compiler during RELEASE builds.
+CMAKE_ASM_MASM_FLAGS_RELEASE:STRING=
 
-//Flags used by the ASM compiler during MINSIZEREL builds.
-CMAKE_ASM_FLAGS_MINSIZEREL:STRING=-Os -DNDEBUG
+//Flags used by the ASM_MASM compiler during RELWITHDEBINFO builds.
+CMAKE_ASM_MASM_FLAGS_RELWITHDEBINFO:STRING=
 
-//Flags used by the ASM compiler during RELEASE builds.
-CMAKE_ASM_FLAGS_RELEASE:STRING=-O3 -DNDEBUG
-
-//Flags used by the ASM compiler during RELWITHDEBINFO builds.
-CMAKE_ASM_FLAGS_RELWITHDEBINFO:STRING=-O2 -g -DNDEBUG
-
-//Choose the type of build, options are: None Debug Release RelWithDebInfo
-// MinSizeRel ...
+//Build type
 CMAKE_BUILD_TYPE:STRING=Release
 
 //Enable/Disable color output during build.
@@ -104,7 +107,7 @@ CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=
 CMAKE_FIND_PACKAGE_REDIRECTS_DIR:STATIC=/workspace/build/CMakeFiles/pkgRedirects
 
 //WRK Include Paths
-CMAKE_INCLUDE_PATH:STRING=/workspace/ntoskrnl/inc;/workspace/sdk/ddk/inc;/workspace/sdk/internal/ds/inc;/workspace/sdk/internal/sdktools/inc;/workspace/sdk/internal/base/inc;/workspace/sdk/sdk/inc;/workspace/sdk/sdk/inc/crt;/workspace/sdk/halkit/inc;/workspace/base/inc;/workspace/ntoskrnl/i386
+CMAKE_INCLUDE_PATH:STRING=/workspace/ntoskrnl/inc;/workspace/sdk/ddk/inc;/workspace/sdk/internal/ds/inc;/workspace/sdk/internal/sdktools/inc;/workspace/sdk/internal/base/inc;/workspace/sdk/sdk/inc;/workspace/sdk/sdk/inc/crt;/workspace/sdk/halkit/inc;/workspace/base/inc;/workspace/ntoskrnl/amd64
 
 //Install path prefix, prepended onto install directories.
 CMAKE_INSTALL_PREFIX:PATH=/usr/local
@@ -239,20 +242,17 @@ ENABLE_HAL_APIC:BOOL=OFF
 //Build ARM HAL
 ENABLE_HAL_ARM:BOOL=ON
 
-//Build Multiprocessor System HAL
+//Build Multiprocessor HAL
 ENABLE_HAL_MPS:BOOL=OFF
 
 //Build Uniprocessor HAL
-ENABLE_HAL_UP:BOOL=ON
+ENABLE_HAL_UP:BOOL=OFF
 
-//Value Computed by CMake
-halarm_BINARY_DIR:STATIC=/workspace/build/hal/halarm
+//Build uniprocessor kernel (0 for MP)
+NT_UP:BOOL=ON
 
-//Value Computed by CMake
-halarm_IS_TOP_LEVEL:STATIC=OFF
-
-//Value Computed by CMake
-halarm_SOURCE_DIR:STATIC=/workspace/hal/halarm
+//WRK compiler (vs or gcc)
+WRK_COMPILER:STRING=vs
 
 //Value Computed by CMake
 wrk_BINARY_DIR:STATIC=/workspace/build
@@ -272,23 +272,19 @@ wrk_SOURCE_DIR:STATIC=/workspace
 CMAKE_ADDR2LINE-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_AR
 CMAKE_AR-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: CMAKE_ASM_COMPILER
-CMAKE_ASM_COMPILER-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: CMAKE_ASM_COMPILER_AR
-CMAKE_ASM_COMPILER_AR-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: CMAKE_ASM_COMPILER_RANLIB
-CMAKE_ASM_COMPILER_RANLIB-ADVANCED:INTERNAL=1
-CMAKE_ASM_COMPILER_WORKS:INTERNAL=1
-//ADVANCED property for variable: CMAKE_ASM_FLAGS
-CMAKE_ASM_FLAGS-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: CMAKE_ASM_FLAGS_DEBUG
-CMAKE_ASM_FLAGS_DEBUG-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: CMAKE_ASM_FLAGS_MINSIZEREL
-CMAKE_ASM_FLAGS_MINSIZEREL-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: CMAKE_ASM_FLAGS_RELEASE
-CMAKE_ASM_FLAGS_RELEASE-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: CMAKE_ASM_FLAGS_RELWITHDEBINFO
-CMAKE_ASM_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_ASM_MASM_COMPILER
+CMAKE_ASM_MASM_COMPILER-ADVANCED:INTERNAL=1
+CMAKE_ASM_MASM_COMPILER_WORKS:INTERNAL=1
+//ADVANCED property for variable: CMAKE_ASM_MASM_FLAGS
+CMAKE_ASM_MASM_FLAGS-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_ASM_MASM_FLAGS_DEBUG
+CMAKE_ASM_MASM_FLAGS_DEBUG-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_ASM_MASM_FLAGS_MINSIZEREL
+CMAKE_ASM_MASM_FLAGS_MINSIZEREL-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_ASM_MASM_FLAGS_RELEASE
+CMAKE_ASM_MASM_FLAGS_RELEASE-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_ASM_MASM_FLAGS_RELWITHDEBINFO
+CMAKE_ASM_MASM_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //This is the directory where this CMakeCache.txt was created
 CMAKE_CACHEFILE_DIR:INTERNAL=/workspace/build
 //Major version of cmake used to create the current loaded cache
@@ -369,7 +365,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=3
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=27
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP

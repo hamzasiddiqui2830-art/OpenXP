@@ -47,6 +47,7 @@ ENDIF
          EXTRN   __imp__KeRaiseIrqlToSynchLevel@0:DWORD
 
          EXTRN   _KiIdleSummary:DWORD
+         EXTRN   kid00:NEAR
 
 IF DBG
          EXTRN   _KdDebuggerEnabled:BYTE
@@ -128,6 +129,7 @@ cPublicProc _KiDispatchInterrupt, 0
 ;
 
          mov     ebx, PCR[PcSelfPcr]     ; get address of PCR
+PUBLIC kid00
 kid00:   cli                             ; disable interrupts
          mov     eax, [ebx+PcPrcbData+PbDpcQueueDepth] ; get DPC queue depth
          or      eax, [ebx+PcPrcbData+PbTimerRequest] ; merge timer request

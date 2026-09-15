@@ -1,1 +1,8 @@
-Nothing should be ignored in this case. The modified file 'ntoskrnl/ke/i386/ctxswap.asm' is an assembly source code file, which is a legitimate part of the kernel source tree and should not be added to .gitignore. There are no build artifacts, dependencies, or temporary files in the provided change list that would warrant adding ignore rules.
+```
+# Build system
+build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+```

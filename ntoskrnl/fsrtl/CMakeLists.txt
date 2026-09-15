@@ -5,22 +5,22 @@ set(MODULE_NAME fsrtl)
 set(TARGET_NAME ntosFsRtl)
 
 set(MODULE_SOURCES
-    DbcsName.c
-    FastIo.c
-    FaultTol.c
-    FileLock.c
-    Filter.c
-    FiltrCtx.c
-    FsFilter.c
-    FsRtlPc.c
-    LargeMcb.c
-    Name.c
-    Notify.c
-    Oplock.c
-    PnP.c
-    Unc.c
-    Tunnel.c
-    StackOvf.c
+    dbcsname.c
+    fastio.c
+    faulttol.c
+    filelock.c
+    filter.c
+    filtrctx.c
+    fsfilter.c
+    fsrtlpc.c
+    largemcb.c
+    name.c
+    notify.c
+    oplock.c
+    pnp.c
+    unc.c
+    tunnel.c
+    stackovf.c
 )
 
 add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})

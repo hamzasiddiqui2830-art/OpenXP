@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../lib/libhal_stub.a CMakeFiles/hal_stub.dir/hal_stub.c.o
-/usr/bin/ranlib ../lib/libhal_stub.a

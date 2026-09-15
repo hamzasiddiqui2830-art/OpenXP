@@ -5,16 +5,16 @@ set(MODULE_NAME raw)
 set(TARGET_NAME ntosraw)
 
 set(MODULE_SOURCES
-    Cleanup.c
-    Close.c
-    Create.c
-    FileInfo.c
-    FsCtrl.c
-    StrucSup.c
-    RawDisp.c
-    RawInit.c
-    ReadWrit.c
-    VolInfo.c
+    cleanup.c
+    close.c
+    create.c
+    fileinfo.c
+    fsctrl.c
+    strucsup.c
+    rawdisp.c
+    rawinit.c
+    readwrit.c
+    volinfo.c
 )
 
 add_library(${TARGET_NAME} STATIC ${MODULE_SOURCES})

@@ -128,6 +128,7 @@ cPublicProc _KiDispatchInterrupt, 0
 ;
 
          mov     ebx, PCR[PcSelfPcr]     ; get address of PCR
+         PUBLIC  kdi00
 kdi00:  cli                             ; disable interrupts
          mov     eax, [ebx+PcPrcbData+PbDpcQueueDepth] ; get DPC queue depth
          or      eax, [ebx+PcPrcbData+PbTimerRequest] ; merge timer request
